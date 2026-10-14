@@ -23,6 +23,8 @@
   --color-credit-soft: var(--credit-soft);
   --color-debit: var(--debit);
   --color-debit-soft: var(--debit-soft);
+  --color-saved: var(--saved);
+  --color-saved-soft: var(--saved-soft);
 }
 
 :root {
@@ -41,6 +43,8 @@
   --credit-soft: oklch(0.93 0.05 155);
   --debit: oklch(0.55 0.17 30);
   --debit-soft: oklch(0.94 0.04 30);
+  --saved: oklch(0.5 0.1 240);
+  --saved-soft: oklch(0.93 0.04 240);
 }
 
 @layer base {
