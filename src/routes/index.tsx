@@ -72,16 +72,22 @@ function Index() {
         <h1 className="font-display text-5xl">Minhas Finanças</h1>
       </header>
 
-      <section className="mb-8 rounded-xl bg-primary p-6 text-primary-foreground">
-        <p className="text-sm opacity-80">Saldo disponível</p>
-        <p className="font-display text-5xl">{brl(totais.saldo)}</p>
-        <div className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <div><p className="opacity-70">Créditos</p><p className="text-lg font-semibold">{brl(totais.c)}</p></div>
-          <div><p className="opacity-70">Débitos</p><p className="text-lg font-semibold">{brl(totais.d)}</p></div>
-          <div><p className="opacity-70">Guardado</p><p className="text-lg font-semibold">{brl(totais.guardado)}</p></div>
-          <div><p className="opacity-70">Falta pagar</p><p className="text-lg font-semibold">{brl(totais.aPagar)}</p></div>
-        </div>
-      </section>
+      <div className="mb-8 grid gap-4 md:grid-cols-2">
+        <section className="rounded-xl bg-primary p-6 text-primary-foreground">
+          <p className="text-sm opacity-80">Dinheiro disponível</p>
+          <p className="font-display text-4xl">{brl(totais.saldo)}</p>
+          <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
+            <div><p className="opacity-70">Créditos</p><p className="font-semibold">{brl(totais.c)}</p></div>
+            <div><p className="opacity-70">Débitos</p><p className="font-semibold">{brl(totais.d)}</p></div>
+            <div><p className="opacity-70">Falta pagar</p><p className="font-semibold">{brl(totais.aPagar)}</p></div>
+          </div>
+        </section>
+        <section className="rounded-xl bg-saved p-6 text-primary-foreground">
+          <p className="text-sm opacity-80">Dinheiro guardado</p>
+          <p className="font-display text-4xl">{brl(totais.guardado)}</p>
+          <p className="mt-5 text-sm opacity-80">Aplicações menos resgates. Não entra no disponível.</p>
+        </section>
+      </div>
 
       <form onSubmit={adicionar} className="mb-8 space-y-4 rounded-xl border bg-card p-5">
         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 sm:grid-cols-4">
