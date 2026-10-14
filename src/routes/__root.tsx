@@ -122,6 +122,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <nav className="border-b bg-card">
+        <div className="mx-auto flex max-w-3xl gap-2 px-5 py-3">
+          <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-4 py-1.5 text-sm font-semibold"
+            activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+            Finanças
+          </Link>
+          <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+            activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+            Feira
+          </Link>
+        </div>
+      </nav>
       <Outlet />
     </QueryClientProvider>
   );

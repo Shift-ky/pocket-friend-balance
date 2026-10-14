@@ -1,0 +1,103 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+
+export const Route = createFileRoute("/feira")({
+  head: () => ({
+    meta: [
+      { title: "Lista da Feira — Minhas Finanças" },
+      { name: "description", content: "Anote os itens da sua feira e acompanhe o total." },
+      { property: "og:title", content: "Lista da Feira" },
+      { property: "og:description", content: "Anote os itens da sua feira e acompanhe o total." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: Feira,
+});
+
+type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
+const KEY = "financas:feira";
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
+
+function Feira() {
+  const [itens, setItens] = useState<Item[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [nome, setNome] = useState("");
+  const [qtd, setQtd] = useState("1");
+  const [preco, setPreco] = useState("");
+
+  useEffect(() => {
+    try { setItens(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch {}
+    setLoaded(true);
+  }, []);
+  useEffect(() => { if (loaded) localStorage.setItem(KEY, JSON.stringify(itens)); }, [itens, loaded]);
+
+  const total = itens.reduce((s, i) => s + i.qtd * i.preco, 0);
+  const noCarrinho = itens.filter((i) => i.pego).reduce((s, i) => s + i.qtd * i.preco, 0);
+
+  function adicionar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome.trim()) return;
+    setItens((p) => [...p, {
+      id: crypto.randomUUID(), nome: nome.trim(),
+      qtd: parseFloat(qtd.replace(",", ".")) || 1,
+      preco: parseFloat(preco.replace(",", ".")) || 0, pego: false,
+    }]);
+    setNome(""); setQtd("1"); setPreco("");
+  }
+
+  const atualizar = (id: string, d: Partial<Item>) => setItens((p) => p.map((x) => x.id === id ? { ...x, ...d } : x));
+
+  return (
+    <main className="mx-auto max-w-3xl px-5 py-10">
+      <header className="mb-8">
+        <p className="text-sm uppercase tracking-widest text-muted-foreground">Compras</p>
+        <h1 className="font-display text-5xl">Lista da Feira</h1>
+      </header>
+
+      <div className="mb-8 grid gap-4 md:grid-cols-2">
+        <section className="rounded-xl bg-primary p-6 text-primary-foreground">
+          <p className="text-sm opacity-80">Total previsto</p>
+          <p className="font-display text-4xl">{brl(total)}</p>
+          <p className="mt-2 text-sm opacity-80">{itens.length} itens na lista</p>
+        </section>
+        <section className="rounded-xl bg-credit p-6 text-primary-foreground">
+          <p className="text-sm opacity-80">No carrinho</p>
+          <p className="font-display text-4xl">{brl(noCarrinho)}</p>
+          <p className="mt-2 text-sm opacity-80">{itens.filter((i) => i.pego).length} itens pegos</p>
+        </section>
+      </div>
+
+      <form onSubmit={adicionar} className="mb-6 grid grid-cols-[1fr_5rem_7rem] gap-3 rounded-xl border bg-card p-5">
+        <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Item (ex: Arroz)" className={input} />
+        <input value={qtd} onChange={(e) => setQtd(e.target.value)} inputMode="decimal" placeholder="Qtd" className={input} />
+        <input value={preco} onChange={(e) => setPreco(e.target.value)} inputMode="decimal" placeholder="Preço R$" className={input} />
+        <button className="col-span-3 rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90">Adicionar item</button>
+      </form>
+
+      {itens.some((i) => i.pego) && (
+        <button onClick={() => setItens((p) => p.filter((i) => !i.pego))} className="mb-3 text-sm text-muted-foreground underline">
+          Remover itens pegos
+        </button>
+      )}
+
+      <ul className="space-y-2">
+        {itens.length === 0 && <li className="py-10 text-center text-muted-foreground">Sua lista está vazia.</li>}
+        {itens.map((i) => (
+          <li key={i.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 accent-credit" />
+            <p className={`flex-1 font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
+            <input value={i.qtd} onChange={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value) || 0 })} inputMode="decimal"
+              className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
+            <span className="text-sm text-muted-foreground">×</span>
+            <input value={i.preco} onChange={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+              className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
+            <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
+            <button onClick={() => setItens((p) => p.filter((x) => x.id !== i.id))} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+          </li>
+        ))}
+      </ul>
+    </main>
+  );
+}
