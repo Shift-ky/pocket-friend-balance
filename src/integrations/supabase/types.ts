@@ -14,13 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      feira_itens: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          nome: string
+          pego: boolean
+          preco: number
+          qtd: number
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          nome: string
+          pego?: boolean
+          preco?: number
+          qtd?: number
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          nome?: string
+          pego?: boolean
+          preco?: number
+          qtd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feira_itens_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupo_membros: {
+        Row: {
+          email: string | null
+          grupo_id: string
+          user_id: string
+        }
+        Insert: {
+          email?: string | null
+          grupo_id: string
+          user_id: string
+        }
+        Update: {
+          email?: string | null
+          grupo_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupo_membros_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos: {
+        Row: {
+          codigo: string
+          created_at: string
+          criado_por: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          codigo?: string
+          created_at?: string
+          criado_por?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          criado_por?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      lancamentos: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string
+          grupo_id: string
+          id: string
+          pago: boolean
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          descricao: string
+          grupo_id: string
+          id?: string
+          pago?: boolean
+          tipo: string
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string
+          grupo_id?: string
+          id?: string
+          pago?: boolean
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      criar_grupo: { Args: { _nome: string }; Returns: string }
+      e_membro: { Args: { _grupo: string }; Returns: boolean }
+      entrar_grupo: { Args: { _codigo: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
