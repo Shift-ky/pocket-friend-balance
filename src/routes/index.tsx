@@ -129,13 +129,13 @@ function Index() {
               <p className="text-xs text-muted-foreground">{INFO[i.tipo].label} · {new Date(i.data + "T00:00").toLocaleDateString("pt-BR")}</p>
             </div>
             {i.tipo === "debito" && (
-              <button onClick={() => setItens((p) => p.map((x) => x.id === i.id ? { ...x, pago: !x.pago } : x))}
+              <button onClick={() => alternarPago(i)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${i.pago ? "bg-credit-soft text-credit" : "bg-debit-soft text-debit"}`}>
                 {i.pago ? "Pago" : "A pagar"}
               </button>
             )}
             <span className={`w-28 text-right font-semibold ${INFO[i.tipo].texto}`}>{brl(i.valor)}</span>
-            <button onClick={() => setItens((p) => p.filter((x) => x.id !== i.id))} aria-label="Excluir"
+            <button onClick={() => excluir(i.id)} aria-label="Excluir"
               className="text-muted-foreground hover:text-debit">✕</button>
           </li>
         ))}
