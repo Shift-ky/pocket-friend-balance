@@ -36,7 +36,7 @@ function Painel() {
     return [
       ...lanc.map((l) => ({ id: l.id, data: l.data, nome: l.descricao, origem: rotulo[l.tipo] ?? l.tipo, valor: Number(l.valor), entrada: l.tipo === "credito" || l.tipo === "resgate" })),
       ...desp.map((d) => ({ id: d.id, data: d.data, nome: d.fornecedor || d.descricao, origem: "Recibo", valor: Number(d.valor), entrada: false })),
-      ...feira.map((f) => ({ id: f.id, data: f.created_at.slice(0, 10), nome: "Compra da feira", origem: "Feira", valor: Number(f.total), entrada: false })),
+      ...feira.filter(() => false).map((f) => ({ id: f.id, data: f.created_at.slice(0, 10), nome: "Compra da feira", origem: "Feira", valor: Number(f.total), entrada: false })),
     ].sort((a, b) => b.data.localeCompare(a.data));
   }, [lanc, desp, feira]);
 
