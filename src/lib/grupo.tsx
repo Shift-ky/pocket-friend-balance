@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Grupo = { id: string; nome: string; codigo: string };
 type Ctx = { session: Session; grupo: Grupo; sair: () => Promise<void> };
-const GrupoCtx = createContext<Ctx | null>(null);
+// Shared on globalThis so hot reloads don't create a second, empty context.
+const g = globalThis as unknown as { __grupoCtx?: React.Context<Ctx | null> };
+const GrupoCtx = (g.__grupoCtx ??= createContext<Ctx | null>(null));
 
 export function useGrupo() {
   const c = useContext(GrupoCtx);
