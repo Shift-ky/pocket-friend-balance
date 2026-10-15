@@ -41,6 +41,7 @@ function Index() {
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [filtro, setFiltro] = useState<"todos" | Tipo>("todos");
   const [conta, setConta] = useState<Conta>("dinheiro");
+  const [mostrar, setMostrar] = useState(false);
 
   const totais = useMemo(() => {
     const din = itens.filter((i) => (i.conta ?? "dinheiro") === "dinheiro");
@@ -136,16 +137,20 @@ function Index() {
         <button className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90">Adicionar</button>
       </form>
 
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {(["todos", "credito", "debito", "aplicacao"] as const).map((f) => (
-          <button key={f} onClick={() => setFiltro(f)}
-            className={`rounded-full border px-4 py-1 text-sm ${filtro === f ? "bg-foreground text-background" : ""}`}>
+          <button key={f} onClick={() => { setFiltro(f); setMostrar(true); }}
+            className={`rounded-full border px-4 py-1 text-sm ${mostrar && filtro === f ? "bg-foreground text-background" : ""}`}>
             {f === "todos" ? "Todos" : f === "credito" ? "Créditos" : f === "debito" ? "Débitos" : "Guardado"}
           </button>
         ))}
+        <button onClick={() => setMostrar((m) => !m)}
+          className={`rounded-full border px-4 py-1 text-sm ${!mostrar ? "bg-foreground text-background" : ""}`}>
+          {mostrar ? "Ocultar lista" : "Lista oculta"}
+        </button>
       </div>
 
-      <ul className="space-y-2">
+      {mostrar && <ul className="space-y-2">
         {lista.length === 0 && <li className="py-10 text-center text-muted-foreground">Nenhum lançamento ainda.</li>}
         {lista.map((i) => (
           <li key={i.id} className={`flex items-center gap-3 rounded-lg border bg-card p-4 ${i.pago || i.tipo === "credito" ? "" : ""}`}>
@@ -167,7 +172,7 @@ function Index() {
               className="text-muted-foreground hover:text-debit">✕</button>
           </li>
         ))}
-      </ul>
+      </ul>}
     </main>
   );
 }
