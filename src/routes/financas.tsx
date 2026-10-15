@@ -43,6 +43,7 @@ function Index() {
   const [filtro, setFiltro] = useState<"todos" | Tipo>("todos");
   const [conta, setConta] = useState<Conta>("dinheiro");
   const [mostrar, setMostrar] = useState(false);
+  const [editando, setEditando] = useState<string | null>(null);
   const admin = useSouAdmin();
 
   const totais = useMemo(() => {
@@ -159,8 +160,10 @@ function Index() {
 
       {mostrar && <ul className="space-y-2">
         {lista.length === 0 && <li className="py-10 text-center text-muted-foreground">Nenhum lançamento ainda.</li>}
-        {lista.map((i) => (
-          <li key={i.id} className={`flex items-center gap-3 rounded-lg border bg-card p-4 ${i.pago || i.tipo === "credito" ? "" : ""}`}>
+        {lista.map((i) => editando === i.id ? (
+          <EditarLinha key={i.id} item={i} onFechar={() => { setEditando(null); recarregar(); }} />
+        ) : (
+          <li key={i.id} className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-4">
             <span className={`flex h-9 w-9 items-center justify-center rounded-full font-bold ${INFO[i.tipo].icone}`}>
               {INFO[i.tipo].sinal}
             </span>
@@ -175,11 +178,53 @@ function Index() {
               </button>
             )}
             <span className={`w-28 text-right font-semibold ${INFO[i.tipo].texto}`}>{brl(i.valor)}</span>
+            <button onClick={() => setEditando(i.id)} aria-label="Editar"
+              className="text-muted-foreground hover:text-foreground">✎</button>
             {admin && <button onClick={() => excluir(i.id)} aria-label="Excluir"
               className="text-muted-foreground hover:text-debit">✕</button>}
           </li>
         ))}
       </ul>}
     </main>
+  );
+}
+
+function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: () => void }) {
+  const [descricao, setDescricao] = useState(item.descricao);
+  const [valor, setValor] = useState(String(item.valor).replace(".", ","));
+  const [data, setData] = useState(item.data);
+  const [conta, setConta] = useState<Conta>(item.conta ?? "dinheiro");
+  const comConta = item.tipo === "credito" || item.tipo === "debito";
+  async function salvar() {
+    const v = parseFloat(valor.replace(",", "."));
+    if (!descricao.trim() || !v || v <= 0) return alert("Preencha descrição e valor.");
+    const { error } = await supabase.from("lancamentos").update({ descricao: descricao.trim(), valor: v, data, conta: comConta ? conta : "dinheiro" }).eq("id", item.id);
+    if (error) return alert("Não foi possível salvar.");
+    onFechar();
+  }
+  const campo = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
+  return (
+    <li className="space-y-3 rounded-lg border-2 border-primary bg-card p-4">
+      <p className="text-sm font-semibold">Editar {INFO[item.tipo].label.toLowerCase()}</p>
+      <input value={descricao} onChange={(e) => setDescricao(e.target.value)} className={`w-full ${campo}`} />
+      <div className="grid grid-cols-2 gap-3">
+        <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className={campo} />
+        <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={campo} />
+      </div>
+      {comConta && (
+        <div className="grid grid-cols-3 gap-2">
+          {(Object.keys(CONTAS) as Conta[]).map((c) => (
+            <button key={c} type="button" onClick={() => setConta(c)}
+              className={`rounded-lg border py-2 text-sm font-semibold ${conta === c ? "bg-foreground text-background" : "text-muted-foreground"}`}>
+              {CONTAS[c]}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button onClick={salvar} className="flex-1 rounded-lg bg-primary py-2 font-semibold text-primary-foreground">Salvar</button>
+        <button onClick={onFechar} className="flex-1 rounded-lg border py-2 font-semibold">Cancelar</button>
+      </div>
+    </li>
   );
 }
