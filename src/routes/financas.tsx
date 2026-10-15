@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
+import { useSouAdmin } from "@/lib/use-admin";
+import { dividirParcelas } from "@/lib/parcelas";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -42,6 +44,8 @@ function Index() {
   const [filtro, setFiltro] = useState<"todos" | Tipo>("todos");
   const [conta, setConta] = useState<Conta>("dinheiro");
   const [mostrar, setMostrar] = useState(false);
+  const [parcelas, setParcelas] = useState("1");
+  const admin = useSouAdmin();
 
   const totais = useMemo(() => {
     const din = itens.filter((i) => (i.conta ?? "dinheiro") === "dinheiro");
@@ -63,12 +67,22 @@ function Index() {
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
     const c = tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
-    await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: tipo === "credito" || c !== "dinheiro" });
-    setDescricao(""); setValor("");
+    const pago = tipo === "credito" || c !== "dinheiro";
+    const n = tipo === "debito" ? Math.max(1, Math.min(120, parseInt(parcelas) || 1)) : 1;
+    const linhasNovas = dividirParcelas(v, n, data).map((p, k) => ({
+      grupo_id: grupo.id, tipo, descricao: n > 1 ? `${descricao.trim()} (${k + 1}/${n})` : descricao.trim(),
+      valor: p.valor, data: p.data, conta: c, pago: n > 1 ? pago && k === 0 : pago,
+    }));
+    await supabase.from("lancamentos").insert(linhasNovas);
+    setDescricao(""); setValor(""); setParcelas("1");
     recarregar();
   }
   const alternarPago = async (i: Lancamento) => { await supabase.from("lancamentos").update({ pago: !i.pago }).eq("id", i.id); recarregar(); };
-  const excluir = async (id: string) => { await supabase.from("lancamentos").delete().eq("id", id); recarregar(); };
+  const excluir = async (id: string) => {
+    const { error, count } = await supabase.from("lancamentos").delete({ count: "exact" }).eq("id", id);
+    if (error || !count) alert("Só o administrador pode excluir movimentações.");
+    recarregar();
+  };
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
