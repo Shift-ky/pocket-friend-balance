@@ -47,6 +47,24 @@ function Feira() {
   const atualizar = async (id: string, d: Partial<Item>) => { await supabase.from("feira_itens").update(d).eq("id", id); recarregar(); };
   const excluir = async (ids: string[]) => { if (ids.length) await supabase.from("feira_itens").delete().in("id", ids); recarregar(); };
 
+  const { linhas: historico, recarregar: recarregarHist } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
+  const [aberto, setAberto] = useState<string | null>(null);
+
+  async function finalizar() {
+    if (!confirm("Salvar esta compra no histórico e limpar a lista?")) return;
+    const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
+    const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia });
+    if (error) return alert("Não foi possível salvar.");
+    await excluir(itens.map((i) => i.id));
+    recarregarHist();
+  }
+  async function recuperar(h: Compra) {
+    await supabase.from("feira_itens").insert(h.itens.map((i) => ({ grupo_id: grupo.id, nome: i.nome, qtd: i.qtd, preco: i.preco })));
+    recarregar();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  const apagarHist = async (id: string) => { if (confirm("Apagar esta compra do histórico?")) { await supabase.from("feira_historico").delete().eq("id", id); recarregarHist(); } };
+
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
       <header className="mb-8">
@@ -93,6 +111,37 @@ function Feira() {
               className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
             <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
             <button onClick={() => excluir([i.id])} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+          </li>
+        ))}
+      </ul>
+
+      {itens.length > 0 && (
+        <button onClick={finalizar} className="mt-6 w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90">
+          ✔ Finalizar compra e salvar no histórico
+        </button>
+      )}
+
+      <h2 className="mb-3 mt-12 font-display text-3xl">Histórico de compras</h2>
+      <ul className="space-y-2">
+        {historico.length === 0 && <li className="py-6 text-center text-muted-foreground">Nenhuma compra salva ainda.</li>}
+        {[...historico].reverse().map((h) => (
+          <li key={h.id} className="rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="flex-1 text-left">
+                <p className="font-semibold">{new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens</p>
+                <p className="text-xs text-muted-foreground">{aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
+              </button>
+              <span className="font-semibold">{brl(Number(h.total))}</span>
+              <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
+              <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+            </div>
+            {aberto === h.id && (
+              <ul className="mt-3 space-y-1 border-t pt-3 text-sm">
+                {h.itens.map((i, n) => (
+                  <li key={n} className="flex justify-between"><span>{i.qtd} × {i.nome}</span><span>{brl(i.qtd * i.preco)}</span></li>
+                ))}
+              </ul>
+            )}
           </li>
         ))}
       </ul>

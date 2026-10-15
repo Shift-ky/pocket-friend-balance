@@ -120,7 +120,7 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   );
 }
 
-export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas", grupoId: string) {
+export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas" | "feira_historico", grupoId: string) {
   const [linhas, setLinhas] = useState<T[]>([]);
   const recarregar = useCallback(async () => {
     const { data } = await supabase.from(tabela).select("*").eq("grupo_id", grupoId).order("created_at");
