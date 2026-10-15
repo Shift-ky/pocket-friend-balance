@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -16,38 +18,34 @@ export const Route = createFileRoute("/feira")({
 });
 
 type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
-const KEY = "financas:feira";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
 
 function Feira() {
-  const [itens, setItens] = useState<Item[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { grupo } = useGrupo();
+  const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
+  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), preco: Number(i.preco) }));
   const [nome, setNome] = useState("");
   const [qtd, setQtd] = useState("1");
   const [preco, setPreco] = useState("");
 
-  useEffect(() => {
-    try { setItens(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch {}
-    setLoaded(true);
-  }, []);
-  useEffect(() => { if (loaded) localStorage.setItem(KEY, JSON.stringify(itens)); }, [itens, loaded]);
-
   const total = itens.reduce((s, i) => s + i.qtd * i.preco, 0);
   const noCarrinho = itens.filter((i) => i.pego).reduce((s, i) => s + i.qtd * i.preco, 0);
 
-  function adicionar(e: React.FormEvent) {
+  async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
-    setItens((p) => [...p, {
-      id: crypto.randomUUID(), nome: nome.trim(),
+    await supabase.from("feira_itens").insert({
+      grupo_id: grupo.id, nome: nome.trim(),
       qtd: parseFloat(qtd.replace(",", ".")) || 1,
-      preco: parseFloat(preco.replace(",", ".")) || 0, pego: false,
-    }]);
+      preco: parseFloat(preco.replace(",", ".")) || 0,
+    });
     setNome(""); setQtd("1"); setPreco("");
+    recarregar();
   }
 
-  const atualizar = (id: string, d: Partial<Item>) => setItens((p) => p.map((x) => x.id === id ? { ...x, ...d } : x));
+  const atualizar = async (id: string, d: Partial<Item>) => { await supabase.from("feira_itens").update(d).eq("id", id); recarregar(); };
+  const excluir = async (ids: string[]) => { if (ids.length) await supabase.from("feira_itens").delete().in("id", ids); recarregar(); };
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">

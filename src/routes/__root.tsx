@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { GrupoGate, useGrupo } from "@/lib/grupo";
 
 function NotFoundComponent() {
   return (
@@ -121,20 +122,31 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <nav className="border-b bg-card">
-        <div className="mx-auto flex max-w-3xl gap-2 px-5 py-3">
-          <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-4 py-1.5 text-sm font-semibold"
-            activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-            Finanças
-          </Link>
-          <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-            activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-            Feira
-          </Link>
-        </div>
-      </nav>
-      <Outlet />
+      <GrupoGate>
+        <Nav />
+        <Outlet />
+      </GrupoGate>
     </QueryClientProvider>
   );
+}
+
+function Nav() {
+  const { grupo, sair } = useGrupo();
+  return (
+    <nav className="border-b bg-card">
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">
+        <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-4 py-1.5 text-sm font-semibold"
+          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+          Finanças
+        </Link>
+        <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+          Feira
+        </Link>
+        <span className="ml-auto text-xs text-muted-foreground">{grupo.nome} · código <b className="text-foreground">{grupo.codigo}</b></span>
+        <button onClick={sair} className="text-xs underline text-muted-foreground">Sair</button>
+      </div>
+    </nav>
+  );
+}
 }
