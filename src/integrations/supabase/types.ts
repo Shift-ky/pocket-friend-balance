@@ -55,6 +55,38 @@ export type Database = {
           },
         ]
       }
+      feira_historico: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          itens: Json
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          itens?: Json
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          itens?: Json
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feira_historico_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feira_itens: {
         Row: {
           created_at: string
