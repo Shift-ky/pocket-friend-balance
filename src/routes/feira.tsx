@@ -67,10 +67,10 @@ function Feira() {
   const apagarHist = async (id: string) => { if (confirm("Apagar esta compra do histórico?")) { await supabase.from("feira_historico").delete().eq("id", id); recarregarHist(); } };
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-5 sm:py-10">
       <header className="mb-8">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">Compras</p>
-        <h1 className="font-display text-5xl">Lista da Feira</h1>
+        <h1 className="font-display text-4xl sm:text-5xl">Lista da Feira</h1>
       </header>
 
       <div className="mb-8 grid gap-4 md:grid-cols-2">
@@ -86,11 +86,11 @@ function Feira() {
         </section>
       </div>
 
-      <form onSubmit={adicionar} className="mb-6 grid grid-cols-[1fr_5rem_7rem] gap-3 rounded-xl border bg-card p-5">
-        <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Item (ex: Arroz)" className={input} />
-        <input value={qtd} onChange={(e) => setQtd(e.target.value)} inputMode="decimal" placeholder="Qtd" className={input} />
-        <input value={preco} onChange={(e) => setPreco(e.target.value)} inputMode="decimal" placeholder="Preço R$" className={input} />
-        <button className="col-span-3 rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90">Adicionar item</button>
+      <form onSubmit={adicionar} className="mb-6 grid grid-cols-2 gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_5rem_7rem] sm:p-5">
+        <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Item (ex: Arroz)" className={`${input} col-span-2 min-w-0 sm:col-span-1`} />
+        <input value={qtd} onChange={(e) => setQtd(e.target.value)} inputMode="decimal" placeholder="Qtd" className={`${input} min-w-0`} />
+        <input value={preco} onChange={(e) => setPreco(e.target.value)} inputMode="decimal" placeholder="Preço R$" className={`${input} min-w-0`} />
+        <button className="col-span-2 rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 sm:col-span-3">Adicionar item</button>
       </form>
 
       {itens.some((i) => i.pego) && (
@@ -102,16 +102,18 @@ function Feira() {
       <ul className="space-y-2">
         {itens.length === 0 && <li className="py-10 text-center text-muted-foreground">Sua lista está vazia.</li>}
         {itens.map((i) => (
-          <li key={i.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 accent-credit" />
-            <p className={`flex-1 font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
-            <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
-              className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
-            <span className="text-sm text-muted-foreground">×</span>
-            <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
-              className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
-            <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
-            <button onClick={() => excluir([i.id])} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+          <li key={i.id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 sm:gap-3">
+            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 shrink-0 accent-credit" />
+            <p className={`min-w-0 flex-1 break-words font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
+            <button onClick={() => excluir([i.id])} aria-label="Excluir" className="shrink-0 text-muted-foreground hover:text-debit sm:order-last">✕</button>
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+              <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+                className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
+              <span className="text-sm text-muted-foreground">×</span>
+              <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+                className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
+              <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
+            </div>
           </li>
         ))}
       </ul>
@@ -127,14 +129,16 @@ function Feira() {
         {historico.length === 0 && <li className="py-6 text-center text-muted-foreground">Nenhuma compra salva ainda.</li>}
         {[...historico].reverse().map((h) => (
           <li key={h.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="flex-1 text-left">
+            <div className="flex flex-wrap items-center gap-3">
+              <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="min-w-0 flex-1 text-left">
                 <p className="font-semibold">{new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens</p>
                 <p className="text-xs text-muted-foreground">{aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
               </button>
-              <span className="font-semibold">{brl(Number(h.total))}</span>
-              <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
-              <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+              <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
+              <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+                <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
+                <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+              </div>
             </div>
             {aberto === h.id && (
               <ul className="mt-3 space-y-1 border-t pt-3 text-sm">
