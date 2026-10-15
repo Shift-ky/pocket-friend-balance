@@ -45,7 +45,7 @@ function Index() {
 
   const totais = useMemo(() => {
     const din = itens.filter((i) => (i.conta ?? "dinheiro") === "dinheiro");
-    const soma = (arr: typeof itens, t: Tipo) => arr.filter((i) => i.tipo === t).reduce((s, i) => s + i.valor, 0);
+    const soma = (arr: typeof itens, t: Tipo) => arr.filter((i) => i.tipo === t && (t !== "debito" || i.pago)).reduce((s, i) => s + i.valor, 0);
     const vale = (c: Conta) => { const a = itens.filter((i) => i.conta === c); return soma(a, "credito") - soma(a, "debito"); };
     const c = soma(din, "credito");
     const d = soma(din, "debito");
@@ -83,7 +83,7 @@ function Index() {
           <p className="font-display text-4xl">{brl(totais.saldo)}</p>
           <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
             <div><p className="opacity-70">Créditos</p><p className="font-semibold">{brl(totais.c)}</p></div>
-            <div><p className="opacity-70">Débitos</p><p className="font-semibold">{brl(totais.d)}</p></div>
+            <div><p className="opacity-70">Débitos pagos</p><p className="font-semibold">{brl(totais.d)}</p></div>
             <div><p className="opacity-70">Falta pagar</p><p className="font-semibold">{brl(totais.aPagar)}</p></div>
           </div>
         </section>
