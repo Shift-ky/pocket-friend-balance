@@ -62,18 +62,18 @@ function Painel() {
   const maior = Math.max(1, ...grafico.flatMap((g) => [g.e, g.s]));
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-5 sm:py-10">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Visão geral</p>
-          <h1 className="font-display text-5xl">Painel</h1>
+          <h1 className="font-display text-4xl sm:text-5xl">Painel</h1>
         </div>
         <div className="flex flex-wrap items-end gap-2 text-sm">
           <label className="flex flex-col text-muted-foreground">De
-            <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="rounded-lg border bg-background px-3 py-2 text-foreground" />
+            <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="rounded-lg border bg-background px-2 py-1.5 text-foreground" />
           </label>
           <label className="flex flex-col text-muted-foreground">Até
-            <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border bg-background px-3 py-2 text-foreground" />
+            <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border bg-background px-2 py-1.5 text-foreground" />
           </label>
           {(de || ate) && <button onClick={() => { setDe(""); setAte(""); }} className="rounded-lg border px-3 py-2">Todo o período</button>}
         </div>
