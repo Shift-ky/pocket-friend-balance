@@ -149,4 +149,3 @@ function Nav() {
     </nav>
   );
 }
-}
