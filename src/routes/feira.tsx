@@ -77,16 +77,16 @@ function Feira() {
         <h1 className="font-display text-4xl sm:text-5xl">Lista da Feira</h1>
       </header>
 
-      <div className="mb-8 grid gap-4 md:grid-cols-2">
-        <section className="rounded-xl bg-primary p-6 text-primary-foreground">
-          <p className="text-sm opacity-80">Total previsto</p>
-          <p className="font-display text-4xl">{brl(total)}</p>
-          <p className="mt-2 text-sm opacity-80">{itens.length} itens na lista</p>
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3">
+        <section className="rounded-xl bg-primary p-3 text-primary-foreground">
+          <p className="text-xs opacity-80">Total previsto</p>
+          <p className="font-display truncate text-lg sm:text-xl">{brl(total)}</p>
+          <p className="mt-1 text-xs opacity-70">{itens.length} itens na lista</p>
         </section>
-        <section className="rounded-xl bg-credit p-6 text-primary-foreground">
-          <p className="text-sm opacity-80">No carrinho</p>
-          <p className="font-display text-4xl">{brl(noCarrinho)}</p>
-          <p className="mt-2 text-sm opacity-80">{itens.filter((i) => i.pego).length} itens pegos</p>
+        <section className="rounded-xl bg-credit p-3 text-primary-foreground">
+          <p className="text-xs opacity-80">No carrinho</p>
+          <p className="font-display truncate text-lg sm:text-xl">{brl(noCarrinho)}</p>
+          <p className="mt-1 text-xs opacity-70">{itens.filter((i) => i.pego).length} itens pegos</p>
         </section>
       </div>
 

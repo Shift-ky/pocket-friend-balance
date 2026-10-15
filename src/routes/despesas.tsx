@@ -69,9 +69,9 @@ function Despesas() {
         <h1 className="font-display text-5xl">Notas e Recibos</h1>
       </header>
 
-      <section className="mb-6 rounded-xl bg-primary p-6 text-primary-foreground">
-        <p className="text-sm opacity-80">Total de despesas</p>
-        <p className="font-display text-4xl">{brl(total)}</p>
+      <section className="mb-6 rounded-xl bg-primary p-3 text-primary-foreground">
+        <p className="text-xs opacity-80">Total de despesas</p>
+        <p className="font-display truncate text-lg sm:text-xl">{brl(total)}</p>
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           {porCat.map((x) => <span key={x.c} className="rounded-full bg-background/20 px-3 py-1">{x.c}: {brl(x.v)}</span>)}
         </div>
