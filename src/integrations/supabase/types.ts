@@ -177,6 +177,7 @@ export type Database = {
       }
       lancamentos: {
         Row: {
+          conta: string
           created_at: string
           data: string
           descricao: string
@@ -187,6 +188,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          conta?: string
           created_at?: string
           data?: string
           descricao: string
@@ -197,6 +199,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          conta?: string
           created_at?: string
           data?: string
           descricao?: string
