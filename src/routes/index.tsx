@@ -79,7 +79,7 @@ function Painel() {
         </div>
       </header>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
         <section className="rounded-xl bg-saved p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Dinheiro disponível</p>
           <p className="font-display text-xl">{brl(disponivel)}</p>
@@ -91,10 +91,6 @@ function Painel() {
         <section className="rounded-xl bg-debit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Saídas pagas</p>
           <p className="font-display text-xl">{brl(saidas)}</p>
-        </section>
-        <section className="rounded-xl bg-primary p-3 text-primary-foreground">
-          <p className="text-xs opacity-80">Resultado</p>
-          <p className="font-display text-xl">{brl(entradas - saidas)}</p>
         </section>
       </div>
 
