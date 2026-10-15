@@ -18,6 +18,7 @@ export const Route = createFileRoute("/feira")({
 });
 
 type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
+type Compra = { id: string; total: number; created_at: string; itens: { nome: string; qtd: number; preco: number }[] };
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
 
