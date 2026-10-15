@@ -51,11 +51,15 @@ function Feira() {
   const { linhas: historico, recarregar: recarregarHist } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
   const [aberto, setAberto] = useState<string | null>(null);
 
+  const [pagamento, setPagamento] = useState<"nenhum" | "dinheiro" | "alimentacao" | "refeicao">("nenhum");
   async function finalizar() {
     if (!confirm("Salvar esta compra no histórico e limpar a lista?")) return;
     const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
     const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia });
     if (error) return alert("Não foi possível salvar.");
+    if (pagamento !== "nenhum" && total > 0) {
+      await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) });
+    }
     await excluir(itens.map((i) => i.id));
     recarregarHist();
   }
@@ -119,9 +123,23 @@ function Feira() {
       </ul>
 
       {itens.length > 0 && (
-        <button onClick={finalizar} className="mt-6 w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90">
-          ✔ Finalizar compra e salvar no histórico
-        </button>
+        <div className="mt-6 space-y-3 rounded-xl border bg-card p-4">
+          <p className="text-sm text-muted-foreground">Como pagou esta compra?</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {([["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setPagamento(k)}
+                className={`rounded-lg border py-2 text-sm font-semibold ${pagamento === k ? "bg-foreground text-background" : "text-muted-foreground"}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."}
+          </p>
+          <button onClick={finalizar} className="w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90">
+            ✔ Finalizar compra e salvar no histórico
+          </button>
+        </div>
       )}
 
       <h2 className="mb-3 mt-12 font-display text-3xl">Histórico de compras</h2>
