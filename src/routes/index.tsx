@@ -79,18 +79,18 @@ function Painel() {
         </div>
       </header>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
-        <section className="rounded-xl bg-saved p-3 text-primary-foreground">
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
+        <section className="col-span-2 rounded-xl bg-saved p-3 md:col-span-1 text-primary-foreground">
           <p className="text-xs opacity-80">Dinheiro disponível</p>
-          <p className="font-display text-xl">{brl(disponivel)}</p>
+          <p className="font-display text-lg sm:text-xl truncate">{brl(disponivel)}</p>
         </section>
         <section className="rounded-xl bg-credit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Entradas</p>
-          <p className="font-display text-xl">{brl(entradas)}</p>
+          <p className="font-display text-lg sm:text-xl truncate">{brl(entradas)}</p>
         </section>
         <section className="rounded-xl bg-debit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Saídas pagas</p>
-          <p className="font-display text-xl">{brl(saidas)}</p>
+          <p className="font-display text-lg sm:text-xl truncate">{brl(saidas)}</p>
         </section>
       </div>
 
