@@ -46,7 +46,6 @@ function Painel() {
   const entradas = lista.filter((m) => m.entrada).reduce((s, m) => s + m.valor, 0);
   const saidas = lista.filter((m) => !m.entrada && !m.pendente).reduce((s, m) => s + m.valor, 0);
   const pendentes = lista.filter((m) => m.pendente);
-  const totalPendente = pendentes.reduce((s, m) => s + m.valor, 0);
 
   const grafico = [...meses].slice(0, 6).reverse().map((m) => {
     const doMes = todos.filter((x) => x.data.startsWith(m));
@@ -72,7 +71,7 @@ function Painel() {
         </div>
       </header>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <section className="rounded-xl bg-credit p-5 text-primary-foreground">
           <p className="text-sm opacity-80">Entradas</p>
           <p className="font-display text-3xl">{brl(entradas)}</p>
@@ -80,10 +79,6 @@ function Painel() {
         <section className="rounded-xl bg-debit p-5 text-primary-foreground">
           <p className="text-sm opacity-80">Saídas pagas</p>
           <p className="font-display text-3xl">{brl(saidas)}</p>
-        </section>
-        <section className="rounded-xl border-2 border-debit bg-card p-5">
-          <p className="text-sm text-muted-foreground">Pendentes</p>
-          <p className="font-display text-3xl text-debit">{brl(totalPendente)}</p>
         </section>
         <section className="rounded-xl bg-primary p-5 text-primary-foreground">
           <p className="text-sm opacity-80">Resultado</p>
