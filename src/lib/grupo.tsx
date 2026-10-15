@@ -27,7 +27,7 @@ function Caixa({ titulo, children }: { titulo: string; children: ReactNode }) {
 }
 
 function Login() {
-  const [modo, setModo] = useState<"entrar" | "criar">("entrar");
+  const [modo, setModo] = useState<"entrar" | "criar" | "recuperar">("entrar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [msg, setMsg] = useState("");
@@ -36,7 +36,10 @@ function Login() {
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setCarregando(true); setMsg("");
-    if (modo === "entrar") {
+    if (modo === "recuperar") {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+      setMsg(error ? error.message : "Enviamos um link para seu e-mail. Abra-o para criar uma nova senha.");
+    } else if (modo === "entrar") {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) setMsg("E-mail ou senha incorretos.");
     } else {
@@ -47,16 +50,40 @@ function Login() {
   }
 
   return (
-    <Caixa titulo={modo === "entrar" ? "Entrar" : "Criar conta"}>
+    <Caixa titulo={modo === "entrar" ? "Entrar" : modo === "criar" ? "Criar conta" : "Recuperar senha"}>
       <form onSubmit={enviar} className="space-y-4">
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail" className={campo} />
-        <input type="password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" className={campo} />
-        <button disabled={carregando} className={botao}>{modo === "entrar" ? "Entrar" : "Criar conta"}</button>
+        {modo !== "recuperar" && <input type="password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" className={campo} />}
+        <button disabled={carregando} className={botao}>{modo === "entrar" ? "Entrar" : modo === "criar" ? "Criar conta" : "Enviar link de recuperação"}</button>
       </form>
       {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
       <button onClick={() => { setModo(modo === "entrar" ? "criar" : "entrar"); setMsg(""); }} className="text-sm underline">
         {modo === "entrar" ? "Não tem conta? Criar conta" : "Já tenho conta"}
       </button>
+      {modo === "entrar" && (
+        <button onClick={() => { setModo("recuperar"); setMsg(""); }} className="block text-sm underline">Esqueci minha senha</button>
+      )}
+    </Caixa>
+  );
+}
+
+function NovaSenha({ aoConcluir }: { aoConcluir: () => void }) {
+  const [senha, setSenha] = useState("");
+  const [msg, setMsg] = useState("");
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    const { error } = await supabase.auth.updateUser({ password: senha });
+    if (error) return setMsg(error.message);
+    window.history.replaceState(null, "", "/");
+    aoConcluir();
+  }
+  return (
+    <Caixa titulo="Nova senha">
+      <form onSubmit={salvar} className="space-y-4">
+        <input type="password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Nova senha (mín. 6)" className={campo} />
+        <button className={botao}>Salvar nova senha</button>
+      </form>
+      {msg && <p className="text-sm text-debit">{msg}</p>}
     </Caixa>
   );
 }
@@ -93,9 +120,12 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [grupo, setGrupo] = useState<Grupo | null | undefined>(undefined);
 
+  const [recuperando, setRecuperando] = useState(false);
+
   useEffect(() => {
+    if (window.location.pathname === "/reset-password" || window.location.hash.includes("type=recovery")) setRecuperando(true);
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange((e, s) => { if (e === "PASSWORD_RECOVERY") setRecuperando(true); setSession(s); });
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -108,6 +138,7 @@ export function GrupoGate({ children }: { children: ReactNode }) {
     if (session) carregarGrupo(); else setGrupo(undefined);
   }, [session?.user.id, carregarGrupo]);
 
+  if (recuperando && session) return <NovaSenha aoConcluir={() => setRecuperando(false)} />;
   if (session === undefined || (session && grupo === undefined))
     return <p className="py-20 text-center text-muted-foreground">Carregando…</p>;
   if (!session) return <Login />;
