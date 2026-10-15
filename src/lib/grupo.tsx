@@ -33,6 +33,15 @@ function Login() {
   const [msg, setMsg] = useState("");
   const [carregando, setCarregando] = useState(false);
 
+  useEffect(() => {
+    const h = new URLSearchParams(window.location.hash.slice(1));
+    if (h.get("error")) {
+      setModo("recuperar");
+      setMsg("Esse link expirou ou já foi usado. Peça um novo link abaixo e abra-o logo em seguida.");
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setCarregando(true); setMsg("");
