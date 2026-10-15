@@ -148,6 +148,14 @@ function Index() {
           <input type="date" value={data} onChange={(e) => setData(e.target.value)}
             className="rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         </div>
+        {tipo === "debito" && (
+          <label className="flex items-center gap-3 text-sm text-muted-foreground">
+            Parcelas
+            <input type="number" min={1} max={120} value={parcelas} onChange={(e) => setParcelas(e.target.value)}
+              className="w-20 rounded-lg border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring" />
+            {parseInt(parcelas) > 1 && valor && <span>{parcelas}x de {brl(parseFloat(valor.replace(",", ".")) / parseInt(parcelas) || 0)}, uma por mês</span>}
+          </label>
+        )}
         <button className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90">Adicionar</button>
       </form>
 
@@ -182,8 +190,8 @@ function Index() {
               </button>
             )}
             <span className={`w-28 text-right font-semibold ${INFO[i.tipo].texto}`}>{brl(i.valor)}</span>
-            <button onClick={() => excluir(i.id)} aria-label="Excluir"
-              className="text-muted-foreground hover:text-debit">✕</button>
+            {admin && <button onClick={() => excluir(i.id)} aria-label="Excluir"
+              className="text-muted-foreground hover:text-debit">✕</button>}
           </li>
         ))}
       </ul>}
