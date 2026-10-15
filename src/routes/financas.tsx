@@ -18,7 +18,9 @@ export const Route = createFileRoute("/financas")({
 });
 
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
-type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean };
+type Conta = "dinheiro" | "alimentacao" | "refeicao";
+type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta };
+const CONTAS: Record<Conta, string> = { dinheiro: "Dinheiro", alimentacao: "Alimentação", refeicao: "Refeição" };
 
 const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: string; texto: string }> = {
   credito: { label: "Crédito", sinal: "+", ativo: "bg-credit text-primary-foreground", icone: "bg-credit-soft text-credit", texto: "text-credit" },
@@ -38,15 +40,17 @@ function Index() {
   const [valor, setValor] = useState("");
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [filtro, setFiltro] = useState<"todos" | Tipo>("todos");
+  const [conta, setConta] = useState<Conta>("dinheiro");
 
   const totais = useMemo(() => {
-    const c = itens.filter((i) => i.tipo === "credito").reduce((s, i) => s + i.valor, 0);
-    const d = itens.filter((i) => i.tipo === "debito").reduce((s, i) => s + i.valor, 0);
-    const aPagar = itens.filter((i) => i.tipo === "debito" && !i.pago).reduce((s, i) => s + i.valor, 0);
-    const ap = itens.filter((i) => i.tipo === "aplicacao").reduce((s, i) => s + i.valor, 0);
-    const rs = itens.filter((i) => i.tipo === "resgate").reduce((s, i) => s + i.valor, 0);
-    const guardado = ap - rs;
-    return { c, d, saldo: c - d - guardado, aPagar, guardado };
+    const din = itens.filter((i) => (i.conta ?? "dinheiro") === "dinheiro");
+    const soma = (arr: typeof itens, t: Tipo) => arr.filter((i) => i.tipo === t).reduce((s, i) => s + i.valor, 0);
+    const vale = (c: Conta) => { const a = itens.filter((i) => i.conta === c); return soma(a, "credito") - soma(a, "debito"); };
+    const c = soma(din, "credito");
+    const d = soma(din, "debito");
+    const aPagar = din.filter((i) => i.tipo === "debito" && !i.pago).reduce((s, i) => s + i.valor, 0);
+    const guardado = soma(itens, "aplicacao") - soma(itens, "resgate");
+    return { c, d, saldo: c - d - guardado, aPagar, guardado, alimentacao: vale("alimentacao"), refeicao: vale("refeicao") };
   }, [itens]);
 
   const lista = itens
@@ -57,7 +61,8 @@ function Index() {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
-    await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, pago: tipo === "credito" });
+    const c = tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
+    await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: tipo === "credito" || c !== "dinheiro" });
     setDescricao(""); setValor("");
     recarregar();
   }
@@ -86,6 +91,16 @@ function Index() {
           <p className="font-display text-4xl">{brl(totais.guardado)}</p>
           <p className="mt-5 text-sm opacity-80">Aplicações menos resgates. Não entra no disponível.</p>
         </section>
+        <section className="rounded-xl bg-credit p-6 text-primary-foreground">
+          <p className="text-sm opacity-80">Alimentação</p>
+          <p className="font-display text-4xl">{brl(totais.alimentacao)}</p>
+          <p className="mt-5 text-sm opacity-80">Saldo do vale-alimentação.</p>
+        </section>
+        <section className="rounded-xl bg-debit p-6 text-primary-foreground">
+          <p className="text-sm opacity-80">Refeição</p>
+          <p className="font-display text-4xl">{brl(totais.refeicao)}</p>
+          <p className="mt-5 text-sm opacity-80">Saldo do vale-refeição.</p>
+        </section>
       </div>
 
       <form onSubmit={adicionar} className="mb-8 space-y-4 rounded-xl border bg-card p-5">
@@ -97,6 +112,19 @@ function Index() {
             </button>
           ))}
         </div>
+        {(tipo === "credito" || tipo === "debito") && (
+          <div>
+            <p className="mb-2 text-sm text-muted-foreground">{tipo === "debito" ? "Pagou com:" : "Entrou em:"}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(CONTAS) as Conta[]).map((c) => (
+                <button key={c} type="button" onClick={() => setConta(c)}
+                  className={`rounded-lg border py-2 text-sm font-semibold ${conta === c ? "bg-foreground text-background" : "text-muted-foreground"}`}>
+                  {CONTAS[c]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição (ex: Salário, Aluguel)"
           className="w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         <div className="grid grid-cols-2 gap-3">
@@ -126,7 +154,7 @@ function Index() {
             </span>
             <div className="flex-1">
               <p className={`font-semibold ${i.tipo === "debito" && i.pago ? "line-through opacity-60" : ""}`}>{i.descricao}</p>
-              <p className="text-xs text-muted-foreground">{INFO[i.tipo].label} · {new Date(i.data + "T00:00").toLocaleDateString("pt-BR")}</p>
+              <p className="text-xs text-muted-foreground">{INFO[i.tipo].label}{(i.tipo === "credito" || i.tipo === "debito") ? ` · ${CONTAS[i.conta ?? "dinheiro"]}` : ""} · {new Date(i.data + "T00:00").toLocaleDateString("pt-BR")}</p>
             </div>
             {i.tipo === "debito" && (
               <button onClick={() => alternarPago(i)}
