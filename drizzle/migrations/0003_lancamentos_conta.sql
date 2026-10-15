@@ -1,0 +1,1 @@
+ALTER TABLE public.lancamentos ADD COLUMN conta text NOT NULL DEFAULT 'dinheiro';
