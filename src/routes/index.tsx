@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,23 +27,17 @@ const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: s
   resgate: { label: "Resgate", sinal: "↓", ativo: "bg-saved text-primary-foreground", icone: "bg-saved-soft text-saved", texto: "text-saved" },
 };
 
-const KEY = "financas:lancamentos";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Index() {
-  const [itens, setItens] = useState<Lancamento[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { grupo } = useGrupo();
+  const { linhas, recarregar } = useTabelaAoVivo<Lancamento>("lancamentos", grupo.id);
+  const itens = useMemo(() => linhas.map((i) => ({ ...i, valor: Number(i.valor) })), [linhas]);
   const [tipo, setTipo] = useState<Tipo>("credito");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [filtro, setFiltro] = useState<"todos" | Tipo>("todos");
-
-  useEffect(() => {
-    try { setItens(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch {}
-    setLoaded(true);
-  }, []);
-  useEffect(() => { if (loaded) localStorage.setItem(KEY, JSON.stringify(itens)); }, [itens, loaded]);
 
   const totais = useMemo(() => {
     const c = itens.filter((i) => i.tipo === "credito").reduce((s, i) => s + i.valor, 0);
@@ -57,13 +53,16 @@ function Index() {
     .filter((i) => filtro === "todos" || i.tipo === filtro || (filtro === "aplicacao" && i.tipo === "resgate"))
     .sort((a, b) => b.data.localeCompare(a.data));
 
-  function adicionar(e: React.FormEvent) {
+  async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
-    setItens((p) => [...p, { id: crypto.randomUUID(), tipo, descricao: descricao.trim(), valor: v, data, pago: tipo === "credito" }]);
+    await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, pago: tipo === "credito" });
     setDescricao(""); setValor("");
+    recarregar();
   }
+  const alternarPago = async (i: Lancamento) => { await supabase.from("lancamentos").update({ pago: !i.pago }).eq("id", i.id); recarregar(); };
+  const excluir = async (id: string) => { await supabase.from("lancamentos").delete().eq("id", id); recarregar(); };
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
@@ -130,13 +129,13 @@ function Index() {
               <p className="text-xs text-muted-foreground">{INFO[i.tipo].label} · {new Date(i.data + "T00:00").toLocaleDateString("pt-BR")}</p>
             </div>
             {i.tipo === "debito" && (
-              <button onClick={() => setItens((p) => p.map((x) => x.id === i.id ? { ...x, pago: !x.pago } : x))}
+              <button onClick={() => alternarPago(i)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${i.pago ? "bg-credit-soft text-credit" : "bg-debit-soft text-debit"}`}>
                 {i.pago ? "Pago" : "A pagar"}
               </button>
             )}
             <span className={`w-28 text-right font-semibold ${INFO[i.tipo].texto}`}>{brl(i.valor)}</span>
-            <button onClick={() => setItens((p) => p.filter((x) => x.id !== i.id))} aria-label="Excluir"
+            <button onClick={() => excluir(i.id)} aria-label="Excluir"
               className="text-muted-foreground hover:text-debit">✕</button>
           </li>
         ))}

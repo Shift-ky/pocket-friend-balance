@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -16,38 +18,34 @@ export const Route = createFileRoute("/feira")({
 });
 
 type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
-const KEY = "financas:feira";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
 
 function Feira() {
-  const [itens, setItens] = useState<Item[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { grupo } = useGrupo();
+  const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
+  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), preco: Number(i.preco) }));
   const [nome, setNome] = useState("");
   const [qtd, setQtd] = useState("1");
   const [preco, setPreco] = useState("");
 
-  useEffect(() => {
-    try { setItens(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch {}
-    setLoaded(true);
-  }, []);
-  useEffect(() => { if (loaded) localStorage.setItem(KEY, JSON.stringify(itens)); }, [itens, loaded]);
-
   const total = itens.reduce((s, i) => s + i.qtd * i.preco, 0);
   const noCarrinho = itens.filter((i) => i.pego).reduce((s, i) => s + i.qtd * i.preco, 0);
 
-  function adicionar(e: React.FormEvent) {
+  async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
-    setItens((p) => [...p, {
-      id: crypto.randomUUID(), nome: nome.trim(),
+    await supabase.from("feira_itens").insert({
+      grupo_id: grupo.id, nome: nome.trim(),
       qtd: parseFloat(qtd.replace(",", ".")) || 1,
-      preco: parseFloat(preco.replace(",", ".")) || 0, pego: false,
-    }]);
+      preco: parseFloat(preco.replace(",", ".")) || 0,
+    });
     setNome(""); setQtd("1"); setPreco("");
+    recarregar();
   }
 
-  const atualizar = (id: string, d: Partial<Item>) => setItens((p) => p.map((x) => x.id === id ? { ...x, ...d } : x));
+  const atualizar = async (id: string, d: Partial<Item>) => { await supabase.from("feira_itens").update(d).eq("id", id); recarregar(); };
+  const excluir = async (ids: string[]) => { if (ids.length) await supabase.from("feira_itens").delete().in("id", ids); recarregar(); };
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
@@ -77,7 +75,7 @@ function Feira() {
       </form>
 
       {itens.some((i) => i.pego) && (
-        <button onClick={() => setItens((p) => p.filter((i) => !i.pego))} className="mb-3 text-sm text-muted-foreground underline">
+        <button onClick={() => excluir(itens.filter((i) => i.pego).map((i) => i.id))} className="mb-3 text-sm text-muted-foreground underline">
           Remover itens pegos
         </button>
       )}
@@ -88,13 +86,13 @@ function Feira() {
           <li key={i.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
             <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 accent-credit" />
             <p className={`flex-1 font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
-            <input value={i.qtd} onChange={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value) || 0 })} inputMode="decimal"
+            <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
               className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
             <span className="text-sm text-muted-foreground">×</span>
-            <input value={i.preco} onChange={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+            <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
               className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
             <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
-            <button onClick={() => setItens((p) => p.filter((x) => x.id !== i.id))} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+            <button onClick={() => excluir([i.id])} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
           </li>
         ))}
       </ul>

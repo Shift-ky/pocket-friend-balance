@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      despesas: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          descricao: string
+          fornecedor: string
+          grupo_id: string
+          id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          fornecedor?: string
+          grupo_id: string
+          id?: string
+          valor?: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          fornecedor?: string
+          grupo_id?: string
+          id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feira_itens: {
         Row: {
           created_at: string
