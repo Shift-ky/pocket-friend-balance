@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
   component: Painel,
 });
 
-type Lanc = { id: string; tipo: string; descricao: string; valor: number; data: string; pago: boolean };
+type Lanc = { id: string; tipo: string; descricao: string; valor: number; data: string; pago: boolean; conta?: string };
 type Desp = { id: string; fornecedor: string; descricao: string; valor: number; data: string };
 type Compra = { id: string; total: number; created_at: string };
 type Mov = { id: string; data: string; nome: string; origem: string; valor: number; entrada: boolean; pendente?: boolean };
@@ -46,6 +46,14 @@ function Painel() {
   const entradas = lista.filter((m) => m.entrada).reduce((s, m) => s + m.valor, 0);
   const saidas = lista.filter((m) => !m.entrada && !m.pendente).reduce((s, m) => s + m.valor, 0);
   const pendentes = lista.filter((m) => m.pendente);
+  const disponivel = lanc.reduce((t, l) => {
+    const v = Number(l.valor); const din = (l.conta ?? "dinheiro") === "dinheiro";
+    if (l.tipo === "credito" && din) return t + v;
+    if (l.tipo === "debito" && din && l.pago) return t - v;
+    if (l.tipo === "aplicacao") return t - v;
+    if (l.tipo === "resgate") return t + v;
+    return t;
+  }, 0);
 
   const grafico = [...meses].slice(0, 6).reverse().map((m) => {
     const doMes = todos.filter((x) => x.data.startsWith(m));
@@ -71,18 +79,22 @@ function Painel() {
         </div>
       </header>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <section className="rounded-xl bg-credit p-5 text-primary-foreground">
-          <p className="text-sm opacity-80">Entradas</p>
-          <p className="font-display text-3xl">{brl(entradas)}</p>
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <section className="rounded-xl bg-saved p-3 text-primary-foreground">
+          <p className="text-xs opacity-80">Dinheiro disponível</p>
+          <p className="font-display text-xl">{brl(disponivel)}</p>
         </section>
-        <section className="rounded-xl bg-debit p-5 text-primary-foreground">
-          <p className="text-sm opacity-80">Saídas pagas</p>
-          <p className="font-display text-3xl">{brl(saidas)}</p>
+        <section className="rounded-xl bg-credit p-3 text-primary-foreground">
+          <p className="text-xs opacity-80">Entradas</p>
+          <p className="font-display text-xl">{brl(entradas)}</p>
         </section>
-        <section className="rounded-xl bg-primary p-5 text-primary-foreground">
-          <p className="text-sm opacity-80">Resultado</p>
-          <p className="font-display text-3xl">{brl(entradas - saidas)}</p>
+        <section className="rounded-xl bg-debit p-3 text-primary-foreground">
+          <p className="text-xs opacity-80">Saídas pagas</p>
+          <p className="font-display text-xl">{brl(saidas)}</p>
+        </section>
+        <section className="rounded-xl bg-primary p-3 text-primary-foreground">
+          <p className="text-xs opacity-80">Resultado</p>
+          <p className="font-display text-xl">{brl(entradas - saidas)}</p>
         </section>
       </div>
 
