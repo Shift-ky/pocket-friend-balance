@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DespesasRouteImport } from './routes/despesas'
 import { Route as FeiraRouteImport } from './routes/feira'
+import { Route as FinancasRouteImport } from './routes/financas'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const FeiraRoute = FeiraRouteImport.update({
   path: '/feira',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinancasRoute = FinancasRouteImport.update({
+  id: '/financas',
+  path: '/financas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/despesas': typeof DespesasRoute
   '/feira': typeof FeiraRoute
+  '/financas': typeof FinancasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/despesas': typeof DespesasRoute
   '/feira': typeof FeiraRoute
+  '/financas': typeof FinancasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/despesas': typeof DespesasRoute
   '/feira': typeof FeiraRoute
+  '/financas': typeof FinancasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/despesas' | '/feira'
+  fullPaths: '/' | '/despesas' | '/feira' | '/financas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/despesas' | '/feira'
-  id: '__root__' | '/' | '/despesas' | '/feira'
+  to: '/' | '/despesas' | '/feira' | '/financas'
+  id: '__root__' | '/' | '/despesas' | '/feira' | '/financas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DespesasRoute: typeof DespesasRoute
   FeiraRoute: typeof FeiraRoute
+  FinancasRoute: typeof FinancasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeiraRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/financas': {
+      id: '/financas'
+      path: '/financas'
+      fullPath: '/financas'
+      preLoaderRoute: typeof FinancasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DespesasRoute: DespesasRoute,
   FeiraRoute: FeiraRoute,
+  FinancasRoute: FinancasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
