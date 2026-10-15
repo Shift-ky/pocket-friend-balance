@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { useSouAdmin } from "@/lib/use-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { CATEGORIAS, lerRecibo } from "@/lib/recibos.functions";
@@ -46,6 +47,7 @@ function Despesas() {
   }
 
   const mudar = async (id: string, d: Partial<Despesa>) => { await supabase.from("despesas").update(d).eq("id", id); recarregar(); };
+  const admin = useSouAdmin();
   const excluir = async (id: string) => { await supabase.from("despesas").delete().eq("id", id); recarregar(); };
 
   function exportar() {
@@ -99,7 +101,7 @@ function Despesas() {
               {CATEGORIAS.map((c) => <option key={c}>{c}</option>)}
             </select>
             <span className="w-24 text-right font-semibold text-debit">{brl(d.valor)}</span>
-            <button onClick={() => excluir(d.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+            {admin && <button onClick={() => excluir(d.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>}
           </li>
         ))}
       </ul>

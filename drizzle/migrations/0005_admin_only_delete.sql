@@ -1,0 +1,10 @@
+DROP POLICY "membros lancamentos" ON public.lancamentos;
+CREATE POLICY "membros leem lancamentos" ON public.lancamentos FOR SELECT TO authenticated USING (public.e_membro(grupo_id));
+CREATE POLICY "membros criam lancamentos" ON public.lancamentos FOR INSERT TO authenticated WITH CHECK (public.e_membro(grupo_id));
+CREATE POLICY "membros editam lancamentos" ON public.lancamentos FOR UPDATE TO authenticated USING (public.e_membro(grupo_id)) WITH CHECK (public.e_membro(grupo_id));
+CREATE POLICY "admin exclui lancamentos" ON public.lancamentos FOR DELETE TO authenticated USING (public.e_membro(grupo_id) AND public.has_role(auth.uid(), 'admin'));
+DROP POLICY "membros despesas" ON public.despesas;
+CREATE POLICY "membros leem despesas" ON public.despesas FOR SELECT TO authenticated USING (public.e_membro(grupo_id));
+CREATE POLICY "membros criam despesas" ON public.despesas FOR INSERT TO authenticated WITH CHECK (public.e_membro(grupo_id));
+CREATE POLICY "membros editam despesas" ON public.despesas FOR UPDATE TO authenticated USING (public.e_membro(grupo_id)) WITH CHECK (public.e_membro(grupo_id));
+CREATE POLICY "admin exclui despesas" ON public.despesas FOR DELETE TO authenticated USING (public.e_membro(grupo_id) AND public.has_role(auth.uid(), 'admin'));

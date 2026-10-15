@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
+import { useSouAdmin } from "@/lib/use-admin";
+import { dividirParcelas } from "@/lib/parcelas";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -42,6 +44,8 @@ function Index() {
   const [filtro, setFiltro] = useState<"todos" | Tipo>("todos");
   const [conta, setConta] = useState<Conta>("dinheiro");
   const [mostrar, setMostrar] = useState(false);
+  const [parcelas, setParcelas] = useState("1");
+  const admin = useSouAdmin();
 
   const totais = useMemo(() => {
     const din = itens.filter((i) => (i.conta ?? "dinheiro") === "dinheiro");
@@ -63,12 +67,22 @@ function Index() {
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
     const c = tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
-    await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: tipo === "credito" || c !== "dinheiro" });
-    setDescricao(""); setValor("");
+    const pago = tipo === "credito" || c !== "dinheiro";
+    const n = tipo === "debito" ? Math.max(1, Math.min(120, parseInt(parcelas) || 1)) : 1;
+    const linhasNovas = dividirParcelas(v, n, data).map((p, k) => ({
+      grupo_id: grupo.id, tipo, descricao: n > 1 ? `${descricao.trim()} (${k + 1}/${n})` : descricao.trim(),
+      valor: p.valor, data: p.data, conta: c, pago: n > 1 ? pago && k === 0 : pago,
+    }));
+    await supabase.from("lancamentos").insert(linhasNovas);
+    setDescricao(""); setValor(""); setParcelas("1");
     recarregar();
   }
   const alternarPago = async (i: Lancamento) => { await supabase.from("lancamentos").update({ pago: !i.pago }).eq("id", i.id); recarregar(); };
-  const excluir = async (id: string) => { await supabase.from("lancamentos").delete().eq("id", id); recarregar(); };
+  const excluir = async (id: string) => {
+    const { error, count } = await supabase.from("lancamentos").delete({ count: "exact" }).eq("id", id);
+    if (error || !count) alert("Só o administrador pode excluir movimentações.");
+    recarregar();
+  };
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
@@ -134,6 +148,14 @@ function Index() {
           <input type="date" value={data} onChange={(e) => setData(e.target.value)}
             className="rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         </div>
+        {tipo === "debito" && (
+          <label className="flex items-center gap-3 text-sm text-muted-foreground">
+            Parcelas
+            <input type="number" min={1} max={120} value={parcelas} onChange={(e) => setParcelas(e.target.value)}
+              className="w-20 rounded-lg border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring" />
+            {parseInt(parcelas) > 1 && valor && <span>{parcelas}x de {brl(parseFloat(valor.replace(",", ".")) / parseInt(parcelas) || 0)}, uma por mês</span>}
+          </label>
+        )}
         <button className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90">Adicionar</button>
       </form>
 
@@ -168,8 +190,8 @@ function Index() {
               </button>
             )}
             <span className={`w-28 text-right font-semibold ${INFO[i.tipo].texto}`}>{brl(i.valor)}</span>
-            <button onClick={() => excluir(i.id)} aria-label="Excluir"
-              className="text-muted-foreground hover:text-debit">✕</button>
+            {admin && <button onClick={() => excluir(i.id)} aria-label="Excluir"
+              className="text-muted-foreground hover:text-debit">✕</button>}
           </li>
         ))}
       </ul>}
