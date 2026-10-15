@@ -75,7 +75,7 @@ function Feira() {
       </form>
 
       {itens.some((i) => i.pego) && (
-        <button onClick={() => setItens((p) => p.filter((i) => !i.pego))} className="mb-3 text-sm text-muted-foreground underline">
+        <button onClick={() => excluir(itens.filter((i) => i.pego).map((i) => i.id))} className="mb-3 text-sm text-muted-foreground underline">
           Remover itens pegos
         </button>
       )}
@@ -86,13 +86,13 @@ function Feira() {
           <li key={i.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
             <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 accent-credit" />
             <p className={`flex-1 font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
-            <input value={i.qtd} onChange={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value) || 0 })} inputMode="decimal"
+            <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
               className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
             <span className="text-sm text-muted-foreground">×</span>
-            <input value={i.preco} onChange={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+            <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
               className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
             <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
-            <button onClick={() => setItens((p) => p.filter((x) => x.id !== i.id))} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+            <button onClick={() => excluir([i.id])} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
           </li>
         ))}
       </ul>
