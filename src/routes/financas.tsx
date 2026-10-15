@@ -85,8 +85,8 @@ function Index() {
         <h1 className="font-display text-5xl">Minhas Finanças</h1>
       </header>
 
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-        <section className="col-span-2 rounded-xl bg-primary p-3 text-primary-foreground">
+      <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-4">
+        <section className="col-span-3 rounded-xl bg-primary p-3 md:col-span-1 text-primary-foreground">
           <p className="text-xs opacity-80">Dinheiro disponível</p>
           <p className="font-display truncate text-lg sm:text-xl">{brl(totais.saldo)}</p>
           <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
@@ -95,19 +95,19 @@ function Index() {
             <div><p className="opacity-70">Falta pagar</p><p className="font-semibold">{brl(totais.aPagar)}</p></div>
           </div>
         </section>
-        <section className="col-span-2 rounded-xl bg-saved p-3 text-primary-foreground">
+        <section className="rounded-xl bg-saved p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Dinheiro guardado</p>
-          <p className="font-display truncate text-lg sm:text-xl">{brl(totais.guardado)}</p>
+          <p className="font-display truncate text-base sm:text-xl">{brl(totais.guardado)}</p>
           <p className="mt-1 text-xs opacity-70">Aplicações menos resgates. Não entra no disponível.</p>
         </section>
         <section className="rounded-xl bg-credit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Alimentação</p>
-          <p className="font-display truncate text-lg sm:text-xl">{brl(totais.alimentacao)}</p>
+          <p className="font-display truncate text-base sm:text-xl">{brl(totais.alimentacao)}</p>
           <p className="mt-1 text-xs opacity-70">Saldo do vale-alimentação.</p>
         </section>
         <section className="rounded-xl bg-debit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">Refeição</p>
-          <p className="font-display truncate text-lg sm:text-xl">{brl(totais.refeicao)}</p>
+          <p className="font-display truncate text-base sm:text-xl">{brl(totais.refeicao)}</p>
           <p className="mt-1 text-xs opacity-70">Saldo do vale-refeição.</p>
         </section>
       </div>
