@@ -123,12 +123,12 @@ function Painel() {
 
       <h2 className="mb-3 font-display text-3xl">Todas as movimentações</h2>
       <ul className="space-y-2">
-        {lista.length === 0 && (
+        {lista.filter((m) => !m.pendente).length === 0 && (
           <li className="py-10 text-center text-muted-foreground">
             Nada por aqui ainda. Comece em <Link to="/financas" className="underline">Finanças</Link>.
           </li>
         )}
-        {lista.map((m) => (
+        {lista.filter((m) => !m.pendente).map((m) => (
           <li key={m.origem + m.id} className="flex items-center gap-3 rounded-lg border bg-card p-4">
             <span className={`flex h-9 w-9 items-center justify-center rounded-full font-bold ${m.entrada ? "bg-credit-soft text-credit" : "bg-debit-soft text-debit"}`}>
               {m.entrada ? "+" : "−"}
