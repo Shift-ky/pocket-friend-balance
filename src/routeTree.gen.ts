@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as DespesasRouteImport } from './routes/despesas'
 import { Route as FeiraRouteImport } from './routes/feira'
 import { Route as FinancasRouteImport } from './routes/financas'
@@ -18,6 +19,11 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DespesasRoute = DespesasRouteImport.update({
@@ -43,6 +49,7 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/despesas': typeof DespesasRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/despesas': typeof DespesasRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/despesas': typeof DespesasRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
@@ -65,15 +74,23 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/despesas' | '/feira' | '/financas' | '/reset-password'
+  fullPaths:
+    '/' | '/admin' | '/despesas' | '/feira' | '/financas' | '/reset-password'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/despesas' | '/feira' | '/financas' | '/reset-password'
+  to: '/' | '/admin' | '/despesas' | '/feira' | '/financas' | '/reset-password'
   id:
-    '__root__' | '/' | '/despesas' | '/feira' | '/financas' | '/reset-password'
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/despesas'
+    | '/feira'
+    | '/financas'
+    | '/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   DespesasRoute: typeof DespesasRoute
   FeiraRoute: typeof FeiraRoute
   FinancasRoute: typeof FinancasRoute
@@ -87,6 +104,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/despesas': {
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   DespesasRoute: DespesasRoute,
   FeiraRoute: FeiraRoute,
   FinancasRoute: FinancasRoute,

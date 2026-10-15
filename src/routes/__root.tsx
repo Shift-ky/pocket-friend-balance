@@ -1,3 +1,6 @@
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { souAdmin } from "@/lib/admin.functions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -151,9 +154,22 @@ function Nav() {
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Recibos
         </Link>
+        <AdminLink />
         <span className="ml-auto text-xs text-muted-foreground">{grupo.nome} · código <b className="text-foreground">{grupo.codigo}</b></span>
         <button onClick={sair} className="text-xs underline text-muted-foreground">Sair</button>
       </div>
     </nav>
+  );
+}
+
+function AdminLink() {
+  const checar = useServerFn(souAdmin);
+  const { data } = useQuery({ queryKey: ["souAdmin"], queryFn: () => checar() });
+  if (!data) return null;
+  return (
+    <Link to="/admin" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+      activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+      Admin
+    </Link>
   );
 }

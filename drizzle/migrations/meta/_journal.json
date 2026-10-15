@@ -29,6 +29,13 @@
       "when": 1792061787374,
       "tag": "0003_lancamentos_conta",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792063196321,
+      "tag": "0004_admin_roles",
+      "breakpoints": true
     }
   ]
 }
