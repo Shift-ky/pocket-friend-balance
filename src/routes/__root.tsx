@@ -137,6 +137,10 @@ function Nav() {
       <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">
         <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+          Início
+        </Link>
+        <Link to="/financas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Finanças
         </Link>
         <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
