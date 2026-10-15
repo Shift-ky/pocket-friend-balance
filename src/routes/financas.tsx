@@ -146,7 +146,7 @@ function Index() {
         ))}
         <button onClick={() => setMostrar((m) => !m)}
           className={`rounded-full border px-4 py-1 text-sm ${!mostrar ? "bg-foreground text-background" : ""}`}>
-          {mostrar ? "Ocultar" : "Ocultas"}
+          {mostrar ? "Ocultar lista" : "Lista oculta"}
         </button>
       </div>
 
