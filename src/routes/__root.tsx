@@ -150,10 +150,6 @@ function Nav() {
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Feira
         </Link>
-        <Link to="/despesas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Recibos
-        </Link>
         <AdminLink />
         <span className="ml-auto text-xs text-muted-foreground">{grupo.nome} · código <b className="text-foreground">{grupo.codigo}</b></span>
         <button onClick={sair} className="text-xs underline text-muted-foreground">Sair</button>
