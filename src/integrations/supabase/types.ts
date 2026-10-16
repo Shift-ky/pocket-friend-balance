@@ -61,6 +61,8 @@ export type Database = {
           grupo_id: string
           id: string
           itens: Json
+          lancamento_id: string | null
+          pagamento: string
           total: number
         }
         Insert: {
@@ -68,6 +70,8 @@ export type Database = {
           grupo_id: string
           id?: string
           itens?: Json
+          lancamento_id?: string | null
+          pagamento?: string
           total?: number
         }
         Update: {
@@ -75,6 +79,8 @@ export type Database = {
           grupo_id?: string
           id?: string
           itens?: Json
+          lancamento_id?: string | null
+          pagamento?: string
           total?: number
         }
         Relationships: [
