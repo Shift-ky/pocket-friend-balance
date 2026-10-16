@@ -20,14 +20,17 @@ export async function entrarNoEstoque(grupoId: string, itens: { nome: string; qt
   }
 }
 
-/** Se o item ficou abaixo do padrão, garante que o que falta esteja na lista da feira. */
+/** Mantém na lista da feira exatamente o que falta para o padrão (tira se nada falta). */
 export async function reporNaFeira(grupoId: string, nome: string, qtd: number, padrao: number) {
   const falta = padrao - qtd;
   const { data: lista } = await supabase.from("feira_itens").select("id,nome,qtd").eq("grupo_id", grupoId);
   const ja = (lista ?? []).find((l) => chave(l.nome) === chave(nome));
-  if (falta <= 0) return;
+  if (falta <= 0) {
+    if (ja) await supabase.from("feira_itens").delete().eq("id", ja.id);
+    return;
+  }
   if (ja) {
-    if (Number(ja.qtd) < falta) await supabase.from("feira_itens").update({ qtd: falta }).eq("id", ja.id);
+    if (Number(ja.qtd) !== falta) await supabase.from("feira_itens").update({ qtd: falta }).eq("id", ja.id);
   } else {
     await supabase.from("feira_itens").insert({ grupo_id: grupoId, nome, qtd: falta, preco: 0 });
   }
