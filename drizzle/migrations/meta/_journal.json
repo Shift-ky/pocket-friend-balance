@@ -57,6 +57,13 @@
       "when": 1792173659910,
       "tag": "0007_feira_historico_admin_finalizadas",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792174449865,
+      "tag": "0008_estoque",
+      "breakpoints": true
     }
   ]
 }

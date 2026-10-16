@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
+import { entrarNoEstoque } from "@/lib/estoque";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -59,7 +60,7 @@ function Feira() {
 
   const [pagamento, setPagamento] = useState<Pagamento>("nenhum");
   async function finalizar() {
-    if (!confirm("Salvar esta compra no histórico e limpar a lista?")) return;
+    if (!confirm("Salvar esta compra no histórico, somar os itens ao estoque e limpar a lista?")) return;
     const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
     let lancamento_id: string | null = null;
     if (pagamento !== "nenhum" && total > 0) {
@@ -68,6 +69,7 @@ function Feira() {
     }
     const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
     if (error) return alert("Não foi possível salvar.");
+    await entrarNoEstoque(grupo.id, copia);
     await excluir(itens.map((i) => i.id));
     recarregarHist();
   }
