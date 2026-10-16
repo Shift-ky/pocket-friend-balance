@@ -55,6 +55,41 @@ export type Database = {
           },
         ]
       }
+      estoque: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          nome: string
+          padrao: number
+          qtd: number
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          nome: string
+          padrao?: number
+          qtd?: number
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          nome?: string
+          padrao?: number
+          qtd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feira_historico: {
         Row: {
           created_at: string
