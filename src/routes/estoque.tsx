@@ -40,13 +40,13 @@ function Estoque() {
   async function mudarQtd(p: Prod, nova: number) {
     nova = Math.max(0, nova);
     await supabase.from("estoque").update({ qtd: nova }).eq("id", p.id);
-    if (nova < p.padrao) await reporNaFeira(grupo.id, p.nome, nova, p.padrao);
+    await reporNaFeira(grupo.id, p.nome, nova, p.padrao);
     recarregar();
   }
 
   async function mudarPadrao(p: Prod, padrao: number) {
     await supabase.from("estoque").update({ padrao }).eq("id", p.id);
-    if (p.qtd < padrao) await reporNaFeira(grupo.id, p.nome, p.qtd, padrao);
+    await reporNaFeira(grupo.id, p.nome, p.qtd, padrao);
     recarregar();
   }
 
