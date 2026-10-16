@@ -18,7 +18,10 @@ export const Route = createFileRoute("/feira")({
 });
 
 type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
-type Compra = { id: string; total: number; created_at: string; itens: { nome: string; qtd: number; preco: number }[] };
+type Compra = { id: string; total: number; created_at: string; pagamento?: string; lancamento_id?: string | null; itens: { nome: string; qtd: number; preco: number }[] };
+type Pagamento = "nenhum" | "dinheiro" | "alimentacao" | "refeicao";
+const PAGAMENTOS = [["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const;
+const nomePag = (p?: string) => PAGAMENTOS.find(([k]) => k === p)?.[1] ?? "Não lançar";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
 
@@ -50,16 +53,19 @@ function Feira() {
 
   const { linhas: historico, recarregar: recarregarHist } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
   const [aberto, setAberto] = useState<string | null>(null);
+  const [editando, setEditando] = useState<{ id: string; pagamento: Pagamento; itens: { nome: string; qtd: string; preco: string }[] } | null>(null);
 
-  const [pagamento, setPagamento] = useState<"nenhum" | "dinheiro" | "alimentacao" | "refeicao">("nenhum");
+  const [pagamento, setPagamento] = useState<Pagamento>("nenhum");
   async function finalizar() {
     if (!confirm("Salvar esta compra no histórico e limpar a lista?")) return;
     const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
-    const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia });
-    if (error) return alert("Não foi possível salvar.");
+    let lancamento_id: string | null = null;
     if (pagamento !== "nenhum" && total > 0) {
-      await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) });
+      const { data } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
+      lancamento_id = data?.id ?? null;
     }
+    const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
+    if (error) return alert("Não foi possível salvar.");
     await excluir(itens.map((i) => i.id));
     recarregarHist();
   }
@@ -69,6 +75,34 @@ function Feira() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   const apagarHist = async (id: string) => { if (confirm("Apagar esta compra do histórico?")) { await supabase.from("feira_historico").delete().eq("id", id); recarregarHist(); } };
+
+  function editar(h: Compra) {
+    setAberto(h.id);
+    setEditando({ id: h.id, pagamento: (h.pagamento ?? "nenhum") as Pagamento, itens: h.itens.map((i) => ({ nome: i.nome, qtd: String(i.qtd), preco: String(i.preco) })) });
+  }
+  async function salvarEdicao(h: Compra) {
+    if (!editando) return;
+    const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+    const novos = editando.itens.filter((i) => i.nome.trim()).map((i) => ({ nome: i.nome.trim(), qtd: num(i.qtd), preco: num(i.preco) }));
+    const novoTotal = novos.reduce((s, i) => s + i.qtd * i.preco, 0);
+    let lancamento_id = h.lancamento_id ?? null;
+    if (editando.pagamento !== "nenhum" && novoTotal > 0) {
+      if (lancamento_id) {
+        await supabase.from("lancamentos").update({ valor: novoTotal, conta: editando.pagamento }).eq("id", lancamento_id);
+      } else {
+        const { data } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo: "debito", descricao: "Compra da feira", valor: novoTotal, conta: editando.pagamento, pago: true, data: h.created_at.slice(0, 10) }).select("id").single();
+        lancamento_id = data?.id ?? null;
+      }
+    } else if (lancamento_id) {
+      const { error, count } = await supabase.from("lancamentos").delete({ count: "exact" }).eq("id", lancamento_id);
+      if (error || !count) return alert("Só o administrador pode tirar o lançamento desta compra das Finanças.");
+      lancamento_id = null;
+    }
+    const { error } = await supabase.from("feira_historico").update({ itens: novos, total: novoTotal, pagamento: editando.pagamento, lancamento_id }).eq("id", h.id);
+    if (error) return alert("Não foi possível salvar.");
+    setEditando(null);
+    recarregarHist();
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-5 sm:py-10">
@@ -150,15 +184,43 @@ function Feira() {
             <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="min-w-0 flex-1 text-left">
                 <p className="font-semibold">{new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens</p>
-                <p className="text-xs text-muted-foreground">{aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
+                <p className="text-xs text-muted-foreground">{nomePag(h.pagamento)} · {aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
               </button>
               <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
               <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+                <button onClick={() => editar(h)} aria-label="Editar" className="rounded-full border px-3 py-1 text-xs font-semibold">✎ Editar</button>
                 <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
                 <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
               </div>
             </div>
-            {aberto === h.id && (
+            {editando?.id === h.id ? (
+              <div className="mt-3 space-y-3 border-t pt-3">
+                {editando.itens.map((i, n) => {
+                  const muda = (campo: "nome" | "qtd" | "preco", v: string) =>
+                    setEditando({ ...editando, itens: editando.itens.map((x, k) => (k === n ? { ...x, [campo]: v } : x)) });
+                  return (
+                    <div key={n} className="grid grid-cols-[1fr_3.5rem_5rem_auto] items-center gap-2">
+                      <input value={i.nome} onChange={(e) => muda("nome", e.target.value)} className="min-w-0 rounded-md border bg-background px-2 py-1 text-sm" aria-label="Item" />
+                      <input value={i.qtd} onChange={(e) => muda("qtd", e.target.value)} inputMode="decimal" className="min-w-0 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
+                      <input value={i.preco} onChange={(e) => muda("preco", e.target.value)} inputMode="decimal" className="min-w-0 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
+                      <button onClick={() => setEditando({ ...editando, itens: editando.itens.filter((_, k) => k !== n) })} aria-label="Remover item" className="text-muted-foreground hover:text-debit">✕</button>
+                    </div>
+                  );
+                })}
+                <button onClick={() => setEditando({ ...editando, itens: [...editando.itens, { nome: "", qtd: "1", preco: "" }] })} className="text-sm underline text-muted-foreground">+ Adicionar item</button>
+                <p className="text-sm text-muted-foreground">Tipo de pagamento</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {PAGAMENTOS.map(([k, l]) => (
+                    <button key={k} type="button" onClick={() => setEditando({ ...editando, pagamento: k })}
+                      className={`rounded-lg border py-2 text-sm font-semibold ${editando.pagamento === k ? "bg-foreground text-background" : "text-muted-foreground"}`}>{l}</button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => salvarEdicao(h)} className="flex-1 rounded-lg bg-primary py-2 font-semibold text-primary-foreground">Salvar</button>
+                  <button onClick={() => setEditando(null)} className="flex-1 rounded-lg border py-2 font-semibold">Cancelar</button>
+                </div>
+              </div>
+            ) : aberto === h.id && (
               <ul className="mt-3 space-y-1 border-t pt-3 text-sm">
                 {h.itens.map((i, n) => (
                   <li key={n} className="flex justify-between"><span>{i.qtd} × {i.nome}</span><span>{brl(i.qtd * i.preco)}</span></li>

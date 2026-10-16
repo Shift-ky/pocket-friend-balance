@@ -43,6 +43,13 @@
       "when": 1792082257342,
       "tag": "0005_admin_only_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792173442362,
+      "tag": "0006_feira_historico_pagamento",
+      "breakpoints": true
     }
   ]
 }
