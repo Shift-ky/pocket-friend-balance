@@ -60,7 +60,7 @@ function Feira() {
 
   const [pagamento, setPagamento] = useState<Pagamento>("nenhum");
   async function finalizar() {
-    if (!confirm("Salvar esta compra no histórico, somar os itens ao estoque e limpar a lista?")) return;
+    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens ao estoque e limpar a lista?")) return;
     const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
     let lancamento_id: string | null = null;
     if (pagamento !== "nenhum" && total > 0) {
@@ -69,7 +69,7 @@ function Feira() {
     }
     const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
     if (error) return alert("Não foi possível salvar.");
-    await entrarNoEstoque(grupo.id, copia);
+    if (pagamento !== "nenhum") await entrarNoEstoque(grupo.id, copia);
     await excluir(itens.map((i) => i.id));
     recarregarHist();
   }
@@ -104,6 +104,8 @@ function Feira() {
     }
     const { error } = await supabase.from("feira_historico").update({ itens: novos, total: novoTotal, pagamento: editando.pagamento, lancamento_id }).eq("id", h.id);
     if (error) return alert("Não foi possível salvar.");
+    const eraFinalizada = !!h.pagamento && h.pagamento !== "nenhum";
+    if (!eraFinalizada && editando.pagamento !== "nenhum") await entrarNoEstoque(grupo.id, novos);
     setEditando(null);
     recarregarHist();
   }
