@@ -180,11 +180,16 @@ function Feira() {
       <ul className="space-y-2">
         {historico.length === 0 && <li className="py-6 text-center text-muted-foreground">Nenhuma compra salva ainda.</li>}
         {[...historico].reverse().map((h) => (
-          <li key={h.id} className="rounded-lg border bg-card p-4">
+          <li key={h.id} className={`rounded-lg border bg-card p-4 border-l-4 ${h.pagamento && h.pagamento !== "nenhum" ? "border-l-primary" : "border-l-muted-foreground/40 border-dashed"}`}>
             <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="min-w-0 flex-1 text-left">
-                <p className="font-semibold">{new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens</p>
-                <p className="text-xs text-muted-foreground">{nomePag(h.pagamento)} · {aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
+                <p className="flex flex-wrap items-center gap-2 font-semibold">
+                  {new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens
+                  {h.pagamento && h.pagamento !== "nenhum"
+                    ? <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">Finalizada</span>
+                    : <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">Não finalizada</span>}
+                </p>
+                <p className="text-xs text-muted-foreground">{h.pagamento && h.pagamento !== "nenhum" ? `Pago com ${nomePag(h.pagamento)}` : "Sem pagamento lançado"} · {aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
               </button>
               <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
               <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
