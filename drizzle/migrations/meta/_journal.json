@@ -50,6 +50,13 @@
       "when": 1792173442362,
       "tag": "0006_feira_historico_pagamento",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792173659910,
+      "tag": "0007_feira_historico_admin_finalizadas",
+      "breakpoints": true
     }
   ]
 }

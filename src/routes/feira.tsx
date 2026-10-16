@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
+import { useSouAdmin } from "@/lib/use-admin";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -52,6 +53,7 @@ function Feira() {
   const excluir = async (ids: string[]) => { if (ids.length) await supabase.from("feira_itens").delete().in("id", ids); recarregar(); };
 
   const { linhas: historico, recarregar: recarregarHist } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
+  const isAdmin = useSouAdmin();
   const [aberto, setAberto] = useState<string | null>(null);
   const [editando, setEditando] = useState<{ id: string; pagamento: Pagamento; itens: { nome: string; qtd: string; preco: string }[] } | null>(null);
 
@@ -193,9 +195,9 @@ function Feira() {
               </button>
               <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
               <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
-                <button onClick={() => editar(h)} aria-label="Editar" className="rounded-full border px-3 py-1 text-xs font-semibold">✎ Editar</button>
+                {(isAdmin || !h.pagamento || h.pagamento === "nenhum") && <button onClick={() => editar(h)} aria-label="Editar" className="rounded-full border px-3 py-1 text-xs font-semibold">✎ Editar</button>}
                 <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
-                <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+                {(isAdmin || !h.pagamento || h.pagamento === "nenhum") && <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>}
               </div>
             </div>
             {editando?.id === h.id ? (
