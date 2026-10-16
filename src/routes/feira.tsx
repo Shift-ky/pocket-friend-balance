@@ -184,15 +184,43 @@ function Feira() {
             <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="min-w-0 flex-1 text-left">
                 <p className="font-semibold">{new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens</p>
-                <p className="text-xs text-muted-foreground">{aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
+                <p className="text-xs text-muted-foreground">{nomePag(h.pagamento)} · {aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
               </button>
               <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
               <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+                <button onClick={() => editar(h)} aria-label="Editar" className="rounded-full border px-3 py-1 text-xs font-semibold">✎ Editar</button>
                 <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
                 <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
               </div>
             </div>
-            {aberto === h.id && (
+            {editando?.id === h.id ? (
+              <div className="mt-3 space-y-3 border-t pt-3">
+                {editando.itens.map((i, n) => {
+                  const muda = (campo: "nome" | "qtd" | "preco", v: string) =>
+                    setEditando({ ...editando, itens: editando.itens.map((x, k) => (k === n ? { ...x, [campo]: v } : x)) });
+                  return (
+                    <div key={n} className="grid grid-cols-[1fr_3.5rem_5rem_auto] items-center gap-2">
+                      <input value={i.nome} onChange={(e) => muda("nome", e.target.value)} className="min-w-0 rounded-md border bg-background px-2 py-1 text-sm" aria-label="Item" />
+                      <input value={i.qtd} onChange={(e) => muda("qtd", e.target.value)} inputMode="decimal" className="min-w-0 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
+                      <input value={i.preco} onChange={(e) => muda("preco", e.target.value)} inputMode="decimal" className="min-w-0 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
+                      <button onClick={() => setEditando({ ...editando, itens: editando.itens.filter((_, k) => k !== n) })} aria-label="Remover item" className="text-muted-foreground hover:text-debit">✕</button>
+                    </div>
+                  );
+                })}
+                <button onClick={() => setEditando({ ...editando, itens: [...editando.itens, { nome: "", qtd: "1", preco: "" }] })} className="text-sm underline text-muted-foreground">+ Adicionar item</button>
+                <p className="text-sm text-muted-foreground">Tipo de pagamento</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {PAGAMENTOS.map(([k, l]) => (
+                    <button key={k} type="button" onClick={() => setEditando({ ...editando, pagamento: k })}
+                      className={`rounded-lg border py-2 text-sm font-semibold ${editando.pagamento === k ? "bg-foreground text-background" : "text-muted-foreground"}`}>{l}</button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => salvarEdicao(h)} className="flex-1 rounded-lg bg-primary py-2 font-semibold text-primary-foreground">Salvar</button>
+                  <button onClick={() => setEditando(null)} className="flex-1 rounded-lg border py-2 font-semibold">Cancelar</button>
+                </div>
+              </div>
+            ) : aberto === h.id && (
               <ul className="mt-3 space-y-1 border-t pt-3 text-sm">
                 {h.itens.map((i, n) => (
                   <li key={n} className="flex justify-between"><span>{i.qtd} × {i.nome}</span><span>{brl(i.qtd * i.preco)}</span></li>
