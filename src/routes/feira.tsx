@@ -53,6 +53,7 @@ function Feira() {
   const excluir = async (ids: string[]) => { if (ids.length) await supabase.from("feira_itens").delete().in("id", ids); recarregar(); };
 
   const { linhas: historico, recarregar: recarregarHist } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
+  const isAdmin = useSouAdmin();
   const [aberto, setAberto] = useState<string | null>(null);
   const [editando, setEditando] = useState<{ id: string; pagamento: Pagamento; itens: { nome: string; qtd: string; preco: string }[] } | null>(null);
 
