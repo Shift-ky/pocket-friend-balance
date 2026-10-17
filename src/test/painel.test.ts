@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { saldosPainel, pendenciasDoMes, type LancamentoPainel } from '@/lib/painel';
+import { saldosPainel, pendenciasDoMes, ordenarPorVencimento, type LancamentoPainel } from '@/lib/painel';
 
 const item = (values: Partial<LancamentoPainel>): LancamentoPainel => ({ id: '1', tipo: 'credito', descricao: 'Teste', valor: 100, data: '2026-10-17', pago: true, conta: 'dinheiro', ...values });
 describe('Pendências do mês vigente', () => {
+  it('ordena vencimentos do mais próximo ao mais distante por mês e dia, sem alterar a origem', () => {
+    const datas = ['2027-01-01', '2026-11-20', '2026-10-30', '2026-11-05', '2026-09-15'];
+    const itens = datas.map(data => item({ data, tipo: 'debito', pago: false }));
+    expect(ordenarPorVencimento(itens).map(i => i.data)).toEqual(['2026-09-15', '2026-10-30', '2026-11-05', '2026-11-20', '2027-01-01']);
+    expect(itens.map(i => i.data)).toEqual(datas);
+  });
   it('soma apenas débitos não pagos dentro do mês atual, incluindo seus limites', () => {
     const itens = [
       item({ tipo: 'debito', pago: false, data: '2026-10-01', valor: 20 }),

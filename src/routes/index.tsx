@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditarLinha } from '@/components/finance-editor';
@@ -7,7 +7,7 @@ import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
 import { useSouAdmin } from '@/lib/use-admin';
 import { supabase } from '@/integrations/supabase/client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
-import { brl, saldosPainel, pendenciasDoMes, type LancamentoPainel } from '@/lib/painel';
+import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -38,6 +38,7 @@ function Painel() {
   const [de, setDe] = useState(''); const [ate, setAte] = useState('');
   const [aba, setAba] = useState<'movimentos' | 'gasolina' | 'compras'>('movimentos');
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
+  const [mostrarPendentes, setMostrarPendentes] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [erro, setErro] = useState('');
   const noPeriodo = (data: string) => (!de || data.slice(0,10) >= de) && (!ate || data.slice(0,10) <= ate);
@@ -47,7 +48,7 @@ function Painel() {
     ...moto.map(d => ({ id: d.id, data: d.data, nome: d.descricao, valor: Number(d.valor), entrada: false, pendente: false, origem: 'Moto · Dinheiro', item: null, moto: true })),
   ].sort((a,b) => b.data.localeCompare(a.data));
   const lista = todos.filter(m => noPeriodo(m.data));
-  const pendentes = lista.filter(m => m.pendente);
+  const pendentes = ordenarPorVencimento(lista.filter(m => m.pendente));
   const entradas = lista.filter(m => m.entrada).reduce((s,m) => s + m.valor, 0);
   const saidas = lista.filter(m => !m.entrada && !m.pendente).reduce((s,m) => s + m.valor, 0);
   const meses = [...new Set(lista.map(m => m.data.slice(0,7)))].sort().slice(-6);
@@ -92,7 +93,18 @@ function Painel() {
         <div className="mb-5 grid grid-cols-2 gap-3"><div className="rounded-lg bg-credit-soft p-3"><p className="flex items-center gap-2 text-xs text-credit"><ArrowDownLeft className="h-4 w-4" />Entradas</p><p className="mt-1 break-words font-display text-xl text-credit">{brl(entradas)}</p></div><div className="rounded-lg bg-debit-soft p-3"><p className="flex items-center gap-2 text-xs text-debit"><ArrowUpRight className="h-4 w-4" />Saídas pagas</p><p className="mt-1 break-words font-display text-xl text-debit">{brl(saidas)}</p></div></div>
         {grafico.length ? <div className="flex h-40 items-end gap-3 border-b pb-2">{grafico.map(g => <div key={g.m} className="min-w-0 flex-1"><div className="flex h-28 items-end justify-center gap-1"><div className="w-1/3 rounded-t bg-credit" style={{height:`${g.e/maior*100}%`}} title={`Entradas: ${brl(g.e)}`} /><div className="w-1/3 rounded-t bg-debit" style={{height:`${g.s/maior*100}%`}} title={`Saídas pagas: ${brl(g.s)}`} /></div><p className="mt-2 text-center text-xs text-muted-foreground">{new Date(g.m+'-01T00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</p></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>}
       </section>
-      <section className="lg:border-l lg:pl-7"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span></div><ul className="max-h-72 overflow-y-auto">{!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}{pendentes.map(m => editando === m.id && m.item ? <EditarLinha key={m.id} item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={m.id} className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false)}</li>)}</ul></section>
+      <section className="min-w-0 lg:border-l lg:pl-7">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span>
+          <Button variant="outline" size="sm" aria-expanded={mostrarPendentes} aria-controls="contas-pendentes-painel" onClick={() => setMostrarPendentes(mostrar => !mostrar)}>{mostrarPendentes ? <EyeOff /> : <Eye />}{mostrarPendentes ? 'Ocultar pendências' : 'Mostrar pendências'}</Button>
+        </div>
+        {mostrarPendentes && <ul id="contas-pendentes-painel" className="max-h-72 overflow-y-auto">
+          {!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}
+          {pendentes.map((m, i) => <Fragment key={m.id}>
+            {(i === 0 || pendentes[i - 1]?.data.slice(0, 7) !== m.data.slice(0, 7)) && <li className="border-b py-2 text-xs font-semibold capitalize text-muted-foreground">{new Date(m.data.slice(0, 7) + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</li>}
+            {editando === m.id && m.item ? <EditarLinha item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false)}</li>}
+          </Fragment>)}
+        </ul>}
+      </section>
     </div>
     <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-3" aria-label="Feira, estoque e moto">
       <div><p className="mb-2 flex items-center gap-2 font-semibold"><ShoppingBasket className="h-4 w-4 text-credit" />Minha feira</p><p className="font-display text-xl">{brl(feira.reduce((s,i) => s+Number(i.qtd)*Number(i.preco),0))}</p><p className="mt-1 text-xs text-muted-foreground">{feira.length} itens · {feira.filter(i => i.pego).length} no carrinho</p><Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/feira">Abrir feira →</Link></Button></div>
