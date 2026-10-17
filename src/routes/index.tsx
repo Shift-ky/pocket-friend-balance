@@ -1,154 +1,111 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
+import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { EditarLinha } from '@/components/finance-editor';
+import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
+import { useSouAdmin } from '@/lib/use-admin';
+import { supabase } from '@/integrations/supabase/client';
+import { totaisMoto, type DespesaMoto } from '@/lib/moto';
+import { brl, saldosPainel, type LancamentoPainel } from '@/lib/painel';
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Painel — Minhas Finanças" },
-      { name: "description", content: "Veja todas as entradas e saídas do seu dinheiro em um só lugar." },
-      { property: "og:title", content: "Painel — Minhas Finanças" },
-      { property: "og:description", content: "Todas as entradas e saídas em um só lugar." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
-  component: Painel,
+export const Route = createFileRoute('/')({
+  head: () => ({ meta: [
+    { title: 'Painel — Minhas Finanças' },
+    { name: 'description', content: 'Seus saldos, contas, compras, estoque e gasolina em um painel único.' },
+    { property: 'og:title', content: 'Painel — Minhas Finanças' },
+    { property: 'og:description', content: 'Acompanhe suas finanças, compras e despesas da moto em um só lugar.' },
+    { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary' },
+  ] }), component: Painel,
 });
 
-type Lanc = { id: string; tipo: string; descricao: string; valor: number; data: string; pago: boolean; conta?: string; destino?: string };
-type DespesaMoto = { id: string; descricao: string; valor: number; data: string };
-type Compra = { id: string; total: number; created_at: string };
-type Mov = { id: string; data: string; nome: string; origem: string; valor: number; entrada: boolean; pendente?: boolean };
-
-const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const nomeMes = (m: string) => new Date(m + "-01T00:00").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+type Compra = { id: string; total: number; created_at: string; pagamento?: string; itens: { nome: string; qtd: number; preco: number }[] };
+type Produto = { id: string; nome: string; qtd: number; padrao: number };
+type ItemFeira = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
+const contas: Record<string, string> = { dinheiro: 'Dinheiro', alimentacao: 'Alimentação', refeicao: 'Refeição' };
+const tipos: Record<string, string> = { credito: 'Crédito', debito: 'Débito', aplicacao: 'Aplicação', resgate: 'Resgate' };
+const campo = 'min-w-0 w-full rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
+const dataBr = (d: string) => new Date(d.slice(0, 10) + 'T00:00').toLocaleDateString('pt-BR');
 
 function Painel() {
   const { grupo } = useGrupo();
-  const { linhas: lanc } = useTabelaAoVivo<Lanc>("lancamentos", grupo.id);
-  const { linhas: feira } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
-  const { linhas: moto } = useTabelaAoVivo<DespesaMoto>("moto_despesas", grupo.id);
-  const [de, setDe] = useState("");
-  const [ate, setAte] = useState("");
+  const { linhas: lanc, recarregar } = useTabelaAoVivo<LancamentoPainel>('lancamentos', grupo.id);
+  const { linhas: moto, recarregar: recarregarMoto } = useTabelaAoVivo<DespesaMoto>('moto_despesas', grupo.id);
+  const { linhas: compras } = useTabelaAoVivo<Compra>('feira_historico', grupo.id);
+  const { linhas: estoque } = useTabelaAoVivo<Produto>('estoque', grupo.id);
+  const { linhas: feira } = useTabelaAoVivo<ItemFeira>('feira_itens', grupo.id);
+  const admin = useSouAdmin();
+  const [de, setDe] = useState(''); const [ate, setAte] = useState('');
+  const [aba, setAba] = useState<'movimentos' | 'gasolina' | 'compras'>('movimentos');
+  const [editando, setEditando] = useState<string | null>(null);
+  const [erro, setErro] = useState('');
+  const noPeriodo = (data: string) => (!de || data.slice(0,10) >= de) && (!ate || data.slice(0,10) <= ate);
+  const saldos = saldosPainel(lanc); const gasolina = totaisMoto(lanc, moto);
+  const todos = [
+    ...lanc.filter(l => l.destino !== 'gasolina').map(l => ({ id: l.id, data: l.data, nome: l.descricao, valor: Number(l.valor), entrada: l.tipo === 'credito' || l.tipo === 'resgate', pendente: l.tipo === 'debito' && !l.pago, origem: `${tipos[l.tipo]} · ${contas[l.conta ?? 'dinheiro']}`, item: l, moto: false })),
+    ...moto.map(d => ({ id: d.id, data: d.data, nome: d.descricao, valor: Number(d.valor), entrada: false, pendente: false, origem: 'Moto · Dinheiro', item: null, moto: true })),
+  ].sort((a,b) => b.data.localeCompare(a.data));
+  const lista = todos.filter(m => noPeriodo(m.data));
+  const pendentes = lista.filter(m => m.pendente);
+  const entradas = lista.filter(m => m.entrada).reduce((s,m) => s + m.valor, 0);
+  const saidas = lista.filter(m => !m.entrada && !m.pendente).reduce((s,m) => s + m.valor, 0);
+  const meses = [...new Set(lista.map(m => m.data.slice(0,7)))].sort().slice(-6);
+  const grafico = meses.map(m => ({ m, e: lista.filter(x => x.data.startsWith(m) && x.entrada).reduce((s,x) => s+x.valor,0), s: lista.filter(x => x.data.startsWith(m) && !x.entrada && !x.pendente).reduce((s,x) => s+x.valor,0) }));
+  const maior = Math.max(1,...grafico.flatMap(g => [g.e,g.s]));
+  const faltantes = estoque.filter(p => Number(p.qtd) < Number(p.padrao));
+  const aportes = lanc.filter(l => l.destino === 'gasolina' && noPeriodo(l.data));
+  async function pagar(item: LancamentoPainel) {
+    const { error } = await supabase.from('lancamentos').update({ pago: !item.pago }).eq('id',item.id);
+    if (error) setErro('Não foi possível atualizar o pagamento.'); else await recarregar();
+  }
+  async function excluir(id: string, ehMoto: boolean) {
+    if (!admin || !confirm('Excluir esta movimentação?')) return;
+    const { error, count } = await supabase.from(ehMoto ? 'moto_despesas' : 'lancamentos').delete({ count: 'exact' }).eq('id',id).eq('grupo_id',grupo.id);
+    if (error || !count) setErro('Não foi possível excluir esta movimentação.');
+    else { await recarregar(); await recarregarMoto(); }
+  }
+  function controles(item: LancamentoPainel | null, id: string, ehMoto: boolean) {
+    return <div className="flex shrink-0 items-center gap-1">
+      {item?.tipo === 'debito' && item.destino !== 'gasolina' && <Button variant="ghost" size="sm" className={item.pago ? 'text-credit' : 'text-debit'} onClick={() => pagar(item)}>{item.pago ? 'Pago' : 'Pagar'}</Button>}
+      {item && <Button size="icon" variant="ghost" aria-label={`Editar ${item.descricao}`} title="Editar" onClick={() => setEditando(item.id)}><Pencil /></Button>}
+      {admin && <Button size="icon" variant="ghost" aria-label={ehMoto ? 'Excluir abastecimento' : 'Excluir movimentação'} title="Excluir" onClick={() => excluir(id,ehMoto)}><Trash2 /></Button>}
+    </div>;
+  }
 
-  const todos = useMemo<Mov[]>(() => {
-    const rotulo: Record<string, string> = { credito: "Crédito", debito: "Débito", aplicacao: "Aplicação", resgate: "Resgate" };
-    return [
-      ...lanc.filter((l) => l.destino !== "gasolina").map((l) => ({ id: l.id, data: l.data, nome: l.descricao, origem: rotulo[l.tipo] ?? l.tipo, valor: Number(l.valor), entrada: l.tipo === "credito" || l.tipo === "resgate", pendente: l.tipo === "debito" && !l.pago })),
-      ...moto.map((d) => ({ id: d.id, data: d.data, nome: d.descricao, origem: "Moto · Dinheiro", valor: Number(d.valor), entrada: false })),
-      ...feira.filter(() => false).map((f) => ({ id: f.id, data: f.created_at.slice(0, 10), nome: "Compra da feira", origem: "Feira", valor: Number(f.total), entrada: false })),
-    ].sort((a, b) => b.data.localeCompare(a.data));
-  }, [lanc, feira, moto]);
-
-  const meses = useMemo(() => [...new Set(todos.map((m) => m.data.slice(0, 7)))].sort().reverse(), [todos]);
-  const lista = todos.filter((m) => (!de || m.data >= de) && (!ate || m.data <= ate));
-  const entradas = lista.filter((m) => m.entrada).reduce((s, m) => s + m.valor, 0);
-  const saidas = lista.filter((m) => !m.entrada && !m.pendente).reduce((s, m) => s + m.valor, 0);
-  const pendentes = lista.filter((m) => m.pendente);
-  const disponivel = lanc.reduce((t, l) => {
-    const v = Number(l.valor); const din = (l.conta ?? "dinheiro") === "dinheiro";
-    if (l.tipo === "credito" && din) return t + v;
-    if (l.tipo === "debito" && din && l.pago) return t - v;
-    if (l.tipo === "aplicacao") return t - v;
-    if (l.tipo === "resgate") return t + v;
-    return t;
-  }, 0);
-
-  const grafico = [...meses].slice(0, 6).reverse().map((m) => {
-    const doMes = todos.filter((x) => x.data.startsWith(m));
-    return { m, e: doMes.filter((x) => x.entrada).reduce((s, x) => s + x.valor, 0), s: doMes.filter((x) => !x.entrada && !x.pendente).reduce((s, x) => s + x.valor, 0) };
-  });
-  const maior = Math.max(1, ...grafico.flatMap((g) => [g.e, g.s]));
-
-  return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-5 sm:py-10">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">Visão geral</p>
-          <h1 className="font-display text-4xl sm:text-5xl">Painel</h1>
-        </div>
-        <div className="flex flex-wrap items-end gap-2 text-sm">
-          <label className="flex flex-col text-muted-foreground">De
-            <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="rounded-lg border bg-background px-2 py-1.5 text-foreground" />
-          </label>
-          <label className="flex flex-col text-muted-foreground">Até
-            <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border bg-background px-2 py-1.5 text-foreground" />
-          </label>
-          {(de || ate) && <button onClick={() => { setDe(""); setAte(""); }} className="rounded-lg border px-3 py-2">Todo o período</button>}
-        </div>
-      </header>
-
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
-        <section className="col-span-2 rounded-xl bg-saved p-3 md:col-span-1 text-primary-foreground">
-          <p className="text-xs opacity-80">Dinheiro disponível</p>
-          <p className="font-display text-lg sm:text-xl truncate">{brl(disponivel)}</p>
-        </section>
-        <section className="rounded-xl bg-credit p-3 text-primary-foreground">
-          <p className="text-xs opacity-80">Entradas</p>
-          <p className="font-display text-lg sm:text-xl truncate">{brl(entradas)}</p>
-        </section>
-        <section className="rounded-xl bg-debit p-3 text-primary-foreground">
-          <p className="text-xs opacity-80">Saídas pagas</p>
-          <p className="font-display text-lg sm:text-xl truncate">{brl(saidas)}</p>
-        </section>
-      </div>
-
-      {grafico.length > 0 && (
-        <section className="mb-8 rounded-xl border bg-card p-5">
-          <p className="mb-4 font-semibold">Últimos meses</p>
-          <div className="flex h-40 items-end gap-4">
-            {grafico.map((g) => (
-              <div key={g.m} className="flex flex-1 flex-col items-center gap-1">
-                <div className="flex h-32 w-full items-end justify-center gap-1">
-                  <div className="w-1/3 rounded-t bg-credit" style={{ height: `${(g.e / maior) * 100}%` }} title={`Entradas ${brl(g.e)}`} />
-                  <div className="w-1/3 rounded-t bg-debit" style={{ height: `${(g.s / maior) * 100}%` }} title={`Saídas ${brl(g.s)}`} />
-                </div>
-                <span className="text-xs text-muted-foreground">{nomeMes(g.m)}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 flex gap-4 text-xs text-muted-foreground">
-            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-credit" />Entradas</span>
-            <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-debit" />Saídas</span>
-          </p>
-        </section>
-      )}
-
-      <h2 className="mb-3 font-display text-3xl">Contas pendentes</h2>
-      <ul className="mb-8 space-y-2">
-        {pendentes.length === 0 && <li className="py-6 text-center text-muted-foreground">Nenhuma conta a pagar neste período.</li>}
-        {pendentes.map((m) => (
-          <li key={"p" + m.id} className="flex items-center gap-3 rounded-lg border border-debit bg-card p-4">
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{m.nome}</p>
-              <p className="text-xs text-muted-foreground">Vence {new Date(m.data + "T00:00").toLocaleDateString("pt-BR")}</p>
-            </div>
-            <span className="font-semibold text-debit">{brl(m.valor)}</span>
-          </li>
-        ))}
+  return <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
+      <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Minhas Finanças · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
+      <div className="flex flex-wrap gap-2"><Button asChild><Link to="/financas"><Plus />Lançamento</Link></Button><Button asChild variant="outline"><Link to="/moto"><Fuel />Abastecimento</Link></Button></div>
+    </header>
+    <section aria-label="Saldos atuais" className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="col-span-2 rounded-lg bg-primary p-4 text-primary-foreground lg:col-span-1"><Wallet className="mb-3 h-5 w-5 opacity-80" /><p className="text-xs opacity-80">Dinheiro disponível</p><p className="mt-1 break-words font-display text-2xl">{brl(saldos.disponivel)}</p></div>
+      {[{ nome: 'Dinheiro guardado', valor: saldos.guardado, Icon: PiggyBank, cor: 'text-saved' },{ nome: 'Alimentação', valor: saldos.alimentacao, Icon: ShoppingBasket, cor: 'text-credit' },{ nome: 'Refeição', valor: saldos.refeicao, Icon: Utensils, cor: 'text-debit' },{ nome: 'Gasolina disponível', valor: gasolina.saldo, Icon: Fuel, cor: 'text-saved' }].map(({nome,valor,Icon,cor}) => <div key={nome} className="min-w-0 rounded-lg border bg-card p-3 sm:p-4"><Icon className={`mb-3 h-5 w-5 ${cor}`} /><p className="text-xs text-muted-foreground">{nome}</p><p className="mt-1 break-words font-display text-lg sm:text-xl">{brl(valor)}</p></div>)}
+    </section>
+    <section className="mb-7 border-y py-4" aria-label="Período de pesquisa">
+      <div className="flex flex-wrap items-end gap-3"><span className="mb-2 flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4" />Período</span><label className="min-w-0 flex-1 text-xs text-muted-foreground sm:max-w-44">De<input aria-label="De" type="date" value={de} onChange={e => setDe(e.target.value)} className={`${campo} mt-1`} /></label><label className="min-w-0 flex-1 text-xs text-muted-foreground sm:max-w-44">Até<input aria-label="Até" type="date" value={ate} onChange={e => setAte(e.target.value)} className={`${campo} mt-1`} /></label>{(de || ate) && <Button variant="ghost" size="sm" onClick={() => {setDe('');setAte('');}}><RotateCcw />Todo o período</Button>}</div>
+      {de && ate && de > ate && <p role="alert" className="mt-2 text-sm text-debit">A data final deve ser igual ou posterior à inicial.</p>}
+    </section>
+    <div className="mb-8 grid gap-7 lg:grid-cols-[1.6fr_1fr]">
+      <section><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Entradas e saídas</h2><span className="text-xs text-muted-foreground">No período</span></div>
+        <div className="mb-5 grid grid-cols-2 gap-3"><div className="rounded-lg bg-credit-soft p-3"><p className="flex items-center gap-2 text-xs text-credit"><ArrowDownLeft className="h-4 w-4" />Entradas</p><p className="mt-1 break-words font-display text-xl text-credit">{brl(entradas)}</p></div><div className="rounded-lg bg-debit-soft p-3"><p className="flex items-center gap-2 text-xs text-debit"><ArrowUpRight className="h-4 w-4" />Saídas pagas</p><p className="mt-1 break-words font-display text-xl text-debit">{brl(saidas)}</p></div></div>
+        {grafico.length ? <div className="flex h-40 items-end gap-3 border-b pb-2">{grafico.map(g => <div key={g.m} className="min-w-0 flex-1"><div className="flex h-28 items-end justify-center gap-1"><div className="w-1/3 rounded-t bg-credit" style={{height:`${g.e/maior*100}%`}} title={`Entradas: ${brl(g.e)}`} /><div className="w-1/3 rounded-t bg-debit" style={{height:`${g.s/maior*100}%`}} title={`Saídas pagas: ${brl(g.s)}`} /></div><p className="mt-2 text-center text-xs text-muted-foreground">{new Date(g.m+'-01T00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</p></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>}
+      </section>
+      <section className="lg:border-l lg:pl-7"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span></div><ul className="max-h-72 overflow-y-auto">{!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}{pendentes.map(m => editando === m.id && m.item ? <EditarLinha key={m.id} item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={m.id} className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false)}</li>)}</ul></section>
+    </div>
+    <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-3" aria-label="Feira, estoque e moto">
+      <div><p className="mb-2 flex items-center gap-2 font-semibold"><ShoppingBasket className="h-4 w-4 text-credit" />Minha feira</p><p className="font-display text-xl">{brl(feira.reduce((s,i) => s+Number(i.qtd)*Number(i.preco),0))}</p><p className="mt-1 text-xs text-muted-foreground">{feira.length} itens · {feira.filter(i => i.pego).length} no carrinho</p><Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/feira">Abrir feira →</Link></Button></div>
+      <div><p className="mb-2 flex items-center gap-2 font-semibold"><Package className="h-4 w-4 text-saved" />Estoque</p><p className="font-display text-xl">{estoque.length} produtos</p><p className="mt-1 text-xs text-muted-foreground">{faltantes.length} abaixo do padrão</p>{faltantes.length > 0 && <p className="mt-1 break-words text-xs text-debit">{faltantes.map(p => `${p.nome} (${Number(p.padrao)-Number(p.qtd)})`).join(' · ')}</p>}<Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/estoque">Abrir estoque →</Link></Button></div>
+      <div><p className="mb-2 flex items-center gap-2 font-semibold"><Fuel className="h-4 w-4 text-saved" />Gasolina da moto</p><dl className="space-y-2 text-sm"><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Dinheiro destinado</dt><dd className="font-semibold">{brl(gasolina.reservado)}</dd></div><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Gasto com gasolina</dt><dd className="font-semibold text-debit">{brl(gasolina.gasto)}</dd></div></dl></div>
+    </section>
+    <section>
+      <h2 className="mb-4 font-display text-2xl">Históricos</h2>
+      <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Históricos">{([{id:'movimentos',nome:'Todas as movimentações'},{id:'gasolina',nome:'Moto e aportes'},{id:'compras',nome:'Compras da feira'}] as const).map(t => <Button key={t.id} role="tab" aria-selected={aba===t.id} variant={aba===t.id?'default':'outline'} size="sm" onClick={() => setAba(t.id)}>{t.nome}</Button>)}</div>
+      {erro && <p role="alert" className="mb-3 text-sm text-debit">{erro}</p>}
+      <ul className="divide-y">
+        {aba === 'movimentos' && <>{!lista.filter(m => !m.pendente).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma movimentação neste período.</li>}{lista.filter(m => !m.pendente).map(m => editando === m.id && m.item ? <EditarLinha key={m.id} item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={m.id} className="flex flex-wrap items-center gap-3 py-4"><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${m.entrada?'bg-credit-soft text-credit':'bg-debit-soft text-debit'}`}>{m.entrada?<ArrowDownLeft className="h-4 w-4" />:<ArrowUpRight className="h-4 w-4" />}</span><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">{m.origem} · {dataBr(m.data)}</p></div><span className={`text-sm font-semibold ${m.entrada?'text-credit':'text-debit'}`}>{m.entrada?'+':'−'} {brl(m.valor)}</span>{controles(m.item,m.id,m.moto)}</li>)}</>}
+        {aba === 'gasolina' && <>{!moto.filter(d => noPeriodo(d.data)).length && !aportes.length && <li className="py-8 text-sm text-muted-foreground">Nenhum abastecimento ou aporte neste período.</li>}{[...moto.filter(d => noPeriodo(d.data)).map(d => ({...d,aporte:false})),...aportes.map(d => ({...d,aporte:true}))].sort((a,b) => b.data.localeCompare(a.data)).map(d => {const item = d.aporte ? lanc.find(l => l.id===d.id) ?? null : null; return editando === d.id && item ? <EditarLinha key={d.id} item={item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={d.id} className="flex flex-wrap items-center gap-3 py-4"><Fuel className="h-5 w-5 shrink-0 text-saved" /><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{d.descricao}</p><p className="text-xs text-muted-foreground">{d.aporte?'Aporte para gasolina':'Abastecimento · Dinheiro · Pago'} · {dataBr(d.data)}</p></div><span className={`text-sm font-semibold ${d.aporte?'text-saved':'text-debit'}`}>{d.aporte?'+':'−'} {brl(Number(d.valor))}</span>{controles(item,d.id,!d.aporte)}</li>;})}</>}
+        {aba === 'compras' && <>{!compras.filter(c => noPeriodo(c.created_at)).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma compra salva neste período.</li>}{compras.filter(c => noPeriodo(c.created_at)).sort((a,b) => b.created_at.localeCompare(a.created_at)).map(c => <li key={c.id} className="py-4"><details><summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Compra de {dataBr(c.created_at)}</p><p className={`text-xs ${c.pagamento && c.pagamento!=='nenhum'?'text-credit':'text-muted-foreground'}`}>{c.pagamento && c.pagamento!=='nenhum'?`Finalizada · ${contas[c.pagamento]}`:'Não finalizada · Sem pagamento lançado'} · {c.itens.length} itens</p></div><span className="text-sm font-semibold">{brl(Number(c.total))}</span></summary><ul className="mt-3 space-y-2 border-l pl-4">{c.itens.map((i,n) => <li key={n} className="flex justify-between gap-3 text-sm"><span className="break-words">{i.qtd} × {i.nome}</span><span className="shrink-0">{brl(i.qtd*i.preco)}</span></li>)}</ul><Button asChild variant="link" className="mt-2 px-0"><Link to="/feira">Abrir compra na Feira →</Link></Button></details></li>)}</>}
       </ul>
-
-      <h2 className="mb-3 font-display text-3xl">Todas as movimentações</h2>
-      <ul className="space-y-2">
-        {lista.filter((m) => !m.pendente).length === 0 && (
-          <li className="py-10 text-center text-muted-foreground">
-            Nada por aqui ainda. Comece em <Link to="/financas" className="underline">Finanças</Link>.
-          </li>
-        )}
-        {lista.filter((m) => !m.pendente).map((m) => (
-          <li key={m.origem + m.id} className="flex items-center gap-3 rounded-lg border bg-card p-4">
-            <span className={`flex h-9 w-9 items-center justify-center rounded-full font-bold ${m.entrada ? "bg-credit-soft text-credit" : "bg-debit-soft text-debit"}`}>
-              {m.entrada ? "+" : "−"}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{m.nome}</p>
-              <p className="text-xs text-muted-foreground">{m.origem}{m.pendente ? " · A pagar" : ""} · {new Date(m.data + "T00:00").toLocaleDateString("pt-BR")}</p>
-            </div>
-            <span className={`font-semibold ${m.entrada ? "text-credit" : "text-debit"}`}>{m.entrada ? "+" : "−"} {brl(m.valor)}</span>
-          </li>
-        ))}
-      </ul>
-    </main>
-  );
+    </section>
+  </main>;
 }
