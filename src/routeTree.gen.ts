@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as EstoqueRouteImport } from './routes/estoque'
 import { Route as FeiraRouteImport } from './routes/feira'
 import { Route as FinancasRouteImport } from './routes/financas'
+import { Route as MotoRouteImport } from './routes/moto'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const FinancasRoute = FinancasRouteImport.update({
   path: '/financas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MotoRoute = MotoRouteImport.update({
+  id: '/moto',
+  path: '/moto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
+  '/moto': typeof MotoRoute
   '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
+  '/moto': typeof MotoRoute
   '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,28 @@ export interface FileRoutesById {
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
+  '/moto': typeof MotoRoute
   '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/admin' | '/estoque' | '/feira' | '/financas' | '/reset-password'
+    | '/'
+    | '/admin'
+    | '/estoque'
+    | '/feira'
+    | '/financas'
+    | '/moto'
+    | '/reset-password'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/estoque' | '/feira' | '/financas' | '/reset-password'
+  to:
+    | '/'
+    | '/admin'
+    | '/estoque'
+    | '/feira'
+    | '/financas'
+    | '/moto'
+    | '/reset-password'
   id:
     | '__root__'
     | '/'
@@ -85,6 +107,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/feira'
     | '/financas'
+    | '/moto'
     | '/reset-password'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +117,7 @@ export interface RootRouteChildren {
   EstoqueRoute: typeof EstoqueRoute
   FeiraRoute: typeof FeiraRoute
   FinancasRoute: typeof FinancasRoute
+  MotoRoute: typeof MotoRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
@@ -134,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinancasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/moto': {
+      id: '/moto'
+      path: '/moto'
+      fullPath: '/moto'
+      preLoaderRoute: typeof MotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -150,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   EstoqueRoute: EstoqueRoute,
   FeiraRoute: FeiraRoute,
   FinancasRoute: FinancasRoute,
+  MotoRoute: MotoRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
