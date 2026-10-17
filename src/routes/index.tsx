@@ -88,12 +88,18 @@ function Painel() {
       <div className="flex flex-wrap items-end gap-3"><span className="mb-2 flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4" />Período</span><label className="min-w-0 flex-1 text-xs text-muted-foreground sm:max-w-44">De<input aria-label="De" type="date" value={de} onChange={e => setDe(e.target.value)} className={`${campo} mt-1`} /></label><label className="min-w-0 flex-1 text-xs text-muted-foreground sm:max-w-44">Até<input aria-label="Até" type="date" value={ate} onChange={e => setAte(e.target.value)} className={`${campo} mt-1`} /></label>{(de || ate) && <Button variant="ghost" size="sm" onClick={() => {setDe('');setAte('');}}><RotateCcw />Todo o período</Button>}</div>
       {de && ate && de > ate && <p role="alert" className="mt-2 text-sm text-debit">A data final deve ser igual ou posterior à inicial.</p>}
     </section>
-    <div className="mb-8 grid gap-7 lg:grid-cols-[1.6fr_1fr]">
+    <div className="mb-8">
       <section><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Entradas e saídas</h2><span className="text-xs text-muted-foreground">No período</span></div>
         <div className="mb-5 grid grid-cols-2 gap-3"><div className="rounded-lg bg-credit-soft p-3"><p className="flex items-center gap-2 text-xs text-credit"><ArrowDownLeft className="h-4 w-4" />Entradas</p><p className="mt-1 break-words font-display text-xl text-credit">{brl(entradas)}</p></div><div className="rounded-lg bg-debit-soft p-3"><p className="flex items-center gap-2 text-xs text-debit"><ArrowUpRight className="h-4 w-4" />Saídas pagas</p><p className="mt-1 break-words font-display text-xl text-debit">{brl(saidas)}</p></div></div>
         {grafico.length ? <div className="flex h-40 items-end gap-3 border-b pb-2">{grafico.map(g => <div key={g.m} className="min-w-0 flex-1"><div className="flex h-28 items-end justify-center gap-1"><div className="w-1/3 rounded-t bg-credit" style={{height:`${g.e/maior*100}%`}} title={`Entradas: ${brl(g.e)}`} /><div className="w-1/3 rounded-t bg-debit" style={{height:`${g.s/maior*100}%`}} title={`Saídas pagas: ${brl(g.s)}`} /></div><p className="mt-2 text-center text-xs text-muted-foreground">{new Date(g.m+'-01T00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</p></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>}
       </section>
-      <section className="min-w-0 lg:border-l lg:pl-7">
+    </div>
+    <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-3" aria-label="Feira, estoque e moto">
+      <div><p className="mb-2 flex items-center gap-2 font-semibold"><ShoppingBasket className="h-4 w-4 text-credit" />Minha feira</p><p className="font-display text-xl">{brl(feira.reduce((s,i) => s+Number(i.qtd)*Number(i.preco),0))}</p><p className="mt-1 text-xs text-muted-foreground">{feira.length} itens · {feira.filter(i => i.pego).length} no carrinho</p><Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/feira">Abrir feira →</Link></Button></div>
+      <div><p className="mb-2 flex items-center gap-2 font-semibold"><Package className="h-4 w-4 text-saved" />Estoque</p><p className="font-display text-xl">{estoque.length} produtos</p><p className="mt-1 text-xs text-muted-foreground">{faltantes.length} abaixo do padrão</p>{faltantes.length > 0 && <p className="mt-1 break-words text-xs text-debit">{faltantes.map(p => `${p.nome} (${Number(p.padrao)-Number(p.qtd)})`).join(' · ')}</p>}<Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/estoque">Abrir estoque →</Link></Button></div>
+      <div><p className="mb-2 flex items-center gap-2 font-semibold"><Fuel className="h-4 w-4 text-saved" />Gasolina da moto</p><dl className="space-y-2 text-sm"><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Dinheiro destinado</dt><dd className="font-semibold">{brl(gasolina.reservado)}</dd></div><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Gasto com gasolina</dt><dd className="font-semibold text-debit">{brl(gasolina.gasto)}</dd></div></dl></div>
+    </section>
+      <section className="mb-8 min-w-0">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span>
           <Button variant="outline" size="sm" aria-expanded={mostrarPendentes} aria-controls="contas-pendentes-painel" onClick={() => setMostrarPendentes(mostrar => !mostrar)}>{mostrarPendentes ? <EyeOff /> : <Eye />}{mostrarPendentes ? 'Ocultar pendências' : 'Mostrar pendências'}</Button>
         </div>
@@ -105,12 +111,6 @@ function Painel() {
           </Fragment>)}
         </ul>}
       </section>
-    </div>
-    <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-3" aria-label="Feira, estoque e moto">
-      <div><p className="mb-2 flex items-center gap-2 font-semibold"><ShoppingBasket className="h-4 w-4 text-credit" />Minha feira</p><p className="font-display text-xl">{brl(feira.reduce((s,i) => s+Number(i.qtd)*Number(i.preco),0))}</p><p className="mt-1 text-xs text-muted-foreground">{feira.length} itens · {feira.filter(i => i.pego).length} no carrinho</p><Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/feira">Abrir feira →</Link></Button></div>
-      <div><p className="mb-2 flex items-center gap-2 font-semibold"><Package className="h-4 w-4 text-saved" />Estoque</p><p className="font-display text-xl">{estoque.length} produtos</p><p className="mt-1 text-xs text-muted-foreground">{faltantes.length} abaixo do padrão</p>{faltantes.length > 0 && <p className="mt-1 break-words text-xs text-debit">{faltantes.map(p => `${p.nome} (${Number(p.padrao)-Number(p.qtd)})`).join(' · ')}</p>}<Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/estoque">Abrir estoque →</Link></Button></div>
-      <div><p className="mb-2 flex items-center gap-2 font-semibold"><Fuel className="h-4 w-4 text-saved" />Gasolina da moto</p><dl className="space-y-2 text-sm"><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Dinheiro destinado</dt><dd className="font-semibold">{brl(gasolina.reservado)}</dd></div><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Gasto com gasolina</dt><dd className="font-semibold text-debit">{brl(gasolina.gasto)}</dd></div></dl></div>
-    </section>
     <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Históricos</h2>
