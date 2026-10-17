@@ -1,5 +1,8 @@
 export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string };
 export const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export function ordenarPorVencimento<T extends { data: string }>(itens: T[]): T[] {
+  return [...itens].sort((a, b) => a.data.localeCompare(b.data));
+}
 export function pendenciasDoMes(itens: LancamentoPainel[], hoje = new Date()) {
   const mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   return itens.filter(i => i.tipo === 'debito' && !i.pago && i.data.slice(0, 7) === mes)
