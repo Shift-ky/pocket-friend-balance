@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditarLinha } from '@/components/finance-editor';
 import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
@@ -37,6 +37,7 @@ function Painel() {
   const admin = useSouAdmin();
   const [de, setDe] = useState(''); const [ate, setAte] = useState('');
   const [aba, setAba] = useState<'movimentos' | 'gasolina' | 'compras'>('movimentos');
+  const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [erro, setErro] = useState('');
   const noPeriodo = (data: string) => (!de || data.slice(0,10) >= de) && (!ate || data.slice(0,10) <= ate);
@@ -98,7 +99,13 @@ function Painel() {
       <div><p className="mb-2 flex items-center gap-2 font-semibold"><Fuel className="h-4 w-4 text-saved" />Gasolina da moto</p><dl className="space-y-2 text-sm"><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Dinheiro destinado</dt><dd className="font-semibold">{brl(gasolina.reservado)}</dd></div><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Gasto com gasolina</dt><dd className="font-semibold text-debit">{brl(gasolina.gasto)}</dd></div></dl></div>
     </section>
     <section>
-      <h2 className="mb-4 font-display text-2xl">Históricos</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-2xl">Históricos</h2>
+        <Button variant="outline" size="sm" aria-expanded={mostrarHistorico} aria-controls="historicos-painel" onClick={() => setMostrarHistorico(mostrar => !mostrar)}>
+          {mostrarHistorico ? <EyeOff /> : <Eye />}{mostrarHistorico ? 'Ocultar histórico' : 'Mostrar histórico'}
+        </Button>
+      </div>
+      {mostrarHistorico && <div id="historicos-painel">
       <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Históricos">{([{id:'movimentos',nome:'Todas as movimentações'},{id:'gasolina',nome:'Moto e aportes'},{id:'compras',nome:'Compras da feira'}] as const).map(t => <Button key={t.id} role="tab" aria-selected={aba===t.id} variant={aba===t.id?'default':'outline'} size="sm" onClick={() => setAba(t.id)}>{t.nome}</Button>)}</div>
       {erro && <p role="alert" className="mb-3 text-sm text-debit">{erro}</p>}
       <ul className="divide-y">
@@ -106,6 +113,7 @@ function Painel() {
         {aba === 'gasolina' && <>{!moto.filter(d => noPeriodo(d.data)).length && !aportes.length && <li className="py-8 text-sm text-muted-foreground">Nenhum abastecimento ou aporte neste período.</li>}{[...moto.filter(d => noPeriodo(d.data)).map(d => ({...d,aporte:false})),...aportes.map(d => ({...d,aporte:true}))].sort((a,b) => b.data.localeCompare(a.data)).map(d => {const item = d.aporte ? lanc.find(l => l.id===d.id) ?? null : null; return editando === d.id && item ? <EditarLinha key={d.id} item={item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={d.id} className="flex flex-wrap items-center gap-3 py-4"><Fuel className="h-5 w-5 shrink-0 text-saved" /><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{d.descricao}</p><p className="text-xs text-muted-foreground">{d.aporte?'Aporte para gasolina':'Abastecimento · Dinheiro · Pago'} · {dataBr(d.data)}</p></div><span className={`text-sm font-semibold ${d.aporte?'text-saved':'text-debit'}`}>{d.aporte?'+':'−'} {brl(Number(d.valor))}</span>{controles(item,d.id,!d.aporte)}</li>;})}</>}
         {aba === 'compras' && <>{!compras.filter(c => noPeriodo(c.created_at)).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma compra salva neste período.</li>}{compras.filter(c => noPeriodo(c.created_at)).sort((a,b) => b.created_at.localeCompare(a.created_at)).map(c => <li key={c.id} className="py-4"><details><summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Compra de {dataBr(c.created_at)}</p><p className={`text-xs ${c.pagamento && c.pagamento!=='nenhum'?'text-credit':'text-muted-foreground'}`}>{c.pagamento && c.pagamento!=='nenhum'?`Finalizada · ${contas[c.pagamento]}`:'Não finalizada · Sem pagamento lançado'} · {c.itens.length} itens</p></div><span className="text-sm font-semibold">{brl(Number(c.total))}</span></summary><ul className="mt-3 space-y-2 border-l pl-4">{c.itens.map((i,n) => <li key={n} className="flex justify-between gap-3 text-sm"><span className="break-words">{i.qtd} × {i.nome}</span><span className="shrink-0">{brl(i.qtd*i.preco)}</span></li>)}</ul><Button asChild variant="link" className="mt-2 px-0"><Link to="/feira">Abrir compra na Feira →</Link></Button></details></li>)}</>}
       </ul>
+      </div>}
     </section>
   </main>;
 }
