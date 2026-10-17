@@ -12,3 +12,4 @@
 - Gasoline funding uses paid cash financial entries with a dedicated destination; Moto expenses live separately, so funding reduces available cash once and only actual expenses count as outflows on the panel.
 - The index dashboard owns financial summaries and finance/Moto history management; finance and Moto routes contain entry forms only, keeping existing payment and permission rules unchanged.
 - Grocery insertion paths share the finalized-purchase price selector; historical unit prices are derived from group-scoped purchase history to avoid duplicating price storage.
+- Financial installment creation uses a shared pure helper and one bulk insert into existing entries, preserving cent totals and calendar-month due dates without a separate installment schema.
