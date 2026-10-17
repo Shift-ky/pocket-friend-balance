@@ -13,8 +13,6 @@ const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: s
   resgate: { label: "Resgate", sinal: "↓", ativo: "bg-saved text-primary-foreground", icone: "bg-saved-soft text-saved", texto: "text-saved" },
 };
 
-const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
 export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: () => void }) {
   const [descricao, setDescricao] = useState(item.descricao);
   const [valor, setValor] = useState(String(item.valor).replace(".", ","));
@@ -28,7 +26,7 @@ export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: ()
     if (error) return alert("Não foi possível salvar.");
     onFechar();
   }
-  const campo = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
+  const campo = "min-w-0 w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
   return (
     <li className="space-y-3 rounded-lg border-2 border-primary bg-card p-4">
       <p className="text-sm font-semibold">Editar {INFO[item.tipo].label.toLowerCase()}</p>
@@ -40,7 +38,7 @@ export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: ()
       {comConta && (
         <div className="grid grid-cols-3 gap-2">
           {(Object.keys(CONTAS) as Conta[]).map((c) => (
-            <Button key={c} type="button" onClick={() => setConta(c)}
+            <Button key={c} variant="ghost" type="button" onClick={() => setConta(c)}
               className={`rounded-lg border py-2 text-sm font-semibold ${conta === c ? "bg-foreground text-background" : "text-muted-foreground"}`}>
               {CONTAS[c]}
             </Button>
@@ -49,7 +47,7 @@ export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: ()
       )}
       <div className="flex gap-2">
         <Button onClick={salvar} className="flex-1 rounded-lg bg-primary py-2 font-semibold text-primary-foreground">Salvar</Button>
-        <Button onClick={onFechar} className="flex-1 rounded-lg border py-2 font-semibold">Cancelar</Button>
+        <Button variant="outline" onClick={onFechar} className="flex-1 rounded-lg border py-2 font-semibold">Cancelar</Button>
       </div>
     </li>
   );

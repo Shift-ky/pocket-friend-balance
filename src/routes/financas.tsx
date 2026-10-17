@@ -22,7 +22,6 @@ export const Route = createFileRoute("/financas")({
 
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
-type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string };
 const CONTAS: Record<Conta, string> = { dinheiro: "Dinheiro", alimentacao: "Alimentação", refeicao: "Refeição" };
 
 const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: string; texto: string }> = {
@@ -31,8 +30,6 @@ const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: s
   aplicacao: { label: "Aplicação", sinal: "↑", ativo: "bg-saved text-primary-foreground", icone: "bg-saved-soft text-saved", texto: "text-saved" },
   resgate: { label: "Resgate", sinal: "↓", ativo: "bg-saved text-primary-foreground", icone: "bg-saved-soft text-saved", texto: "text-saved" },
 };
-
-const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Index() {
   const { grupo } = useGrupo();
@@ -69,7 +66,7 @@ function Index() {
       <form onSubmit={adicionar} className="mb-8 space-y-4 border-y py-6">
         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 sm:grid-cols-4">
           {(Object.keys(INFO) as Tipo[]).map((t) => (
-            <Button key={t} type="button" onClick={() => { setTipo(t); setGasolina(false); }}
+            <Button key={t} variant="ghost" aria-pressed={!gasolina && tipo === t} type="button" onClick={() => { setTipo(t); setGasolina(false); }}
               className={`rounded-md py-2 text-sm font-semibold transition ${!gasolina && tipo === t ? INFO[t].ativo : "text-muted-foreground"}`}>
               {INFO[t].sinal} {INFO[t].label}
             </Button>
@@ -82,7 +79,7 @@ function Index() {
             <p className="mb-2 text-sm text-muted-foreground">{tipo === "debito" ? "Pagou com:" : "Entrou em:"}</p>
             <div className="grid grid-cols-3 gap-2">
               {(Object.keys(CONTAS) as Conta[]).map((c) => (
-                <Button key={c} type="button" onClick={() => setConta(c)}
+                <Button key={c} variant="ghost" aria-pressed={conta === c} type="button" onClick={() => setConta(c)}
                   className={`rounded-lg border py-2 text-sm font-semibold ${conta === c ? "bg-foreground text-background" : "text-muted-foreground"}`}>
                   {CONTAS[c]}
                 </Button>
