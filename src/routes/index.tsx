@@ -94,15 +94,6 @@ function Painel() {
         {grafico.length ? <div className="flex h-40 items-end gap-3 border-b pb-2">{grafico.map(g => <div key={g.m} className="min-w-0 flex-1"><div className="flex h-28 items-end justify-center gap-1"><div className="w-1/3 rounded-t bg-credit" style={{height:`${g.e/maior*100}%`}} title={`Entradas: ${brl(g.e)}`} /><div className="w-1/3 rounded-t bg-debit" style={{height:`${g.s/maior*100}%`}} title={`Saídas pagas: ${brl(g.s)}`} /></div><p className="mt-2 text-center text-xs text-muted-foreground">{new Date(g.m+'-01T00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</p></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>}
       </section>
     </div>
-        {mostrarPendentes && <ul id="contas-pendentes-painel" className="max-h-72 overflow-y-auto">
-          {!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}
-          {pendentes.map((m, i) => <Fragment key={m.id}>
-            {(i === 0 || pendentes[i - 1]?.data.slice(0, 7) !== m.data.slice(0, 7)) && <li className="border-b py-2 text-xs font-semibold capitalize text-muted-foreground">{new Date(m.data.slice(0, 7) + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</li>}
-            {editando === m.id && m.item ? <EditarLinha item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false)}</li>}
-          </Fragment>)}
-        </ul>}
-      </section>
-    </div>
     <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-3" aria-label="Feira, estoque e moto">
       <div><p className="mb-2 flex items-center gap-2 font-semibold"><ShoppingBasket className="h-4 w-4 text-credit" />Minha feira</p><p className="font-display text-xl">{brl(feira.reduce((s,i) => s+Number(i.qtd)*Number(i.preco),0))}</p><p className="mt-1 text-xs text-muted-foreground">{feira.length} itens · {feira.filter(i => i.pego).length} no carrinho</p><Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/feira">Abrir feira →</Link></Button></div>
       <div><p className="mb-2 flex items-center gap-2 font-semibold"><Package className="h-4 w-4 text-saved" />Estoque</p><p className="font-display text-xl">{estoque.length} produtos</p><p className="mt-1 text-xs text-muted-foreground">{faltantes.length} abaixo do padrão</p>{faltantes.length > 0 && <p className="mt-1 break-words text-xs text-debit">{faltantes.map(p => `${p.nome} (${Number(p.padrao)-Number(p.qtd)})`).join(' · ')}</p>}<Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/estoque">Abrir estoque →</Link></Button></div>
@@ -111,7 +102,16 @@ function Painel() {
       <section className="mb-8 min-w-0">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span>
           <Button variant="outline" size="sm" aria-expanded={mostrarPendentes} aria-controls="contas-pendentes-painel" onClick={() => setMostrarPendentes(mostrar => !mostrar)}>{mostrarPendentes ? <EyeOff /> : <Eye />}{mostrarPendentes ? 'Ocultar pendências' : 'Mostrar pendências'}</Button>
-        <section>
+        </div>
+        {mostrarPendentes && <ul id="contas-pendentes-painel" className="max-h-72 overflow-y-auto">
+          {!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}
+          {pendentes.map((m, i) => <Fragment key={m.id}>
+            {(i === 0 || pendentes[i - 1]?.data.slice(0, 7) !== m.data.slice(0, 7)) && <li className="border-b py-2 text-xs font-semibold capitalize text-muted-foreground">{new Date(m.data.slice(0, 7) + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</li>}
+            {editando === m.id && m.item ? <EditarLinha item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false)}</li>}
+          </Fragment>)}
+        </ul>}
+      </section>
+    <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Históricos</h2>
         <Button variant="outline" size="sm" aria-expanded={mostrarHistorico} aria-controls="historicos-painel" onClick={() => setMostrarHistorico(mostrar => !mostrar)}>
