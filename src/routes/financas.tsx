@@ -5,6 +5,7 @@ import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
 import { Fuel } from "lucide-react";
 import { movimentacaoGasolina } from "@/lib/moto";
+import { parcelarLancamento } from "@/lib/parcelamento";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -39,6 +40,7 @@ function Index() {
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [conta, setConta] = useState<Conta>("dinheiro");
   const [gasolina, setGasolina] = useState(false);
+  const [parcelas, setParcelas] = useState("1");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -50,11 +52,19 @@ function Index() {
     setSalvando(true); setErro(""); setSucesso("");
     const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
     const pago = tipo === "credito" || c !== "dinheiro";
-    const { error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago, ...(gasolina ? movimentacaoGasolina(v) : {}) });
+    let registros;
+    try {
+      registros = parcelarLancamento({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago, ...(gasolina ? movimentacaoGasolina(v) : {}) }, Number(parcelas));
+    } catch (error) {
+      setSalvando(false);
+      setErro(error instanceof Error ? error.message : "Verifique as parcelas.");
+      return;
+    }
+    const { error } = await supabase.from("lancamentos").insert(registros);
     setSalvando(false);
     if (error) return setErro("Não foi possível adicionar. Tente novamente.");
-    setDescricao(""); setValor("");
-    setSucesso("Lançamento salvo.");
+    setDescricao(""); setValor(""); setParcelas("1");
+    setSucesso(registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.");
   }
   return (
     <main className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-10">
@@ -95,6 +105,9 @@ function Index() {
           <input type="date" value={data} onChange={(e) => setData(e.target.value)}
             className="min-w-0 w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         </div>
+        {!gasolina && tipo === "debito" && conta === "dinheiro" && <label className="block text-sm text-muted-foreground">Quantidade de parcelas
+          <input aria-label="Quantidade de parcelas" type="number" min="1" step="1" required value={parcelas} onChange={e => setParcelas(e.target.value)} className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring" />
+        </label>}
         <Button disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>
         {sucesso && <p role="status" className="text-sm text-credit">{sucesso}</p>}
         {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
