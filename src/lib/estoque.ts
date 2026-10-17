@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ultimoPrecoFeira } from "@/lib/precos-feira";
 
 const chave = (s: string) => s.trim().toLowerCase();
 
@@ -32,6 +33,7 @@ export async function reporNaFeira(grupoId: string, nome: string, qtd: number, p
   if (ja) {
     if (Number(ja.qtd) !== falta) await supabase.from("feira_itens").update({ qtd: falta }).eq("id", ja.id);
   } else {
-    await supabase.from("feira_itens").insert({ grupo_id: grupoId, nome, qtd: falta, preco: 0 });
+    const preco = await ultimoPrecoFeira(grupoId, nome);
+    await supabase.from("feira_itens").insert({ grupo_id: grupoId, nome, qtd: falta, preco });
   }
 }

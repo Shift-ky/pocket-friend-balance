@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
 import { entrarNoEstoque } from "@/lib/estoque";
+import { buscarPrecosFeira, ultimoPrecoFeira } from "@/lib/precos-feira";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -41,10 +42,15 @@ function Feira() {
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
+    let precoItem = parseFloat(preco.replace(",", ".")) || 0;
+    if (!preco.trim()) {
+      try { precoItem = await ultimoPrecoFeira(grupo.id, nome); }
+      catch { return alert("Não foi possível consultar o último preço. Tente novamente."); }
+    }
     await supabase.from("feira_itens").insert({
       grupo_id: grupo.id, nome: nome.trim(),
       qtd: parseFloat(qtd.replace(",", ".")) || 1,
-      preco: parseFloat(preco.replace(",", ".")) || 0,
+      preco: precoItem,
     });
     setNome(""); setQtd("1"); setPreco("");
     recarregar();
@@ -74,7 +80,10 @@ function Feira() {
     recarregarHist();
   }
   async function recuperar(h: Compra) {
-    await supabase.from("feira_itens").insert(h.itens.map((i) => ({ grupo_id: grupo.id, nome: i.nome, qtd: i.qtd, preco: i.preco })));
+    let precos: Map<string, number>;
+    try { precos = await buscarPrecosFeira(grupo.id); }
+    catch { return alert("Não foi possível consultar os últimos preços. Tente novamente."); }
+    await supabase.from("feira_itens").insert(h.itens.map((i) => ({ grupo_id: grupo.id, nome: i.nome, qtd: i.qtd, preco: precos.get(i.nome.trim().toLowerCase()) ?? i.preco })));
     recarregar();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
