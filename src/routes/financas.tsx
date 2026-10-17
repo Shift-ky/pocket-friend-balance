@@ -3,6 +3,9 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
+import { Button } from "@/components/ui/button";
+import { Fuel } from "lucide-react";
+import { movimentacaoGasolina, totaisMoto, type DespesaMoto } from "@/lib/moto";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -20,7 +23,7 @@ export const Route = createFileRoute("/financas")({
 
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
-type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta };
+type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string };
 const CONTAS: Record<Conta, string> = { dinheiro: "Dinheiro", alimentacao: "Alimentação", refeicao: "Refeição" };
 
 const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: string; texto: string }> = {
@@ -44,6 +47,11 @@ function Index() {
   const [conta, setConta] = useState<Conta>("dinheiro");
   const [mostrar, setMostrar] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
+  const [gasolina, setGasolina] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+  const { linhas: despesasMoto } = useTabelaAoVivo<DespesaMoto>("moto_despesas", grupo.id);
+  const saldoMoto = totaisMoto(itens, despesasMoto).saldo;
   const admin = useSouAdmin();
 
   const totais = useMemo(() => {
@@ -65,9 +73,13 @@ function Index() {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
-    const c = tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
+    if (salvando) return;
+    setSalvando(true); setErro("");
+    const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
     const pago = tipo === "credito" || c !== "dinheiro";
-    await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago });
+    const { error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago, ...(gasolina ? movimentacaoGasolina(v) : {}) });
+    setSalvando(false);
+    if (error) return setErro("Não foi possível adicionar. Tente novamente.");
     setDescricao(""); setValor("");
     recarregar();
   }
@@ -110,18 +122,24 @@ function Index() {
           <p className="font-display truncate text-base sm:text-xl">{brl(totais.refeicao)}</p>
           <p className="mt-1 text-xs opacity-70">Saldo do vale-refeição.</p>
         </section>
+        <section className="col-span-3 flex items-center justify-between gap-3 border-b py-3">
+          <p className="flex items-center gap-2 text-sm"><Fuel className="h-4 w-4 text-saved" />Gasolina da moto</p>
+          <p className="font-display text-lg text-saved">{brl(saldoMoto)}</p>
+        </section>
       </div>
 
       <form onSubmit={adicionar} className="mb-8 space-y-4 rounded-xl border bg-card p-5">
         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 sm:grid-cols-4">
           {(Object.keys(INFO) as Tipo[]).map((t) => (
-            <button key={t} type="button" onClick={() => setTipo(t)}
-              className={`rounded-md py-2 text-sm font-semibold transition ${tipo === t ? INFO[t].ativo : "text-muted-foreground"}`}>
+            <button key={t} type="button" onClick={() => { setTipo(t); setGasolina(false); }}
+              className={`rounded-md py-2 text-sm font-semibold transition ${!gasolina && tipo === t ? INFO[t].ativo : "text-muted-foreground"}`}>
               {INFO[t].sinal} {INFO[t].label}
             </button>
           ))}
         </div>
-        {(tipo === "credito" || tipo === "debito") && (
+        <Button type="button" variant={gasolina ? "default" : "outline"} className="w-full" aria-pressed={gasolina} onClick={() => { setGasolina(true); setTipo("debito"); setConta("dinheiro"); }}><Fuel />Destinar para gasolina</Button>
+        {gasolina && <p className="text-sm text-muted-foreground">Dinheiro → Gasolina da moto</p>}
+        {!gasolina && (tipo === "credito" || tipo === "debito") && (
           <div>
             <p className="mb-2 text-sm text-muted-foreground">{tipo === "debito" ? "Pagou com:" : "Entrou em:"}</p>
             <div className="grid grid-cols-3 gap-2">
@@ -142,7 +160,8 @@ function Index() {
           <input type="date" value={data} onChange={(e) => setData(e.target.value)}
             className="rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         </div>
-        <button className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90">Adicionar</button>
+        <Button disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>
+        {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
       </form>
 
       <div className="mb-3 flex flex-wrap gap-2">
@@ -169,9 +188,9 @@ function Index() {
             </span>
             <div className="flex-1">
               <p className={`font-semibold ${i.tipo === "debito" && i.pago ? "line-through opacity-60" : ""}`}>{i.descricao}</p>
-              <p className="text-xs text-muted-foreground">{INFO[i.tipo].label}{(i.tipo === "credito" || i.tipo === "debito") ? ` · ${CONTAS[i.conta ?? "dinheiro"]}` : ""} · {new Date(i.data + "T00:00").toLocaleDateString("pt-BR")}</p>
+              <p className="text-xs text-muted-foreground">{i.destino === "gasolina" ? "Destinado à gasolina" : INFO[i.tipo].label}{(i.tipo === "credito" || i.tipo === "debito") ? ` · ${CONTAS[i.conta ?? "dinheiro"]}` : ""} · {new Date(i.data + "T00:00").toLocaleDateString("pt-BR")}</p>
             </div>
-            {i.tipo === "debito" && (
+            {i.tipo === "debito" && i.destino !== "gasolina" && (
               <button onClick={() => alternarPago(i)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${i.pago ? "bg-credit-soft text-credit" : "bg-debit-soft text-debit"}`}>
                 {i.pago ? "Pago" : "A pagar"}
@@ -194,7 +213,7 @@ function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: () => voi
   const [valor, setValor] = useState(String(item.valor).replace(".", ","));
   const [data, setData] = useState(item.data);
   const [conta, setConta] = useState<Conta>(item.conta ?? "dinheiro");
-  const comConta = item.tipo === "credito" || item.tipo === "debito";
+  const comConta = item.destino !== "gasolina" && (item.tipo === "credito" || item.tipo === "debito");
   async function salvar() {
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return alert("Preencha descrição e valor.");

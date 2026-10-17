@@ -222,6 +222,7 @@ export type Database = {
           created_at: string
           data: string
           descricao: string
+          destino: string
           grupo_id: string
           id: string
           pago: boolean
@@ -233,6 +234,7 @@ export type Database = {
           created_at?: string
           data?: string
           descricao: string
+          destino?: string
           grupo_id: string
           id?: string
           pago?: boolean
@@ -244,6 +246,7 @@ export type Database = {
           created_at?: string
           data?: string
           descricao?: string
+          destino?: string
           grupo_id?: string
           id?: string
           pago?: boolean
@@ -253,6 +256,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lancamentos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moto_despesas: {
+        Row: {
+          conta: string
+          created_at: string
+          data: string
+          descricao: string
+          grupo_id: string
+          id: string
+          valor: number
+        }
+        Insert: {
+          conta?: string
+          created_at?: string
+          data?: string
+          descricao: string
+          grupo_id: string
+          id?: string
+          valor: number
+        }
+        Update: {
+          conta?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          grupo_id?: string
+          id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moto_despesas_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "grupos"

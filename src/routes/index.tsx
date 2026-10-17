@@ -16,7 +16,8 @@ export const Route = createFileRoute("/")({
   component: Painel,
 });
 
-type Lanc = { id: string; tipo: string; descricao: string; valor: number; data: string; pago: boolean; conta?: string };
+type Lanc = { id: string; tipo: string; descricao: string; valor: number; data: string; pago: boolean; conta?: string; destino?: string };
+type DespesaMoto = { id: string; descricao: string; valor: number; data: string };
 type Compra = { id: string; total: number; created_at: string };
 type Mov = { id: string; data: string; nome: string; origem: string; valor: number; entrada: boolean; pendente?: boolean };
 
@@ -27,16 +28,18 @@ function Painel() {
   const { grupo } = useGrupo();
   const { linhas: lanc } = useTabelaAoVivo<Lanc>("lancamentos", grupo.id);
   const { linhas: feira } = useTabelaAoVivo<Compra>("feira_historico", grupo.id);
+  const { linhas: moto } = useTabelaAoVivo<DespesaMoto>("moto_despesas", grupo.id);
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
 
   const todos = useMemo<Mov[]>(() => {
     const rotulo: Record<string, string> = { credito: "Crédito", debito: "Débito", aplicacao: "Aplicação", resgate: "Resgate" };
     return [
-      ...lanc.map((l) => ({ id: l.id, data: l.data, nome: l.descricao, origem: rotulo[l.tipo] ?? l.tipo, valor: Number(l.valor), entrada: l.tipo === "credito" || l.tipo === "resgate", pendente: l.tipo === "debito" && !l.pago })),
+      ...lanc.filter((l) => l.destino !== "gasolina").map((l) => ({ id: l.id, data: l.data, nome: l.descricao, origem: rotulo[l.tipo] ?? l.tipo, valor: Number(l.valor), entrada: l.tipo === "credito" || l.tipo === "resgate", pendente: l.tipo === "debito" && !l.pago })),
+      ...moto.map((d) => ({ id: d.id, data: d.data, nome: d.descricao, origem: "Moto · Dinheiro", valor: Number(d.valor), entrada: false })),
       ...feira.filter(() => false).map((f) => ({ id: f.id, data: f.created_at.slice(0, 10), nome: "Compra da feira", origem: "Feira", valor: Number(f.total), entrada: false })),
     ].sort((a, b) => b.data.localeCompare(a.data));
-  }, [lanc, feira]);
+  }, [lanc, feira, moto]);
 
   const meses = useMemo(() => [...new Set(todos.map((m) => m.data.slice(0, 7)))].sort().reverse(), [todos]);
   const lista = todos.filter((m) => (!de || m.data >= de) && (!ate || m.data <= ate));
