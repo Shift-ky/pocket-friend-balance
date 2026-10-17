@@ -7,7 +7,7 @@ import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
 import { useSouAdmin } from '@/lib/use-admin';
 import { supabase } from '@/integrations/supabase/client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
-import { brl, saldosPainel, type LancamentoPainel } from '@/lib/painel';
+import { brl, saldosPainel, pendenciasDoMes, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -78,8 +78,9 @@ function Painel() {
       <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Minhas Finanças · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
       <div className="flex flex-wrap gap-2"><Button asChild><Link to="/financas"><Plus />Lançamento</Link></Button><Button asChild variant="outline"><Link to="/moto"><Fuel />Abastecimento</Link></Button></div>
     </header>
-    <section aria-label="Saldos atuais" className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-5">
-      <div className="col-span-2 rounded-lg bg-primary p-4 text-primary-foreground lg:col-span-1"><Wallet className="mb-3 h-5 w-5 opacity-80" /><p className="text-xs opacity-80">Dinheiro disponível</p><p className="mt-1 break-words font-display text-2xl">{brl(saldos.disponivel)}</p></div>
+    <section aria-label="Saldos atuais" className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-6">
+      <div className="min-w-0 rounded-lg bg-primary p-3 text-primary-foreground sm:p-4"><Wallet className="mb-3 h-5 w-5 opacity-80" /><p className="text-xs opacity-80">Dinheiro disponível</p><p className="mt-1 break-words font-display text-lg sm:text-xl">{brl(saldos.disponivel)}</p></div>
+      <div aria-label="Pendências do mês atual" className="min-w-0 rounded-lg border bg-debit-soft p-3 sm:p-4"><CalendarDays className="mb-3 h-5 w-5 text-debit" /><p className="text-xs text-muted-foreground">Pendências · mês atual</p><p className="mt-1 break-words font-display text-lg text-debit sm:text-xl">{brl(pendenciasDoMes(lanc))}</p></div>
       {[{ nome: 'Dinheiro guardado', valor: saldos.guardado, Icon: PiggyBank, cor: 'text-saved' },{ nome: 'Alimentação', valor: saldos.alimentacao, Icon: ShoppingBasket, cor: 'text-credit' },{ nome: 'Refeição', valor: saldos.refeicao, Icon: Utensils, cor: 'text-debit' },{ nome: 'Gasolina disponível', valor: gasolina.saldo, Icon: Fuel, cor: 'text-saved' }].map(({nome,valor,Icon,cor}) => <div key={nome} className="min-w-0 rounded-lg border bg-card p-3 sm:p-4"><Icon className={`mb-3 h-5 w-5 ${cor}`} /><p className="text-xs text-muted-foreground">{nome}</p><p className="mt-1 break-words font-display text-lg sm:text-xl">{brl(valor)}</p></div>)}
     </section>
     <section className="mb-7 border-y py-4" aria-label="Período de pesquisa">
