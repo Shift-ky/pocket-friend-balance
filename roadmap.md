@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Mostrar mensagem suave após o login, com tempo de leitura e continuação automática; verificar duração e entrada.
+- [x] Mostrar mensagem suave após o login por cerca de 8 segundos e continuar automaticamente; duração testada e tela conferida no celular com sessão válida (resposta de entrada simulada), sem repetição ao recarregar.
 - [x] Personalizar a tela de entrada com fotografia de economia, casa e viagem em uma composição delicada; imagem, formulários e ausência de corte verificados no computador e em dois tamanhos de celular, preservando os procedimentos de acesso.
 - [x] Adicionar porcentagem de visibilidade da foto e paleta Coringa individual com cores personalizadas; testes e salvamento/releitura verificados na conta proprietária.
 - [x] Deixar a criação e o gerenciamento de divisões mais discretos no estoque; ícone, abertura e cancelamento verificados no celular.
