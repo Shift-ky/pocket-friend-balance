@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { contaProtegida, eProprietario } from "@/lib/admin-permissions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { ALL_ACCESS, MODULES, type Access } from "@/lib/access";
 
 type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 
@@ -35,6 +36,34 @@ export const souAdmin = createServerFn({ method: "GET" })
     return !!data;
   });
 
+export const meusAcessos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: identity, error: identityError } = await context.supabase.auth.getUser();
+    if (identityError || identity.user?.id !== context.userId) throw new Error("Acesso negado");
+    if (eProprietario(identity.user)) return ALL_ACCESS;
+    const { data, error } = await context.supabase.from("user_access").select("financas,moto,feira,estoque").eq("user_id", context.userId).maybeSingle();
+    if (error) throw new Error("Não foi possível consultar os acessos.");
+    return data ?? ALL_ACCESS;
+  });
+
+export const alterarAcessos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; acessos: Access }) => {
+    if (!d || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.id) || MODULES.some(m => typeof d.acessos?.[m] !== "boolean")) throw new Error("Acessos inválidos.");
+    return { id: d.id, acessos: Object.fromEntries(MODULES.map(m => [m, d.acessos[m]])) as Access };
+  })
+  .handler(async ({ data, context }) => {
+    await exigirProprietario(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: target, error: targetError } = await supabaseAdmin.auth.admin.getUserById(data.id);
+    if (targetError || !target.user) throw new Error("Conta não encontrada.");
+    if (contaProtegida(target.user)) throw new Error("Os acessos do proprietário não podem ser alterados.");
+    const { error } = await supabaseAdmin.from("user_access").upsert({ user_id: data.id, ...data.acessos });
+    if (error) throw new Error("Não foi possível salvar os acessos.");
+    return { ok: true };
+  });
+
 export const listarUsuarios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -45,6 +74,8 @@ export const listarUsuarios = createServerFn({ method: "GET" })
     const { data: roles, error: rolesError } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin");
     if (rolesError) throw new Error("Não foi possível consultar as permissões.");
     const admins = new Set(roles.map((r) => r.user_id));
+    const { data: accessRows, error: accessError } = await supabaseAdmin.from("user_access").select("*");
+    if (accessError) throw new Error("Não foi possível consultar os acessos.");
     return data.users.map((u) => ({
       id: u.id,
       email: u.email ?? "",
@@ -53,6 +84,7 @@ export const listarUsuarios = createServerFn({ method: "GET" })
       ultimoAcesso: u.last_sign_in_at ?? null,
       administrador: admins.has(u.id),
       protegido: contaProtegida(u),
+      acessos: contaProtegida(u) ? ALL_ACCESS : accessRows.find(a => a.user_id === u.id) ?? ALL_ACCESS,
     }));
   });
 

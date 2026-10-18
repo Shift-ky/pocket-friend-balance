@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
+import { useAccess } from "@/lib/access-context";
 import { Fuel } from "lucide-react";
 import { movimentacaoGasolina } from "@/lib/moto";
 import { parcelarLancamento } from "@/lib/parcelamento";
@@ -33,6 +34,7 @@ const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: s
 };
 
 function Index() {
+  const access = useAccess();
   const { grupo } = useGrupo();
   const [tipo, setTipo] = useState<Tipo>("credito");
   const [descricao, setDescricao] = useState("");
@@ -46,6 +48,7 @@ function Index() {
   const [sucesso, setSucesso] = useState("");
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
+    if (!access.financas || (gasolina && !access.moto)) return setErro("Você não tem acesso a este lançamento.");
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
     if (salvando) return;
@@ -82,7 +85,7 @@ function Index() {
             </Button>
           ))}
         </div>
-        <Button type="button" variant={gasolina ? "default" : "outline"} className="w-full" aria-pressed={gasolina} onClick={() => { setGasolina(true); setTipo("debito"); setConta("dinheiro"); }}><Fuel />Destinar para gasolina</Button>
+        {access.moto && <Button type="button" variant={gasolina ? "default" : "outline"} className="w-full" aria-pressed={gasolina} onClick={() => { setGasolina(true); setTipo("debito"); setConta("dinheiro"); }}><Fuel />Destinar para gasolina</Button>}
         {gasolina && <p className="text-sm text-muted-foreground">Dinheiro → Gasolina da moto</p>}
         {!gasolina && (tipo === "credito" || tipo === "debito") && (
           <div>
