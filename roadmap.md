@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Preparar abertura offline, dados locais por conta e fila durável de alterações com sincronização automática e verificação.
 - [x] Escolher Pendente ou Já pago ao lançar uma conta nas Finanças; salvamento e releitura no Painel conferidos na conta proprietária, com 16 testes aprovados e lançamentos de verificação removidos.
 - [x] Escolher a divisão ao cadastrar um produto no estoque; salvamento e releitura conferidos na conta proprietária no celular, com oito testes aprovados.
 - [x] Corrigir nomes no estoque e refletir a mesma correção na cesta de compras; conferido na conta proprietária, preservando quantidades, preços e marcações.
