@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Adicionar temas individuais e imagem pessoal com contraste protegido, salvamento por conta e verificação completa.
 - [x] Permitir arrastar produtos do estoque, salvar a ordem compartilhada e conferir no celular; arraste, teclado e releitura verificados na conta proprietária.
 - [x] Ocultar quadros das abas bloqueadas e destinação de gasolina quando Moto estiver bloqueada; apresentação conferida no celular com permissões simuladas.
 - [x] Criar acessos individuais a Finanças, Moto, Feira e Estoque com proteção dos dados.
