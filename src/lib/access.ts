@@ -21,5 +21,5 @@ export function visibleEntries<T extends { destino?: string; origem_modulo?: str
   return rows.filter(row => (row.origem_modulo !== 'feira' || access.feira) && (row.destino === 'gasolina' ? access.moto : access.financas));
 }
 export function moduleForTable(table: string): Module {
-  return table === 'moto_despesas' ? 'moto' : table === 'estoque' ? 'estoque' : table.startsWith('feira_') ? 'feira' : 'financas';
+  return table === 'moto_despesas' ? 'moto' : table === 'estoque' || table === 'estoque_divisoes' ? 'estoque' : table.startsWith('feira_') ? 'feira' : 'financas';
 }

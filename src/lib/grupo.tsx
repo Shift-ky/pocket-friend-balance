@@ -162,7 +162,7 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   );
 }
 
-export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas" | "feira_historico" | "estoque" | "moto_despesas", grupoId: string) {
+export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas" | "feira_historico" | "estoque" | "estoque_divisoes" | "moto_despesas", grupoId: string) {
   const access = useAccess();
   const allowed = tabela === "lancamentos" ? access.financas || access.moto : access[moduleForTable(tabela)];
   const [linhas, setLinhas] = useState<T[]>([]);
