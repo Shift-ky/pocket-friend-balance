@@ -81,3 +81,14 @@
   --input: var(--border);
   --ring: var(--primary);
 }
+
+@keyframes welcome-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.login-welcome { animation: welcome-in 600ms ease-out both; }
+.login-welcome.login-welcome-exit { animation: none; opacity: 0; transition: opacity 500ms ease-in; }
+@media (prefers-reduced-motion: reduce) {
+  .login-welcome { animation: none; }
+  .login-welcome.login-welcome-exit { transition: none; }
+}

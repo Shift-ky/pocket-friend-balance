@@ -22,3 +22,4 @@
 - Custom appearance overrides use validated semantic color roles and a bounded photo opacity per user; data panels retain solid surfaces so personalization never changes financial logic or exposes another user's settings.
 - Stock divisions are group-owned and use the stock module's access rules; a composite foreign key forbids cross-group assignments and deletion retains products, while sorting within divisions preserves the complete shared order.
 - Signed-out login styling is scoped to its own semantic tokens and bundled photography; preserve the existing authentication handlers and keep personal appearance isolated to signed-in accounts.
+- The post-login welcome is triggered only by successful explicit password sign-in, not session restoration or token refresh; its isolated timer keeps authentication and group loading unchanged.

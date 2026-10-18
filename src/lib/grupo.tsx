@@ -6,6 +6,7 @@ import { moduleForTable, visibleEntries } from "@/lib/access";
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Sprout } from 'lucide-react';
 import loginDreams from '@/assets/login-dreams.jpg';
+import { LoginWelcome } from '@/components/login-welcome';
 
 type Grupo = { id: string; nome: string; codigo: string };
 type Ctx = { session: Session; grupo: Grupo; sair: () => Promise<void> };
@@ -31,7 +32,7 @@ function Caixa({ titulo, children }: { titulo: string; children: ReactNode }) {
   );
 }
 
-function Login() {
+function Login({ aoEntrar }: { aoEntrar: () => void }) {
   const [modo, setModo] = useState<"entrar" | "criar" | "recuperar">("entrar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -57,6 +58,7 @@ function Login() {
     } else if (modo === "entrar") {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) setMsg("E-mail ou senha incorretos.");
+      else aoEntrar();
     } else {
       const { error } = await supabase.auth.signUp({ email, password: senha, options: { emailRedirectTo: window.location.origin } });
       setMsg(error ? error.message : "Conta criada! Confirme pelo link enviado ao seu e-mail e depois entre.");
@@ -149,6 +151,8 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   const [grupo, setGrupo] = useState<Grupo | null | undefined>(undefined);
 
   const [recuperando, setRecuperando] = useState(false);
+  const [boasVindas, setBoasVindas] = useState(false);
+  const concluirBoasVindas = useCallback(() => setBoasVindas(false), []);
 
   useEffect(() => {
     if (window.location.pathname === "/reset-password" || window.location.hash.includes("type=recovery")) setRecuperando(true);
@@ -167,9 +171,10 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   }, [session?.user.id, carregarGrupo]);
 
   if (recuperando && session) return <NovaSenha aoConcluir={() => setRecuperando(false)} />;
+  if (boasVindas && session) return <LoginWelcome aoConcluir={concluirBoasVindas} />;
   if (session === undefined || (session && grupo === undefined))
     return <p className="py-20 text-center text-muted-foreground">Carregando…</p>;
-  if (!session) return <Login />;
+  if (!session) return <Login aoEntrar={() => setBoasVindas(true)} />;
   if (!grupo) return <EscolherGrupo aoEntrar={carregarGrupo} />;
 
   return (
