@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { souAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao } from "@/lib/admin.functions";
+import { souAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador } from "@/lib/admin.functions";
 import { useGrupo } from "@/lib/grupo";
+import { Button } from "@/components/ui/button";
+import { ShieldPlus, ShieldMinus, KeyRound, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -26,10 +28,14 @@ function Admin() {
   const listar = useServerFn(listarUsuarios);
   const excluir = useServerFn(excluirUsuario);
   const redefinir = useServerFn(enviarRedefinicao);
+  const gerenciar = useServerFn(possoGerenciarAdministradores);
+  const alterar = useServerFn(alterarAdministrador);
   const [msg, setMsg] = useState("");
+  const [ocupado, setOcupado] = useState<string | null>(null);
 
   const admin = useQuery({ queryKey: ["souAdmin"], queryFn: () => checar() });
   const usuarios = useQuery({ queryKey: ["usuarios"], queryFn: () => listar(), enabled: admin.data === true });
+  const permissao = useQuery({ queryKey: ["gerenciarAdministradores", session.user.id], queryFn: () => gerenciar(), enabled: admin.data === true });
 
   if (admin.isLoading) return <p className="py-20 text-center text-muted-foreground">Carregando…</p>;
   if (!admin.data) return <p className="py-20 text-center text-muted-foreground">Esta página é só para o administrador.</p>;
@@ -43,6 +49,18 @@ function Admin() {
     try { await redefinir({ data: { email, origem: window.location.origin } }); setMsg(`Link de nova senha enviado para ${email}.`); }
     catch (e) { setMsg((e as Error).message); }
   }
+  async function onAdministrador(id: string, email: string, administrador: boolean) {
+    if (!confirm(`${administrador ? "Conceder" : "Remover"} acesso de administrador ${administrador ? "para" : "de"} ${email}?`)) return;
+    setOcupado(id);
+    setMsg("");
+    try {
+      await alterar({ data: { id, administrador } });
+      setMsg(administrador ? "Permissão de administrador concedida." : "Permissão de administrador removida.");
+      await qc.invalidateQueries({ queryKey: ["usuarios"] });
+      await qc.invalidateQueries({ queryKey: ["souAdmin"] });
+    } catch (e) { setMsg((e as Error).message); }
+    finally { setOcupado(null); }
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-8">
@@ -55,14 +73,21 @@ function Admin() {
         {usuarios.data?.map((u) => (
           <li key={u.id} className="rounded-xl border bg-card p-4">
             <p className="break-all font-semibold">{u.email}{u.id === session.user.id && " (você)"}</p>
+            <p className="mt-1 text-xs font-semibold text-primary">{u.protegido ? "Proprietário" : u.administrador ? "Administrador" : "Usuário"}</p>
             <p className="text-xs text-muted-foreground">
               Cadastro: {new Date(u.criado).toLocaleDateString("pt-BR")} · {u.confirmado ? "Confirmado" : "Não confirmado"}
               {u.ultimoAcesso && ` · Último acesso: ${new Date(u.ultimoAcesso).toLocaleDateString("pt-BR")}`}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => onRedefinir(u.email)} className="rounded-lg border px-3 py-1.5 text-sm font-semibold">Enviar nova senha</button>
-              {u.id !== session.user.id && (
-                <button onClick={() => onExcluir(u.id, u.email)} className="rounded-lg border border-debit px-3 py-1.5 text-sm font-semibold text-debit">Excluir</button>
+              {permissao.data && !u.protegido && (
+                <Button size="sm" variant="outline" disabled={ocupado !== null || (!u.administrador && !u.confirmado)} onClick={() => onAdministrador(u.id, u.email, !u.administrador)}>
+                  {u.administrador ? <ShieldMinus /> : <ShieldPlus />}
+                  {ocupado === u.id ? "Salvando…" : u.administrador ? "Remover administrador" : "Tornar administrador"}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => onRedefinir(u.email)}><KeyRound />Enviar nova senha</Button>
+              {u.id !== session.user.id && !u.protegido && (
+                <Button size="sm" variant="outline" onClick={() => onExcluir(u.id, u.email)} className="border-debit text-debit"><Trash2 />Excluir</Button>
               )}
             </div>
           </li>
