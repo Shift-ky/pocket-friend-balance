@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FolderPlus, Pencil, Trash2, X, Check } from 'lucide-react';
+import { FolderPlus, Pencil, Trash2, X, Check, Settings2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import type { DivisaoEstoque } from '@/lib/divisoes-estoque';
@@ -9,6 +9,7 @@ export function StockDivisions({ grupoId, divisoes, atualizar }: { grupoId: stri
   const [nome, setNome] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  const [gerenciando, setGerenciando] = useState(false);
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim() || editando === null) return;
@@ -27,13 +28,13 @@ export function StockDivisions({ grupoId, divisoes, atualizar }: { grupoId: stri
     if (error) setErro('Não foi possível excluir a divisão.'); else await atualizar();
     setSalvando(false);
   }
-  return <section className="mt-6 border-y py-4" aria-label="Divisões do estoque">
-    <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-xl">Divisões</h2><Button type="button" variant="outline" size="sm" disabled={salvando} onClick={() => {setEditando(''); setNome(''); setErro('');}}><FolderPlus />Nova divisão</Button></div>
+  return <section className="mt-2" aria-label="Divisões do estoque">
+    <div className="flex items-center justify-end gap-1"><Button type="button" variant="ghost" size="icon" className="text-muted-foreground" disabled={salvando} aria-label="Nova divisão" title="Nova divisão" onClick={() => {setEditando(''); setNome(''); setErro('');}}><FolderPlus /></Button>{divisoes.length > 0 && <Button type="button" variant="ghost" size="icon" className="text-muted-foreground" disabled={salvando} aria-label="Gerenciar divisões" title="Gerenciar divisões" aria-expanded={gerenciando} aria-controls="gerenciar-divisoes" onClick={() => setGerenciando(atual => !atual)}><Settings2 /></Button>}</div>
     {editando !== null && <form onSubmit={salvar} className="mt-3 flex gap-2">
       <input autoFocus required maxLength={60} aria-label="Nome da divisão" placeholder="Nome da divisão" value={nome} onChange={e => setNome(e.target.value)} className="min-w-0 flex-1 rounded-md border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
       <Button disabled={salvando} type="submit" size="icon" aria-label="Salvar divisão" title="Salvar divisão"><Check /></Button><Button type="button" variant="ghost" size="icon" aria-label="Cancelar" title="Cancelar" onClick={() => setEditando(null)}><X /></Button>
     </form>}
-    {divisoes.length > 0 && <ul className="mt-3 divide-y">{divisoes.map(d => <li key={d.id} className="flex items-center gap-2 py-1"><span className="min-w-0 flex-1 break-words text-sm">{d.nome}</span><Button type="button" size="icon" variant="ghost" disabled={salvando} title="Renomear divisão" aria-label={`Renomear divisão ${d.nome}`} onClick={() => {setEditando(d.id); setNome(d.nome); setErro('');}}><Pencil /></Button><Button type="button" size="icon" variant="ghost" disabled={salvando} title="Excluir divisão" aria-label={`Excluir divisão ${d.nome}`} onClick={() => excluir(d)}><Trash2 /></Button></li>)}</ul>}
+    {gerenciando && divisoes.length > 0 && <ul id="gerenciar-divisoes" className="mt-2 divide-y">{divisoes.map(d => <li key={d.id} className="flex items-center gap-2 py-1"><span className="min-w-0 flex-1 break-words text-sm">{d.nome}</span><Button type="button" size="icon" variant="ghost" disabled={salvando} title="Renomear divisão" aria-label={`Renomear divisão ${d.nome}`} onClick={() => {setEditando(d.id); setNome(d.nome); setErro('');}}><Pencil /></Button><Button type="button" size="icon" variant="ghost" disabled={salvando} title="Excluir divisão" aria-label={`Excluir divisão ${d.nome}`} onClick={() => excluir(d)}><Trash2 /></Button></li>)}</ul>}
     {erro && <p role="alert" className="mt-2 text-sm text-debit">{erro}</p>}
   </section>;
 }
