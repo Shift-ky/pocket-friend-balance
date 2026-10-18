@@ -21,6 +21,7 @@ function useAparencia() {
       return { theme: temaValido(data?.theme), background_path: data?.background_path ?? null, imagem };
     },
     staleTime: 50 * 60 * 1000,
+    refetchInterval: 50 * 60 * 1000,
   });
 }
 
@@ -82,9 +83,9 @@ export function AppearanceMenu() {
     <DialogContent className="max-h-[90dvh] overflow-y-auto bg-card">
       <DialogHeader><DialogTitle className="font-display text-2xl">Sua aparência</DialogTitle><DialogDescription>Essa escolha vale somente para sua conta.</DialogDescription></DialogHeader>
       <div className="grid grid-cols-2 gap-3">
-        {TEMAS.map(t => <button key={t.id} type="button" disabled={salvando} aria-pressed={atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path), 'Tema salvo.')} className={`rounded-lg border p-3 text-left text-sm font-semibold ${atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
-          <span className="mb-2 flex gap-1">{t.cores.map(c => <span key={c} className="h-6 flex-1 rounded border" style={{ background: c }} />)}</span>{t.nome}
-        </button>)}
+        {TEMAS.map(t => <Button key={t.id} type="button" variant="outline" disabled={salvando} aria-pressed={atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path), 'Tema salvo.')} className={`h-auto flex-col items-stretch p-3 text-left ${atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
+          <span data-theme={t.id} className="flex gap-1"><span className="h-6 flex-1 rounded border bg-background" /><span className="h-6 flex-1 rounded border bg-primary" /></span>{t.nome}
+        </Button>)}
       </div>
       <section className="space-y-3 border-t pt-4">
         <div><h3 className="font-semibold">Imagem de fundo</h3><p className="text-xs text-muted-foreground">Fica suave atrás das informações e os quadros continuam com fundo sólido.</p></div>
