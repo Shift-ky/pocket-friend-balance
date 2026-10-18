@@ -1,4 +1,7 @@
 # Roadmap
+- [x] Criar acessos individuais a Finanças, Moto, Feira e Estoque com proteção dos dados.
+- [x] Aplicar acessos ao menu, aos lançamentos e a todos os totais e históricos do Painel.
+- [x] Verificar salvamento e releitura pela conta proprietária e testes de autorização e totais.
 - [x] Restringir a página Admin e suas ações à conta proprietária e verificar o acesso.
 - [x] Permitir somente à conta proprietária conceder e remover administradores, com proteção e verificação.
 - [x] Compartilhar Finanças e Feira entre celulares em tempo real (login + grupo)

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
-import { entrarNoEstoque } from "@/lib/estoque";
+import { useAccess } from "@/lib/access-context";
 import { buscarPrecosFeira, ultimoPrecoFeira } from "@/lib/precos-feira";
 
 export const Route = createFileRoute("/feira")({
@@ -29,6 +29,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
 
 function Feira() {
+  const access = useAccess();
   const { grupo } = useGrupo();
   const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
   const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), preco: Number(i.preco) }));
@@ -66,16 +67,18 @@ function Feira() {
 
   const [pagamento, setPagamento] = useState<Pagamento>("nenhum");
   async function finalizar() {
+    if (pagamento !== "nenhum" && !access.financas) return alert("Sem acesso às Finanças, salve sem lançamento financeiro.");
     if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens ao estoque e limpar a lista?")) return;
     const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
     let lancamento_id: string | null = null;
     if (pagamento !== "nenhum" && total > 0) {
-      const { data } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
-      lancamento_id = data?.id ?? null;
+      const { data, error: financeError } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
+      if (financeError || !data) return alert("Não foi possível lançar o pagamento.");
+      lancamento_id = data.id;
     }
     const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
     if (error) return alert("Não foi possível salvar.");
-    if (pagamento !== "nenhum") await entrarNoEstoque(grupo.id, copia);
+
     await excluir(itens.map((i) => i.id));
     recarregarHist();
   }
@@ -95,16 +98,19 @@ function Feira() {
   }
   async function salvarEdicao(h: Compra) {
     if (!editando) return;
+    if (!access.financas && (h.pagamento !== "nenhum" || editando.pagamento !== "nenhum")) return alert("Esta edição precisa de acesso às Finanças.");
     const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
     const novos = editando.itens.filter((i) => i.nome.trim()).map((i) => ({ nome: i.nome.trim(), qtd: num(i.qtd), preco: num(i.preco) }));
     const novoTotal = novos.reduce((s, i) => s + i.qtd * i.preco, 0);
     let lancamento_id = h.lancamento_id ?? null;
     if (editando.pagamento !== "nenhum" && novoTotal > 0) {
       if (lancamento_id) {
-        await supabase.from("lancamentos").update({ valor: novoTotal, conta: editando.pagamento }).eq("id", lancamento_id);
+        const { error: financeError } = await supabase.from("lancamentos").update({ valor: novoTotal, conta: editando.pagamento }).eq("id", lancamento_id);
+        if (financeError) return alert("Não foi possível atualizar o pagamento.");
       } else {
-        const { data } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, tipo: "debito", descricao: "Compra da feira", valor: novoTotal, conta: editando.pagamento, pago: true, data: h.created_at.slice(0, 10) }).select("id").single();
-        lancamento_id = data?.id ?? null;
+        const { data, error: financeError } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: novoTotal, conta: editando.pagamento, pago: true, data: h.created_at.slice(0, 10) }).select("id").single();
+        if (financeError || !data) return alert("Não foi possível lançar o pagamento.");
+      lancamento_id = data.id;
       }
     } else if (lancamento_id) {
       const { error, count } = await supabase.from("lancamentos").delete({ count: "exact" }).eq("id", lancamento_id);
@@ -113,8 +119,7 @@ function Feira() {
     }
     const { error } = await supabase.from("feira_historico").update({ itens: novos, total: novoTotal, pagamento: editando.pagamento, lancamento_id }).eq("id", h.id);
     if (error) return alert("Não foi possível salvar.");
-    const eraFinalizada = !!h.pagamento && h.pagamento !== "nenhum";
-    if (!eraFinalizada && editando.pagamento !== "nenhum") await entrarNoEstoque(grupo.id, novos);
+
     setEditando(null);
     recarregarHist();
   }
@@ -175,7 +180,7 @@ function Feira() {
         <div className="mt-6 space-y-3 rounded-xl border bg-card p-4">
           <p className="text-sm text-muted-foreground">Como pagou esta compra?</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {([["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const).map(([k, l]) => (
+            {([["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const).filter(([k]) => access.financas || k === "nenhum").map(([k, l]) => (
               <button key={k} type="button" onClick={() => setPagamento(k)}
                 className={`rounded-lg border py-2 text-sm font-semibold ${pagamento === k ? "bg-foreground text-background" : "text-muted-foreground"}`}>
                 {l}
@@ -208,7 +213,7 @@ function Feira() {
               </button>
               <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
               <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
-                {(isAdmin || !h.pagamento || h.pagamento === "nenhum") && <button onClick={() => editar(h)} aria-label="Editar" className="rounded-full border px-3 py-1 text-xs font-semibold">✎ Editar</button>}
+                {((isAdmin && access.financas) || !h.pagamento || h.pagamento === "nenhum") && <button onClick={() => editar(h)} aria-label="Editar" className="rounded-full border px-3 py-1 text-xs font-semibold">✎ Editar</button>}
                 <button onClick={() => recuperar(h)} className="rounded-full border px-3 py-1 text-xs font-semibold">Copiar para a lista</button>
                 {(isAdmin || !h.pagamento || h.pagamento === "nenhum") && <button onClick={() => apagarHist(h.id)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>}
               </div>
@@ -230,7 +235,7 @@ function Feira() {
                 <button onClick={() => setEditando({ ...editando, itens: [...editando.itens, { nome: "", qtd: "1", preco: "" }] })} className="text-sm underline text-muted-foreground">+ Adicionar item</button>
                 <p className="text-sm text-muted-foreground">Tipo de pagamento</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {PAGAMENTOS.map(([k, l]) => (
+                  {PAGAMENTOS.filter(([k]) => access.financas || k === "nenhum").map(([k, l]) => (
                     <button key={k} type="button" onClick={() => setEditando({ ...editando, pagamento: k })}
                       className={`rounded-lg border py-2 text-sm font-semibold ${editando.pagamento === k ? "bg-foreground text-background" : "text-muted-foreground"}`}>{l}</button>
                   ))}

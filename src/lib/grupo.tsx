@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useAccess } from "@/lib/access-context";
+import { moduleForTable, visibleEntries } from "@/lib/access";
 
 type Grupo = { id: string; nome: string; codigo: string };
 type Ctx = { session: Session; grupo: Grupo; sair: () => Promise<void> };
@@ -161,11 +163,14 @@ export function GrupoGate({ children }: { children: ReactNode }) {
 }
 
 export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas" | "feira_historico" | "estoque" | "moto_despesas", grupoId: string) {
+  const access = useAccess();
+  const allowed = tabela === "lancamentos" ? access.financas || access.moto : access[moduleForTable(tabela)];
   const [linhas, setLinhas] = useState<T[]>([]);
   const recarregar = useCallback(async () => {
+    if (!allowed) { setLinhas([]); return; }
     const { data } = await supabase.from(tabela).select("*").eq("grupo_id", grupoId).order("created_at");
     setLinhas((data ?? []) as T[]);
-  }, [tabela, grupoId]);
+  }, [tabela, grupoId, allowed, access]);
 
   useEffect(() => {
     recarregar();
@@ -176,5 +181,5 @@ export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "desp
     return () => { supabase.removeChannel(canal); };
   }, [tabela, grupoId, recarregar]);
 
-  return { linhas, recarregar };
+  return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string; origem_modulo?: string })[], access) : linhas, recarregar };
 }

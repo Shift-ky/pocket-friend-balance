@@ -13,7 +13,7 @@ vi.mock("@tanstack/react-start", () => ({
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 const mocks = vi.hoisted(() => ({ getUserById: vi.fn(), from: vi.fn() }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { auth: { admin: { getUserById: mocks.getUserById } }, from: mocks.from } }));
-import { alterarAdministrador, excluirUsuario, listarUsuarios, enviarRedefinicao, possoAcessarAdmin, souAdmin } from "@/lib/admin.functions";
+import { alterarAdministrador, excluirUsuario, listarUsuarios, enviarRedefinicao, possoAcessarAdmin, souAdmin, alterarAcessos } from "@/lib/admin.functions";
 
 type Handler = (input: { data: { id: string; administrador?: boolean }; context: unknown }) => Promise<unknown>;
 const alterar = alterarAdministrador as unknown as Handler;
@@ -23,6 +23,17 @@ const other = { id: "6106a84c-f28f-49cd-a62d-499ebc4aeafb", email: "outro@exampl
 const context = (user = owner, admin = true) => ({ userId: user.id, supabase: { rpc: vi.fn().mockResolvedValue({ data: admin }), auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) } } });
 
 describe("Autorização das operações de administrador", () => {
+  it('somente o proprietário pode alterar visualizações', async () => {
+    const handler = alterarAcessos as unknown as (input: { data: unknown; context: unknown }) => Promise<unknown>;
+    await expect(handler({ data: { id: other.id, acessos: { financas:true, moto:false, feira:true, estoque:true } }, context: context(other) })).rejects.toThrow('Somente o proprietário');
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it('não permite retirar acessos do proprietário', async () => {
+    mocks.getUserById.mockResolvedValue({ data: { user: owner } });
+    const handler = alterarAcessos as unknown as (input: { data: unknown; context: unknown }) => Promise<unknown>;
+    await expect(handler({ data: { id: owner.id, acessos: { financas:false, moto:false, feira:false, estoque:false } }, context: context() })).rejects.toThrow('não podem ser alterados');
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
   beforeEach(() => { vi.clearAllMocks(); });
   it("nega concessão e remoção para outro administrador", async () => {
     for (const administrador of [true, false]) {

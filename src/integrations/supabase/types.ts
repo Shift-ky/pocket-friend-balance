@@ -225,6 +225,7 @@ export type Database = {
           destino: string
           grupo_id: string
           id: string
+          origem_modulo: string
           pago: boolean
           tipo: string
           valor: number
@@ -237,6 +238,7 @@ export type Database = {
           destino?: string
           grupo_id: string
           id?: string
+          origem_modulo?: string
           pago?: boolean
           tipo: string
           valor: number
@@ -249,6 +251,7 @@ export type Database = {
           destino?: string
           grupo_id?: string
           id?: string
+          origem_modulo?: string
           pago?: boolean
           tipo?: string
           valor?: number
@@ -301,6 +304,30 @@ export type Database = {
           },
         ]
       }
+      user_access: {
+        Row: {
+          estoque: boolean
+          feira: boolean
+          financas: boolean
+          moto: boolean
+          user_id: string
+        }
+        Insert: {
+          estoque?: boolean
+          feira?: boolean
+          financas?: boolean
+          moto?: boolean
+          user_id: string
+        }
+        Update: {
+          estoque?: boolean
+          feira?: boolean
+          financas?: boolean
+          moto?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -334,6 +361,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      module_access: { Args: { _module: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"

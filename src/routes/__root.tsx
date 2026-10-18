@@ -16,6 +16,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GrupoGate, useGrupo } from "@/lib/grupo";
+import { AccessProvider, AccessSurface } from "@/components/access-provider";
+import { useAccess } from "@/lib/access-context";
 
 function NotFoundComponent() {
   return (
@@ -126,8 +128,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <GrupoGate>
-        <Nav />
-        <Outlet />
+        <AccessProvider><Nav /><AccessSurface><Outlet /></AccessSurface></AccessProvider>
       </GrupoGate>
     </QueryClientProvider>
   );
@@ -135,6 +136,7 @@ function RootComponent() {
 
 function Nav() {
   const { grupo, sair } = useGrupo();
+  const access = useAccess();
   return (
     <nav className="border-b bg-card">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">
@@ -142,22 +144,22 @@ function Nav() {
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Início
         </Link>
-        <Link to="/financas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+        {access.financas && <Link to="/financas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Finanças
-        </Link>
-        <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+        </Link>}
+        {access.feira && <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Feira
-        </Link>
-        <Link to="/estoque" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+        </Link>}
+        {access.estoque && <Link to="/estoque" className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Estoque
-        </Link>
-        <Link to="/moto" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+        </Link>}
+        {access.moto && <Link to="/moto" className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Moto
-        </Link>
+        </Link>}
         <AdminLink />
         <span className="ml-auto text-xs text-muted-foreground">{grupo.nome} · código <b className="text-foreground">{grupo.codigo}</b></span>
         <button onClick={sair} className="text-xs underline text-muted-foreground">Sair</button>

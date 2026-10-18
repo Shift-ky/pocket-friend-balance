@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { possoAcessarAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador } from "@/lib/admin.functions";
+import { possoAcessarAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador, alterarAcessos } from "@/lib/admin.functions";
+import { MODULES, MODULE_LABELS, type Access } from "@/lib/access";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
 import { ShieldPlus, ShieldMinus, KeyRound, Trash2 } from "lucide-react";
@@ -30,6 +31,7 @@ function Admin() {
   const redefinir = useServerFn(enviarRedefinicao);
   const gerenciar = useServerFn(possoGerenciarAdministradores);
   const alterar = useServerFn(alterarAdministrador);
+  const salvarAcessos = useServerFn(alterarAcessos);
   const [msg, setMsg] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
 
@@ -62,6 +64,13 @@ function Admin() {
     finally { setOcupado(null); }
   }
 
+  async function onAcesso(id: string, acessos: Access) {
+    setOcupado(id); setMsg("");
+    try { await salvarAcessos({ data: { id, acessos } }); await qc.invalidateQueries({ queryKey: ["usuarios"] }); setMsg("Acessos atualizados."); }
+    catch (e) { setMsg((e as Error).message); }
+    finally { setOcupado(null); }
+  }
+
   return (
     <main className="mx-auto max-w-3xl px-5 py-8">
       <h1 className="mb-2 font-display text-4xl">Administração</h1>
@@ -79,6 +88,7 @@ function Admin() {
               {u.ultimoAcesso && ` · Último acesso: ${new Date(u.ultimoAcesso).toLocaleDateString("pt-BR")}`}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
+              {!u.protegido && <fieldset className="mb-2 w-full"><legend className="mb-2 text-sm font-semibold">Visualizações permitidas</legend><div className="flex flex-wrap gap-x-5 gap-y-3">{MODULES.map(m => <label key={m} className="flex items-center gap-2 text-sm"><input type="checkbox" aria-label={`${MODULE_LABELS[m]} para ${u.email}`} checked={u.acessos[m]} disabled={ocupado !== null} onChange={e => onAcesso(u.id, { ...u.acessos, [m]: e.target.checked })} />{MODULE_LABELS[m]}</label>)}</div></fieldset>}
               {permissao.data && !u.protegido && (
                 <Button size="sm" variant="outline" disabled={ocupado !== null || (!u.administrador && !u.confirmado)} onClick={() => onAdministrador(u.id, u.email, !u.administrador)}>
                   {u.administrador ? <ShieldMinus /> : <ShieldPlus />}
