@@ -151,6 +151,12 @@ function Nav() {
   const access = useAccess();
   return (
     <nav className="border-b bg-card">
+      <div className="border-b">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-2">
+          <span className="min-w-0 break-words text-xs text-muted-foreground">{grupo.nome} · código <b className="whitespace-nowrap text-foreground">{grupo.codigo}</b></span>
+          <Button variant="link" size="sm" onClick={sair} className="shrink-0 px-0 text-xs text-muted-foreground">Sair</Button>
+        </div>
+      </div>
       <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">
         <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
@@ -173,8 +179,6 @@ function Nav() {
           Moto
         </Link>}
         <AdminLink />
-        <span className="ml-auto text-xs text-muted-foreground">{grupo.nome} · código <b className="text-foreground">{grupo.codigo}</b></span>
-        <button onClick={sair} className="text-xs underline text-muted-foreground">Sair</button>
       </div>
     </nav>
   );
