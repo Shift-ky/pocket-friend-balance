@@ -331,6 +331,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_appearance: {
+        Row: {
+          background_path: string | null
+          theme: string
+          user_id: string
+        }
+        Insert: {
+          background_path?: string | null
+          theme?: string
+          user_id: string
+        }
+        Update: {
+          background_path?: string | null
+          theme?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
