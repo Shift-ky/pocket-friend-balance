@@ -17,6 +17,6 @@ export function parcelarLancamento<T extends Base>(base: T, quantidade: number):
     descricao: quantidade > 1 ? `${base.descricao} (${i + 1}/${quantidade})` : base.descricao,
     valor: (valorBase + (i < resto ? 1 : 0)) / 100,
     data: format(addMonths(inicio, i), 'yyyy-MM-dd'),
-    pago: false,
+    pago: base.pago,
   }));
 }
