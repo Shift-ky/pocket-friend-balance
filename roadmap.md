@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Criar divisões de estoque compartilhadas, mover produtos e verificar salvamento sem alterar quantidades.
 - [x] Adicionar temas individuais e imagem pessoal com contraste protegido; escolha, envio, releitura, remoção e celular verificados na conta proprietária.
 - [x] Permitir arrastar produtos do estoque, salvar a ordem compartilhada e conferir no celular; arraste, teclado e releitura verificados na conta proprietária.
 - [x] Ocultar quadros das abas bloqueadas e destinação de gasolina quando Moto estiver bloqueada; apresentação conferida no celular com permissões simuladas.
