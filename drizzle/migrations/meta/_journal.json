@@ -78,6 +78,13 @@
       "when": 1792321038279,
       "tag": "0010_user_module_access",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792321159783,
+      "tag": "0011_purchase_origin_access",
+      "breakpoints": true
     }
   ]
 }

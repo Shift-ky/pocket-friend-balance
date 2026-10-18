@@ -1,0 +1,3 @@
+ALTER TABLE public.lancamentos ADD COLUMN origem_modulo text NOT NULL DEFAULT 'financas';
+UPDATE public.lancamentos l SET origem_modulo='feira' WHERE EXISTS (SELECT 1 FROM public.feira_historico h WHERE h.lancamento_id=l.id);
+CREATE POLICY access_purchase_origin ON public.lancamentos AS RESTRICTIVE FOR ALL TO authenticated USING (origem_modulo<>'feira' OR public.module_access('feira')) WITH CHECK (origem_modulo<>'feira' OR public.module_access('feira'));

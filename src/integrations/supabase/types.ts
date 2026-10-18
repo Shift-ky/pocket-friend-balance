@@ -225,6 +225,7 @@ export type Database = {
           destino: string
           grupo_id: string
           id: string
+          origem_modulo: string
           pago: boolean
           tipo: string
           valor: number
@@ -237,6 +238,7 @@ export type Database = {
           destino?: string
           grupo_id: string
           id?: string
+          origem_modulo?: string
           pago?: boolean
           tipo: string
           valor: number
@@ -249,6 +251,7 @@ export type Database = {
           destino?: string
           grupo_id?: string
           id?: string
+          origem_modulo?: string
           pago?: boolean
           tipo?: string
           valor?: number
