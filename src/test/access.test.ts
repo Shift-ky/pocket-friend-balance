@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_ACCESS, visibleEntries } from '@/lib/access';
+import { ALL_ACCESS, NO_ACCESS, panelVisibility, visibleEntries } from '@/lib/access';
 import { saldosPainel, type LancamentoPainel } from '@/lib/painel';
 const rows: LancamentoPainel[] = [
   { id:'1', tipo:'credito', descricao:'Salário', valor:100, data:'2026-10-18', pago:true, conta:'dinheiro' },
@@ -7,6 +7,20 @@ const rows: LancamentoPainel[] = [
   { id:'3', tipo:'debito', descricao:'Compra', valor:10, data:'2026-10-18', pago:true, conta:'dinheiro', origem_modulo:'feira' },
 ];
 describe('Visualização por módulo', () => {
+  it('oculta os resumos financeiros quando Finanças está desativada, mesmo com Moto liberada', () => {
+    const visible = panelVisibility({ ...ALL_ACCESS, financas:false });
+    expect(visible.financialCards).toBe(false);
+    expect(visible.financialSummary).toBe(false);
+    expect(visible.motoCards).toBe(true);
+  });
+  it.each(['moto', 'feira', 'estoque'] as const)('oculta os quadros de %s ao retirar o acesso', module => {
+    const keys = { moto:'motoCards', feira:'groceryCards', estoque:'stockCards' } as const;
+    expect(panelVisibility(ALL_ACCESS)[keys[module]]).toBe(true);
+    expect(panelVisibility({ ...ALL_ACCESS, [module]:false })[keys[module]]).toBe(false);
+  });
+  it('não reserva seções de saldo, resumo ou histórico quando todos os módulos estão ocultos', () => {
+    expect(panelVisibility(NO_ACCESS)).toEqual({ financialCards:false, motoCards:false, groceryCards:false, stockCards:false, financialSummary:false, balances:false, moduleSummary:false, history:false, period:false });
+  });
   it('exclui aportes de Moto dos lançamentos e do dinheiro disponível quando Moto está oculta', () => {
     const visible = visibleEntries(rows, { ...ALL_ACCESS, moto:false });
     expect(visible.map(r => r.id)).toEqual(['1','3']);
