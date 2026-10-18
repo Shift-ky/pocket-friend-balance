@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button';
 import { ordenarEstoque } from '@/lib/ordem-estoque';
 import { agruparEstoque, moverNaDivisao, type DivisaoEstoque } from '@/lib/divisoes-estoque';
 import { StockDivisions } from '@/components/stock-divisions';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { StockNameEditor } from '@/components/stock-name-editor';
+import { ChevronDown, ChevronRight, Folder } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 
 export const Route = createFileRoute("/estoque")({
   head: () => ({
@@ -57,6 +59,12 @@ function Estoque() {
     const { error } = await supabase.from('estoque').update({ divisao_id: divisao || null }).eq('id', p.id).eq('grupo_id', grupo.id);
     if (error) setErroOrdem('Não foi possível mover o produto para essa divisão.');
     else { setErroOrdem(''); await recarregar(); }
+  }
+  async function corrigirNome(p: Prod, nome: string): Promise<string | null> {
+    const { error } = await supabase.from('estoque').update({ nome }).eq('id', p.id).eq('grupo_id', grupo.id);
+    if (error) return error.code === 'P0001' ? error.message : 'Não foi possível salvar o nome. Tente novamente.';
+    await recarregar();
+    return null;
   }
 
   async function reordenar({ active, over }: DragEndEvent) {
@@ -129,14 +137,23 @@ function Estoque() {
         {secao.produtos.length === 0 && <li className="py-3 text-sm text-muted-foreground">Nenhum produto nesta divisão.</li>}
         {secao.produtos.map((p) => (
           <StockSortableItem key={p.id} id={p.id} nome={p.nome} abaixo={p.qtd < p.padrao} disabled={salvando}>
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate font-semibold">{p.nome}</p>
+            <div className="flex flex-wrap items-center gap-1">
+              <StockNameEditor nome={p.nome} disabled={salvando} salvar={nome => corrigirNome(p, nome)} />
               {p.qtd < p.padrao && <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase text-debit">Repor</span>}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="ghost" size="icon" disabled={salvando} aria-label={`Divisão de ${p.nome}`} title={`Alterar divisão · ${secao.nome}`} className="h-8 w-8 shrink-0 text-muted-foreground"><Folder className="h-4 w-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-w-[calc(100vw-2rem)] bg-card text-foreground">
+                  <DropdownMenuLabel>Divisão</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={p.divisao_id ?? ''} onValueChange={valor => mudarDivisao(p, valor)}>
+                    <DropdownMenuRadioItem value="" className="whitespace-normal break-words focus:bg-muted focus:text-foreground">Sem divisão</DropdownMenuRadioItem>
+                    {divisoes.map(d => <DropdownMenuRadioItem key={d.id} value={d.id} className="whitespace-normal break-words focus:bg-muted focus:text-foreground">{d.nome}</DropdownMenuRadioItem>)}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="icon" onClick={() => excluir(p)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</Button>
             </div>
-            <label className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">Divisão
-              <select aria-label={`Divisão de ${p.nome}`} disabled={salvando} value={p.divisao_id ?? ''} onChange={e => mudarDivisao(p, e.target.value)} className="min-w-0 max-w-full flex-1 rounded-md border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"><option value="">Sem divisão</option>{divisoes.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}</select>
-            </label>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => mudarQtd(p, p.qtd - 1)} className="rounded-full text-lg font-bold" aria-label="Diminuir">−</Button>
