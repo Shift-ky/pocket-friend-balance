@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ordenarEstoque } from '@/lib/ordem-estoque';
 import { agruparEstoque, moverNaDivisao, type DivisaoEstoque } from '@/lib/divisoes-estoque';
 import { StockDivisions } from '@/components/stock-divisions';
+import { StockNameEditor } from '@/components/stock-name-editor';
 import { ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 
@@ -58,6 +59,12 @@ function Estoque() {
     const { error } = await supabase.from('estoque').update({ divisao_id: divisao || null }).eq('id', p.id).eq('grupo_id', grupo.id);
     if (error) setErroOrdem('Não foi possível mover o produto para essa divisão.');
     else { setErroOrdem(''); await recarregar(); }
+  }
+  async function corrigirNome(p: Prod, nome: string): Promise<string | null> {
+    const { error } = await supabase.from('estoque').update({ nome }).eq('id', p.id).eq('grupo_id', grupo.id);
+    if (error) return error.code === 'P0001' ? error.message : 'Não foi possível salvar o nome. Tente novamente.';
+    await recarregar();
+    return null;
   }
 
   async function reordenar({ active, over }: DragEndEvent) {
@@ -130,8 +137,8 @@ function Estoque() {
         {secao.produtos.length === 0 && <li className="py-3 text-sm text-muted-foreground">Nenhum produto nesta divisão.</li>}
         {secao.produtos.map((p) => (
           <StockSortableItem key={p.id} id={p.id} nome={p.nome} abaixo={p.qtd < p.padrao} disabled={salvando}>
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate font-semibold">{p.nome}</p>
+            <div className="flex flex-wrap items-center gap-1">
+              <StockNameEditor nome={p.nome} disabled={salvando} salvar={nome => corrigirNome(p, nome)} />
               {p.qtd < p.padrao && <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase text-debit">Repor</span>}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
