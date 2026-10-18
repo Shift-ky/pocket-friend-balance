@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Ocultar quadros das abas bloqueadas e destinação de gasolina quando Moto estiver bloqueada; conferir a apresentação.
 - [x] Criar acessos individuais a Finanças, Moto, Feira e Estoque com proteção dos dados.
 - [x] Aplicar acessos ao menu, aos lançamentos e a todos os totais e históricos do Painel.
 - [x] Verificar salvamento e releitura pela conta proprietária e testes de autorização e totais.
