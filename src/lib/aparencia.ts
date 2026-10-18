@@ -30,6 +30,11 @@ export function coresValidas(valor: unknown): CoresCoringa {
 export function visibilidadeValida(valor: unknown): number {
   return typeof valor === 'number' && Number.isFinite(valor) ? Math.max(0, Math.min(100, Math.round(valor))) : 10;
 }
+export function textoDoBotao(cor: string): string {
+  const canais = [1, 3, 5].map(i => parseInt(cor.slice(i, i + 2), 16) / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const luminancia = (canais[0] ?? 0) * 0.2126 + (canais[1] ?? 0) * 0.7152 + (canais[2] ?? 0) * 0.0722;
+  return luminancia > 0.179 ? 'var(--coringa-foreground)' : 'var(--coringa-card)';
+}
 export const TAMANHO_MAXIMO_IMAGEM = 5 * 1024 * 1024;
 const TIPOS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 

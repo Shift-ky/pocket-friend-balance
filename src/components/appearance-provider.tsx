@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ImagePlus, Palette, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGrupo } from '@/lib/grupo';
-import { TEMAS, CORES_CORINGA, coresValidas, visibilidadeValida, temaValido, validarImagemFundo, type Tema, type CoresCoringa } from '@/lib/aparencia';
+import { TEMAS, CORES_CORINGA, coresValidas, visibilidadeValida, textoDoBotao, temaValido, validarImagemFundo, type Tema, type CoresCoringa } from '@/lib/aparencia';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -46,7 +46,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
       for (const { id } of CORES_CORINGA) root.style.setProperty(`--${id}`, data.custom_colors[id] ?? defaults.getPropertyValue(`--coringa-${id}`).trim());
       root.style.setProperty('--input', 'var(--border)');
       root.style.setProperty('--ring', 'var(--primary)');
-      root.style.setProperty('--primary-foreground', 'contrast-color(var(--primary))');
+      root.style.setProperty('--primary-foreground', textoDoBotao(data.custom_colors.primary ?? defaults.getPropertyValue('--coringa-primary').trim()));
       for (const id of ['credit', 'debit', 'saved']) root.style.setProperty(`--${id}-soft`, `color-mix(in srgb, var(--${id}) 12%, var(--card))`);
     }
     return () => { for (const id of [...CORES_CORINGA.map(c => c.id), ...extras]) root.style.removeProperty(`--${id}`); };
