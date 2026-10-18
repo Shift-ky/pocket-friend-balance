@@ -1,6 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { souAdmin } from "@/lib/admin.functions";
+import { possoAcessarAdmin } from "@/lib/admin.functions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -167,8 +167,9 @@ function Nav() {
 }
 
 function AdminLink() {
-  const checar = useServerFn(souAdmin);
-  const { data } = useQuery({ queryKey: ["souAdmin"], queryFn: () => checar() });
+  const { session } = useGrupo();
+  const checar = useServerFn(possoAcessarAdmin);
+  const { data } = useQuery({ queryKey: ["acessoAdmin", session.user.id], queryFn: () => checar() });
   if (!data) return null;
   return (
     <Link to="/admin" className="rounded-full px-4 py-1.5 text-sm font-semibold"

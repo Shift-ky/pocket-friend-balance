@@ -11,6 +11,23 @@ async function exigirAdmin(context: Ctx) {
   if (error || !data) throw new Error("Acesso negado");
 }
 
+async function exigirProprietario(context: Ctx) {
+  await exigirAdmin(context);
+  const { data, error } = await context.supabase.auth.getUser();
+  if (error || data.user?.id !== context.userId || !eProprietario(data.user)) {
+    throw new Error("Somente o proprietário pode acessar a administração de contas.");
+  }
+}
+
+export const possoAcessarAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: admin, error: roleError } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (roleError || !admin) return false;
+    const { data, error } = await context.supabase.auth.getUser();
+    return !error && data.user?.id === context.userId && eProprietario(data.user);
+  });
+
 export const souAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -21,7 +38,7 @@ export const souAdmin = createServerFn({ method: "GET" })
 export const listarUsuarios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await exigirAdmin(context as Ctx);
+    await exigirProprietario(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
     if (error) throw new Error(error.message);
@@ -46,7 +63,7 @@ export const excluirUsuario = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }) => {
-    await exigirAdmin(context as Ctx);
+    await exigirProprietario(context);
     if (data.id === context.userId) throw new Error("Você não pode excluir a própria conta.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: target, error: targetError } = await supabaseAdmin.auth.admin.getUserById(data.id);
@@ -64,7 +81,7 @@ export const possoGerenciarAdministradores = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await exigirAdmin(context);
     const { data, error } = await context.supabase.auth.getUser();
-    return !error && eProprietario(data.user);
+    return !error && data.user?.id === context.userId && eProprietario(data.user);
   });
 
 export const alterarAdministrador = createServerFn({ method: "POST" })
@@ -75,9 +92,7 @@ export const alterarAdministrador = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }) => {
-    await exigirAdmin(context);
-    const { data: caller, error: callerError } = await context.supabase.auth.getUser();
-    if (callerError || !eProprietario(caller.user)) throw new Error("Somente o proprietário pode alterar administradores.");
+    await exigirProprietario(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: target, error: targetError } = await supabaseAdmin.auth.admin.getUserById(data.id);
     if (targetError || !target.user) throw new Error("Conta não encontrada.");
@@ -105,7 +120,7 @@ export const enviarRedefinicao = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }) => {
-    await exigirAdmin(context as Ctx);
+    await exigirProprietario(context);
     const { error } = await context.supabase.auth.resetPasswordForEmail(data.email, {
       redirectTo: `${data.origem}/reset-password`,
     });
