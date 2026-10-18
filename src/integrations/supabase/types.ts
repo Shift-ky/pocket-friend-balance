@@ -58,6 +58,7 @@ export type Database = {
       estoque: {
         Row: {
           created_at: string
+          divisao_id: string | null
           grupo_id: string
           id: string
           nome: string
@@ -67,6 +68,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          divisao_id?: string | null
           grupo_id: string
           id?: string
           nome: string
@@ -76,6 +78,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          divisao_id?: string | null
           grupo_id?: string
           id?: string
           nome?: string
@@ -85,7 +88,43 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "estoque_divisao_grupo"
+            columns: ["divisao_id", "grupo_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_divisoes"
+            referencedColumns: ["id", "grupo_id"]
+          },
+          {
             foreignKeyName: "estoque_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estoque_divisoes: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_divisoes_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "grupos"
