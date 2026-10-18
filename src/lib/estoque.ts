@@ -4,7 +4,7 @@ import { ultimoPrecoFeira } from "@/lib/precos-feira";
 const chave = (s: string) => s.trim().toLowerCase();
 
 /** Soma itens comprados ao estoque; cadastra os que ainda não existem. */
-export async function entrarNoEstoque(grupoId: string, itens: { nome: string; qtd: number; divisao_id?: string }[]) {
+export async function entrarNoEstoque(grupoId: string, itens: { nome: string; qtd: number; divisao_id?: string | undefined }[]) {
   const { data: atuais, error: erroLeitura } = await supabase.from("estoque").select("id,nome,qtd").eq("grupo_id", grupoId);
   if (erroLeitura) throw erroLeitura;
   const mapa = new Map((atuais ?? []).map((e) => [chave(e.nome), e]));
