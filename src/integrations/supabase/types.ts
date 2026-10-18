@@ -61,6 +61,7 @@ export type Database = {
           grupo_id: string
           id: string
           nome: string
+          ordem: number | null
           padrao: number
           qtd: number
         }
@@ -69,6 +70,7 @@ export type Database = {
           grupo_id: string
           id?: string
           nome: string
+          ordem?: number | null
           padrao?: number
           qtd?: number
         }
@@ -77,6 +79,7 @@ export type Database = {
           grupo_id?: string
           id?: string
           nome?: string
+          ordem?: number | null
           padrao?: number
           qtd?: number
         }
@@ -362,6 +365,10 @@ export type Database = {
         Returns: boolean
       }
       module_access: { Args: { _module: string }; Returns: boolean }
+      ordenar_estoque: {
+        Args: { _grupo_id: string; _ids: string[] }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
