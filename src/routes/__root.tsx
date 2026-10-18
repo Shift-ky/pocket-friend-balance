@@ -17,6 +17,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GrupoGate, useGrupo } from "@/lib/grupo";
 import { AccessProvider, AccessSurface } from "@/components/access-provider";
+import { AppearanceMenu, AppearanceProvider } from "@/components/appearance-provider";
 import { useAccess } from "@/lib/access-context";
 import { recoverModuleLoad, isModuleLoadError } from '@/lib/module-recovery';
 import { Button } from '@/components/ui/button';
@@ -114,14 +115,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
       <body>
         <div className="flex min-h-dvh flex-col">
           <div className="flex-1">{children}</div>
-          <footer className="border-t bg-card px-5 py-4 text-center text-xs text-muted-foreground">
+          <footer className="relative z-10 border-t bg-card px-5 py-4 text-center text-xs text-muted-foreground">
             <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-4 gap-y-2">
               <span>Author: <span className="font-semibold text-foreground">Robson Costa</span></span>
               <a href="https://github.com/Shift-ky" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">GitHub: Shift-ky</a>
@@ -148,7 +149,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <GrupoGate>
-        <AccessProvider><Nav /><AccessSurface><Outlet /></AccessSurface></AccessProvider>
+        <AppearanceProvider><AccessProvider><Nav /><AccessSurface><Outlet /></AccessSurface></AccessProvider></AppearanceProvider>
       </GrupoGate>
     </QueryClientProvider>
   );
@@ -162,7 +163,7 @@ function Nav() {
       <div className="border-b">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-2">
           <span className="min-w-0 break-words text-xs text-muted-foreground">{grupo.nome} · código <b className="whitespace-nowrap text-foreground">{grupo.codigo}</b></span>
-          <Button variant="link" size="sm" onClick={sair} className="shrink-0 px-0 text-xs text-muted-foreground">Sair</Button>
+          <div className="flex shrink-0 items-center gap-4"><AppearanceMenu /><Button variant="link" size="sm" onClick={sair} className="shrink-0 px-0 text-xs text-muted-foreground">Sair</Button></div>
         </div>
       </div>
       <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">

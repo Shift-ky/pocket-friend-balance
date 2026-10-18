@@ -92,6 +92,13 @@
       "when": 1792330478261,
       "tag": "0012_stock_manual_order",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792331634906,
+      "tag": "0013_personal_appearance",
+      "breakpoints": true
     }
   ]
 }
