@@ -3,18 +3,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ImagePlus, Palette, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGrupo } from '@/lib/grupo';
-import { TEMAS, temaValido, validarImagemFundo, type Tema } from '@/lib/aparencia';
+import { TEMAS, CORES_CORINGA, coresValidas, visibilidadeValida, textoDoBotao, temaValido, validarImagemFundo, type Tema, type CoresCoringa } from '@/lib/aparencia';
+import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-type Aparencia = { theme: Tema; background_path: string | null; imagem: string | null };
+type Aparencia = { theme: Tema; background_path: string | null; imagem: string | null; background_visibility: number; custom_enabled: boolean; custom_colors: CoresCoringa };
 
 function useAparencia() {
   const { session } = useGrupo();
   return useQuery({
     queryKey: ['aparencia', session.user.id],
     queryFn: async (): Promise<Aparencia> => {
-      const { data, error } = await supabase.from('user_appearance').select('theme, background_path').eq('user_id', session.user.id).maybeSingle();
+      const { data, error } = await supabase.from('user_appearance').select('theme, background_path, background_visibility, custom_enabled, custom_colors').eq('user_id', session.user.id).maybeSingle();
       if (error) throw error;
       let imagem: string | null = null;
       if (data?.background_path) {
@@ -22,7 +23,7 @@ function useAparencia() {
         if (resultado.error) throw resultado.error;
         imagem = resultado.data.signedUrl;
       }
-      return { theme: temaValido(data?.theme), background_path: data?.background_path ?? null, imagem };
+      return { theme: temaValido(data?.theme), background_path: data?.background_path ?? null, imagem, background_visibility: visibilidadeValida(data?.background_visibility), custom_enabled: data?.custom_enabled ?? false, custom_colors: coresValidas(data?.custom_colors) };
     },
     staleTime: 50 * 60 * 1000,
     refetchInterval: 50 * 60 * 1000,
@@ -37,8 +38,21 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle('dark', tema === 'dark');
     return () => { delete document.documentElement.dataset['theme']; document.documentElement.classList.remove('dark'); };
   }, [tema]);
+  useEffect(() => {
+    const root = document.documentElement;
+    const extras = ['input', 'ring', 'primary-foreground', 'credit-soft', 'debit-soft', 'saved-soft'];
+    if (data?.custom_enabled) {
+      const defaults = getComputedStyle(root);
+      for (const { id } of CORES_CORINGA) root.style.setProperty(`--${id}`, data.custom_colors[id] ?? defaults.getPropertyValue(`--coringa-${id}`).trim());
+      root.style.setProperty('--input', 'var(--border)');
+      root.style.setProperty('--ring', 'var(--primary)');
+      root.style.setProperty('--primary-foreground', textoDoBotao(data.custom_colors.primary ?? defaults.getPropertyValue('--coringa-primary').trim()));
+      for (const id of ['credit', 'debit', 'saved']) root.style.setProperty(`--${id}-soft`, `color-mix(in srgb, var(--${id}) 12%, var(--card))`);
+    }
+    return () => { for (const id of [...CORES_CORINGA.map(c => c.id), ...extras]) root.style.removeProperty(`--${id}`); };
+  }, [data?.custom_enabled, data?.custom_colors]);
   return <>
-    {data?.imagem && <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url("${data.imagem}")` }}><div className="absolute inset-0 bg-background/90 backdrop-blur-[2px]" /></div>}
+    {data?.imagem && <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url("${data.imagem}")`, opacity: data.background_visibility / 100 }} />}
     <div className="relative z-10">{children}</div>
   </>;
 }
@@ -50,10 +64,19 @@ export function AppearanceMenu() {
   const input = useRef<HTMLInputElement>(null);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState('');
-  const atual = data ?? { theme: 'original' as Tema, background_path: null, imagem: null };
+  const atual = data ?? { theme: 'original' as Tema, background_path: null, imagem: null, background_visibility: 10, custom_enabled: false, custom_colors: {} };
+  const [cores, setCores] = useState<CoresCoringa>({});
+  const [visibilidade, setVisibilidade] = useState(10);
+  useEffect(() => {
+    const defaults = getComputedStyle(document.documentElement);
+    const iniciais: CoresCoringa = {};
+    for (const { id } of CORES_CORINGA) iniciais[id] = defaults.getPropertyValue(`--coringa-${id}`).trim();
+    setCores({ ...iniciais, ...data?.custom_colors });
+    setVisibilidade(data?.background_visibility ?? 10);
+  }, [data]);
 
-  async function salvar(theme: Tema, background_path: string | null) {
-    const { error } = await supabase.from('user_appearance').upsert({ user_id: session.user.id, theme, background_path });
+  async function salvar(theme: Tema, background_path: string | null, ajustes: Partial<Pick<Aparencia, 'background_visibility' | 'custom_enabled' | 'custom_colors'>> = {}) {
+    const { error } = await supabase.from('user_appearance').upsert({ user_id: session.user.id, theme, background_path, background_visibility: atual.background_visibility, custom_enabled: atual.custom_enabled, custom_colors: atual.custom_colors, ...ajustes });
     if (error) throw error;
     await queryClient.invalidateQueries({ queryKey: ['aparencia', session.user.id] });
   }
@@ -88,13 +111,16 @@ export function AppearanceMenu() {
     <DialogContent className="max-h-[90dvh] overflow-y-auto bg-card">
       <DialogHeader><DialogTitle className="font-display text-2xl">Sua aparência</DialogTitle><DialogDescription>Essa escolha vale somente para sua conta.</DialogDescription></DialogHeader>
       <div className="grid grid-cols-2 gap-3">
-        {TEMAS.map(t => <Button key={t.id} type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path), 'Tema salvo.')} className={`h-auto flex-col items-stretch p-3 text-left ${atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
+        {TEMAS.map(t => <Button key={t.id} type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={!atual.custom_enabled && atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path, { custom_enabled: false }), 'Tema salvo.')} className={`h-auto flex-col items-stretch p-3 text-left ${!atual.custom_enabled && atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
           <span data-theme={t.id} className="flex gap-1"><span className="h-6 flex-1 rounded border bg-background" /><span className="h-6 flex-1 rounded border bg-primary" /></span>{t.nome}
         </Button>)}
       </div>
+      <Button type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={atual.custom_enabled} onClick={() => executar(() => salvar(atual.theme, atual.background_path, { custom_enabled: true, custom_colors: coresValidas(cores) }), 'Paleta Coringa aplicada.')}><Palette />Coringa</Button>
+      {atual.custom_enabled && <section className="space-y-3 border-t pt-4" aria-label="Paleta Coringa"><h3 className="font-semibold">Suas cores</h3><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{CORES_CORINGA.map(c => <label key={c.id} className="flex min-w-0 items-center justify-between gap-2 text-sm"><span>{c.nome}</span><input type="color" aria-label={c.nome} value={cores[c.id]} disabled={salvando} onChange={e => setCores(atual => ({ ...atual, [c.id]: e.target.value }))} className="h-9 w-12 shrink-0 cursor-pointer rounded border bg-card p-1" /></label>)}</div><Button disabled={salvando} onClick={() => executar(() => salvar(atual.theme, atual.background_path, { custom_enabled: true, custom_colors: coresValidas(cores) }), 'Cores salvas.')}><Palette />Aplicar cores</Button></section>}
       <section className="space-y-3 border-t pt-4">
         <div><h3 className="font-semibold">Imagem de fundo</h3><p className="text-xs text-muted-foreground">Fica suave atrás das informações e os quadros continuam com fundo sólido.</p></div>
         {atual.imagem && <img src={atual.imagem} alt="Sua imagem de fundo atual" className="h-28 w-full rounded-lg object-cover" />}
+        <div className="space-y-3"><label id="visibilidade-foto" className="flex justify-between gap-2 text-sm"><span>Visibilidade da foto</span><span>{visibilidade}%</span></label><Slider aria-labelledby="visibilidade-foto" min={0} max={100} step={1} value={[visibilidade]} disabled={salvando || isPending || isError} onValueChange={valores => setVisibilidade(valores[0] ?? 10)} onValueCommit={valores => executar(() => salvar(atual.theme, atual.background_path, { background_visibility: visibilidadeValida(valores[0]) }), 'Visibilidade salva.')} /></div>
         <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => enviar(e.target.files?.[0])} />
         <div className="flex flex-wrap gap-2"><Button type="button" disabled={salvando || isPending || isError} onClick={() => input.current?.click()}><ImagePlus />{atual.imagem ? 'Trocar imagem' : 'Escolher imagem'}</Button>{atual.imagem && <Button type="button" variant="outline" disabled={salvando} onClick={removerImagem}><Trash2 />Remover</Button>}</div>
       </section>

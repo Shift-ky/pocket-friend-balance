@@ -373,16 +373,25 @@ export type Database = {
       user_appearance: {
         Row: {
           background_path: string | null
+          background_visibility: number
+          custom_colors: Json
+          custom_enabled: boolean
           theme: string
           user_id: string
         }
         Insert: {
           background_path?: string | null
+          background_visibility?: number
+          custom_colors?: Json
+          custom_enabled?: boolean
           theme?: string
           user_id: string
         }
         Update: {
           background_path?: string | null
+          background_visibility?: number
+          custom_colors?: Json
+          custom_enabled?: boolean
           theme?: string
           user_id?: string
         }
