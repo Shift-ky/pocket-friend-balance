@@ -41,7 +41,8 @@ function Index() {
   const [valor, setValor] = useState("");
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [conta, setConta] = useState<Conta>("dinheiro");
-  const [gasolina, setGasolina] = useState(false);
+  const [destinarGasolina, setGasolina] = useState(false);
+  const gasolina = access.moto && destinarGasolina;
   const [parcelas, setParcelas] = useState("1");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
