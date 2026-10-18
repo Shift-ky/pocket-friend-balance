@@ -13,3 +13,4 @@
 - The index dashboard owns financial summaries and finance/Moto history management; finance and Moto routes contain entry forms only, keeping existing payment and permission rules unchanged.
 - Grocery insertion paths share the finalized-purchase price selector; historical unit prices are derived from group-scoped purchase history to avoid duplicating price storage.
 - Financial installment creation uses a shared pure helper and one bulk insert into existing entries, preserving cent totals and calendar-month due dates without a separate installment schema.
+- Administrator delegation uses authenticated server functions that revalidate the owner's immutable identity and verified email before privileged role writes; roles remain in user_roles and the owner is protected from deletion to prevent delegated privilege escalation.
