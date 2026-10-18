@@ -17,7 +17,11 @@ function useAparencia() {
       const { data, error } = await supabase.from('user_appearance').select('theme, background_path').eq('user_id', session.user.id).maybeSingle();
       if (error) throw error;
       let imagem: string | null = null;
-      if (data?.background_path) imagem = (await supabase.storage.from('personal-backgrounds').createSignedUrl(data.background_path, 3600)).data?.signedUrl ?? null;
+      if (data?.background_path) {
+        const resultado = await supabase.storage.from('personal-backgrounds').createSignedUrl(data.background_path, 3600);
+        if (resultado.error) throw resultado.error;
+        imagem = resultado.data.signedUrl;
+      }
       return { theme: temaValido(data?.theme), background_path: data?.background_path ?? null, imagem };
     },
     staleTime: 50 * 60 * 1000,
@@ -29,20 +33,20 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const { data } = useAparencia();
   const tema = data?.theme ?? 'original';
   useEffect(() => {
-    document.documentElement.dataset.theme = tema;
+    document.documentElement.dataset['theme'] = tema;
     document.documentElement.classList.toggle('dark', tema === 'dark');
-    return () => { delete document.documentElement.dataset.theme; document.documentElement.classList.remove('dark'); };
+    return () => { delete document.documentElement.dataset['theme']; document.documentElement.classList.remove('dark'); };
   }, [tema]);
   return <>
-    {data?.imagem && <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: `url("${data.imagem}")` }}><div className="absolute inset-0 bg-background/90 backdrop-blur-[2px]" /></div>}
-    {children}
+    {data?.imagem && <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url("${data.imagem}")` }}><div className="absolute inset-0 bg-background/90 backdrop-blur-[2px]" /></div>}
+    <div className="relative z-10">{children}</div>
   </>;
 }
 
 export function AppearanceMenu() {
   const { session } = useGrupo();
   const queryClient = useQueryClient();
-  const { data } = useAparencia();
+  const { data, isPending, isError } = useAparencia();
   const input = useRef<HTMLInputElement>(null);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState('');
@@ -66,7 +70,8 @@ export function AppearanceMenu() {
       const caminho = `${session.user.id}/${Date.now()}.${validacao.extensao}`;
       const { error } = await supabase.storage.from('personal-backgrounds').upload(caminho, arquivo, { contentType: arquivo.type });
       if (error) throw error;
-      await salvar(atual.theme, caminho);
+      try { await salvar(atual.theme, caminho); }
+      catch (error) { await supabase.storage.from('personal-backgrounds').remove([caminho]); throw error; }
       if (atual.background_path) await supabase.storage.from('personal-backgrounds').remove([atual.background_path]);
     }, 'Imagem aplicada com proteção para manter os números legíveis.');
     if (input.current) input.current.value = '';
@@ -83,7 +88,7 @@ export function AppearanceMenu() {
     <DialogContent className="max-h-[90dvh] overflow-y-auto bg-card">
       <DialogHeader><DialogTitle className="font-display text-2xl">Sua aparência</DialogTitle><DialogDescription>Essa escolha vale somente para sua conta.</DialogDescription></DialogHeader>
       <div className="grid grid-cols-2 gap-3">
-        {TEMAS.map(t => <Button key={t.id} type="button" variant="outline" disabled={salvando} aria-pressed={atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path), 'Tema salvo.')} className={`h-auto flex-col items-stretch p-3 text-left ${atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
+        {TEMAS.map(t => <Button key={t.id} type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path), 'Tema salvo.')} className={`h-auto flex-col items-stretch p-3 text-left ${atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
           <span data-theme={t.id} className="flex gap-1"><span className="h-6 flex-1 rounded border bg-background" /><span className="h-6 flex-1 rounded border bg-primary" /></span>{t.nome}
         </Button>)}
       </div>
@@ -91,9 +96,10 @@ export function AppearanceMenu() {
         <div><h3 className="font-semibold">Imagem de fundo</h3><p className="text-xs text-muted-foreground">Fica suave atrás das informações e os quadros continuam com fundo sólido.</p></div>
         {atual.imagem && <img src={atual.imagem} alt="Sua imagem de fundo atual" className="h-28 w-full rounded-lg object-cover" />}
         <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => enviar(e.target.files?.[0])} />
-        <div className="flex flex-wrap gap-2"><Button type="button" disabled={salvando} onClick={() => input.current?.click()}><ImagePlus />{atual.imagem ? 'Trocar imagem' : 'Escolher imagem'}</Button>{atual.imagem && <Button type="button" variant="outline" disabled={salvando} onClick={removerImagem}><Trash2 />Remover</Button>}</div>
+        <div className="flex flex-wrap gap-2"><Button type="button" disabled={salvando || isPending || isError} onClick={() => input.current?.click()}><ImagePlus />{atual.imagem ? 'Trocar imagem' : 'Escolher imagem'}</Button>{atual.imagem && <Button type="button" variant="outline" disabled={salvando} onClick={removerImagem}><Trash2 />Remover</Button>}</div>
       </section>
       {msg && <p role="status" className="text-sm text-muted-foreground">{msg}</p>}
+      {isError && <p role="alert" className="text-sm text-debit">Não foi possível carregar sua aparência. Tente novamente mais tarde.</p>}
     </DialogContent>
   </Dialog>;
 }
