@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ordenarEstoque } from '@/lib/ordem-estoque';
 import { agruparEstoque, moverNaDivisao, type DivisaoEstoque } from '@/lib/divisoes-estoque';
 import { StockDivisions } from '@/components/stock-divisions';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 export const Route = createFileRoute("/estoque")({
   head: () => ({
@@ -36,6 +37,14 @@ function Estoque() {
   const [ordemLocal, setOrdemLocal] = useState<string[] | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroOrdem, setErroOrdem] = useState('');
+  const [recolhidas, setRecolhidas] = useState<Set<string>>(() => new Set());
+  function alternarDivisao(id: string) {
+    setRecolhidas(atual => {
+      const proximas = new Set(atual);
+      if (proximas.has(id)) proximas.delete(id); else proximas.add(id);
+      return proximas;
+    });
+  }
   const ordenados = ordenarEstoque(linhas.map((p) => ({ ...p, qtd: Number(p.qtd), padrao: Number(p.padrao) })));
   const prods = ordemLocal ? [...ordenados].sort((a, b) => ordemLocal.indexOf(a.id) - ordemLocal.indexOf(b.id)) : ordenados;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -114,9 +123,9 @@ function Estoque() {
       {erroOrdem && <p role="alert" className="text-sm text-debit">{erroOrdem}</p>}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reordenar}>
       {secoes.filter(s => s.id || s.produtos.length || prods.length === 0).map(secao => <section key={secao.id} className="mt-6" aria-label={`Produtos: ${secao.nome}`}>
-      <div className="mb-3 flex items-center justify-between gap-3 border-b pb-2"><h2 className="min-w-0 break-words font-display text-xl">{secao.nome}</h2><span className="text-xs text-muted-foreground">{secao.produtos.length}</span></div>
-      <SortableContext items={secao.produtos.map(p => p.id)} strategy={verticalListSortingStrategy}>
-      <ul className="space-y-2">
+      <div className="mb-3 flex items-center gap-3 border-b pb-2"><Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => alternarDivisao(secao.id)} aria-expanded={!recolhidas.has(secao.id)} aria-controls={`produtos-divisao-${secao.id || 'sem-divisao'}`} aria-label={`${recolhidas.has(secao.id) ? 'Expandir' : 'Minimizar'} divisão ${secao.nome}`} title={recolhidas.has(secao.id) ? 'Expandir divisão' : 'Minimizar divisão'}>{recolhidas.has(secao.id) ? <ChevronRight /> : <ChevronDown />}</Button><h2 className="min-w-0 flex-1 break-words font-display text-xl">{secao.nome}</h2><span className="shrink-0 text-xs text-muted-foreground">{secao.produtos.length}</span></div>
+      {!recolhidas.has(secao.id) && <SortableContext items={secao.produtos.map(p => p.id)} strategy={verticalListSortingStrategy}>
+      <ul id={`produtos-divisao-${secao.id || 'sem-divisao'}`} className="space-y-2">
         {secao.produtos.length === 0 && <li className="py-3 text-sm text-muted-foreground">Nenhum produto nesta divisão.</li>}
         {secao.produtos.map((p) => (
           <StockSortableItem key={p.id} id={p.id} nome={p.nome} abaixo={p.qtd < p.padrao} disabled={salvando}>
@@ -143,7 +152,7 @@ function Estoque() {
           </StockSortableItem>
         ))}
       </ul>
-      </SortableContext>
+      </SortableContext>}
       </section>)}
       </DndContext>
     </main>
