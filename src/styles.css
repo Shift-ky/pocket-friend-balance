@@ -68,3 +68,16 @@
     font-family: var(--font-sans);
   }
 }
+
+[data-login] {
+  --background: oklch(0.97 0.014 155);
+  --foreground: oklch(0.29 0.036 162);
+  --card: oklch(0.995 0.003 155);
+  --primary: oklch(0.43 0.066 162);
+  --primary-foreground: oklch(0.99 0.003 155);
+  --muted: oklch(0.94 0.023 155);
+  --muted-foreground: oklch(0.49 0.027 162);
+  --border: oklch(0.88 0.019 155);
+  --input: var(--border);
+  --ring: var(--primary);
+}

@@ -3,6 +3,9 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccess } from "@/lib/access-context";
 import { moduleForTable, visibleEntries } from "@/lib/access";
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Sprout } from 'lucide-react';
+import loginDreams from '@/assets/login-dreams.jpg';
 
 type Grupo = { id: string; nome: string; codigo: string };
 type Ctx = { session: Session; grupo: Grupo; sair: () => Promise<void> };
@@ -34,6 +37,7 @@ function Login() {
   const [senha, setSenha] = useState("");
   const [msg, setMsg] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   useEffect(() => {
     const h = new URLSearchParams(window.location.hash.slice(1));
@@ -61,20 +65,33 @@ function Login() {
   }
 
   return (
-    <Caixa titulo={modo === "entrar" ? "Entrar" : modo === "criar" ? "Criar conta" : "Recuperar senha"}>
-      <form onSubmit={enviar} className="space-y-4">
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="E-mail" className={campo} />
-        {modo !== "recuperar" && <input type="password" required minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Senha" className={campo} />}
-        <button disabled={carregando} className={botao}>{modo === "entrar" ? "Entrar" : modo === "criar" ? "Criar conta" : "Enviar link de recuperação"}</button>
-      </form>
-      {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
-      <button onClick={() => { setModo(modo === "entrar" ? "criar" : "entrar"); setMsg(""); }} className="text-sm underline">
-        {modo === "entrar" ? "Não tem conta? Criar conta" : "Já tenho conta"}
-      </button>
-      {modo === "entrar" && (
-        <button onClick={() => { setModo("recuperar"); setMsg(""); }} className="block text-sm underline">Esqueci minha senha</button>
-      )}
-    </Caixa>
+    <main data-login className="relative isolate bg-background text-foreground">
+      <img src={loginDreams} alt="Moedas guardadas ao lado de fotografias de uma casa e de uma viagem à praia" width={1536} height={1024} fetchPriority="high" className="absolute inset-x-0 top-0 -z-10 h-[290px] w-full object-cover object-bottom lg:h-full lg:object-center" />
+      <div className="mx-auto grid max-w-7xl lg:min-h-[calc(100dvh-65px)] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <header className="flex h-[290px] flex-col px-6 pt-7 lg:h-auto lg:px-12 lg:py-14">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase"><Sprout className="h-4 w-4" />Um passo de cada vez</p>
+          <h1 className="mt-4 font-display text-4xl lg:mt-8 lg:text-5xl">Minhas Finanças</h1>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed lg:text-base">Cuide do seu dinheiro.<br />Dê espaço aos seus sonhos.</p>
+          <p className="mt-auto hidden max-w-xs border-l-2 border-primary pl-4 text-sm leading-relaxed lg:block">A sua próxima conquista começa<br />com o cuidado de hoje.</p>
+        </header>
+        <section aria-label="Acesso à sua conta" className="flex items-center bg-card px-6 py-9 lg:bg-card/95 lg:px-12 lg:py-14">
+          <div className="mx-auto w-full max-w-sm">
+            <span className="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted text-primary"><Sprout className="h-5 w-5" /></span>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Seu futuro, com carinho</p>
+            <h2 className="mt-2 font-display text-3xl">{modo === 'entrar' ? 'Que bom ter você aqui.' : modo === 'criar' ? 'Comece a cuidar dos seus sonhos.' : 'Vamos recuperar seu acesso.'}</h2>
+            <p className="mb-7 mt-3 text-sm leading-relaxed text-muted-foreground">{modo === 'entrar' ? 'Entre na sua conta e continue construindo suas conquistas.' : modo === 'criar' ? 'Crie sua conta para começar uma nova etapa.' : 'Receba por e-mail um link para criar uma nova senha.'}</p>
+            <form onSubmit={enviar} className="space-y-5">
+              <label className="block space-y-2 text-sm font-semibold"><span>E-mail</span><div className="relative"><Mail aria-hidden className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" /><input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" className={`${campo} h-11 pl-10 font-normal`} /></div></label>
+              {modo !== 'recuperar' && <label className="block space-y-2 text-sm font-semibold"><span>Senha</span><div className="relative"><LockKeyhole aria-hidden className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" /><input type={mostrarSenha ? 'text' : 'password'} autoComplete={modo === 'criar' ? 'new-password' : 'current-password'} required minLength={6} value={senha} onChange={e => setSenha(e.target.value)} placeholder="Sua senha" className={`${campo} h-11 pl-10 pr-12 font-normal`} /><Button type="button" variant="ghost" size="icon" aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'} title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setMostrarSenha(atual => !atual)} className="absolute right-1 top-1 h-9 w-9 text-muted-foreground">{mostrarSenha ? <EyeOff /> : <Eye />}</Button></div></label>}
+              {modo === 'entrar' && <div className="flex justify-end"><Button type="button" variant="link" disabled={carregando} onClick={() => { setModo('recuperar'); setMsg(''); }} className="h-auto px-0 py-0 text-xs">Esqueci minha senha</Button></div>}
+              <Button type="submit" disabled={carregando} className="h-12 w-full justify-between px-5">{carregando ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : modo === 'criar' ? 'Criar conta' : 'Enviar link de recuperação'}<ArrowRight className="h-4 w-4" /></Button>
+            </form>
+            {msg && <p role="status" className="mt-4 text-sm text-muted-foreground">{msg}</p>}
+            <div className="mt-7 border-t pt-5 text-center text-sm"><span className="text-muted-foreground">{modo === 'entrar' ? 'Ainda não tem uma conta? ' : ''}</span><Button type="button" variant="link" disabled={carregando} onClick={() => { setModo(modo === 'entrar' ? 'criar' : 'entrar'); setMsg(''); }} className="h-auto px-0 py-0">{modo === 'entrar' ? 'Criar conta' : 'Voltar para entrar'}</Button></div>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
 
