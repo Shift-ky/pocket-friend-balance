@@ -28,6 +28,16 @@
 }
 
 :root, [data-theme="original"] {
+  --coringa-background: #f8fafc;
+  --coringa-card: #ffffff;
+  --coringa-foreground: #20242a;
+  --coringa-primary: #2563eb;
+  --coringa-muted: #eef2f6;
+  --coringa-muted-foreground: #596373;
+  --coringa-border: #cbd5e1;
+  --coringa-credit: #16804a;
+  --coringa-debit: #c53535;
+  --coringa-saved: #2563a5;
   --radius: 1rem;
   --background: oklch(0.97 0.012 85);
   --foreground: oklch(0.22 0.02 60);
