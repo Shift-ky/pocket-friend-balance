@@ -52,6 +52,10 @@ function Estoque() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const [nome, setNome] = useState("");
   const [qtd, setQtd] = useState("1");
+  const [divisaoCadastro, setDivisaoCadastro] = useState('');
+  const [cadastrando, setCadastrando] = useState(false);
+  const [erroCadastro, setErroCadastro] = useState('');
+  const divisaoSelecionada = divisoes.find(d => d.id === divisaoCadastro);
   const faltando = prods.filter((p) => p.qtd < p.padrao).length;
   const secoes = agruparEstoque(prods, divisoes);
   async function atualizarDivisoes() { await recarregarDivisoes(); await recarregar(); }
@@ -86,9 +90,14 @@ function Estoque() {
 
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim()) return;
-    await entrarNoEstoque(grupo.id, [{ nome, qtd: num(qtd) || 1 }]);
-    setNome(""); setQtd("1"); recarregar();
+    if (!nome.trim() || cadastrando) return;
+    setCadastrando(true); setErroCadastro('');
+    try {
+      await entrarNoEstoque(grupo.id, [{ nome, qtd: num(qtd) || 1, divisao_id: divisaoSelecionada?.id }]);
+      setNome(""); setQtd("1"); await recarregar();
+    } catch {
+      setErroCadastro('Não foi possível cadastrar o produto. Tente novamente.');
+    } finally { setCadastrando(false); }
   }
 
   async function mudarQtd(p: Prod, nova: number) {
@@ -123,8 +132,21 @@ function Estoque() {
       <form onSubmit={adicionar} className="mt-5 grid grid-cols-[minmax(0,1fr)_5rem_auto] gap-2">
         <input className={`${input} min-w-0 w-full`} placeholder="Produto (ex.: Arroz)" value={nome} onChange={(e) => setNome(e.target.value)} />
         <input className={`${input} min-w-0 w-full`} inputMode="decimal" value={qtd} onChange={(e) => setQtd(e.target.value)} aria-label="Quantidade" />
-        <Button type="submit" className="h-auto px-4 font-semibold">Adicionar</Button>
+        <Button type="submit" disabled={cadastrando} className="h-auto px-4 font-semibold">{cadastrando ? 'Salvando…' : 'Adicionar'}</Button>
+        {divisoes.length > 0 && <div className="col-span-3 min-w-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button type="button" variant="ghost" disabled={cadastrando} aria-label="Divisão do novo produto" className="max-w-full gap-2 text-muted-foreground"><Folder className="h-4 w-4 shrink-0" /><span className="truncate">{divisaoSelecionada?.nome ?? 'Sem divisão'}</span><ChevronDown className="h-3 w-3 shrink-0" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-w-[calc(100vw-2rem)] bg-card text-foreground">
+              <DropdownMenuLabel>Divisão</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={divisaoSelecionada?.id ?? ''} onValueChange={setDivisaoCadastro}>
+                <DropdownMenuRadioItem value="" className="whitespace-normal break-words focus:bg-muted focus:text-foreground">Sem divisão</DropdownMenuRadioItem>
+                {divisoes.map(d => <DropdownMenuRadioItem key={d.id} value={d.id} className="whitespace-normal break-words focus:bg-muted focus:text-foreground">{d.nome}</DropdownMenuRadioItem>)}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>}
       </form>
+      {erroCadastro && <p role="alert" className="mt-2 text-sm text-debit">{erroCadastro}</p>}
       <StockDivisions grupoId={grupo.id} divisoes={divisoes} atualizar={atualizarDivisoes} />
 
       <p role="status" className="mt-2 text-sm text-muted-foreground">{salvando ? 'Salvando ordem…' : ''}</p>
