@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { souAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador } from "@/lib/admin.functions";
+import { possoAcessarAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador } from "@/lib/admin.functions";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
 import { ShieldPlus, ShieldMinus, KeyRound, Trash2 } from "lucide-react";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/admin")({
 function Admin() {
   const { session } = useGrupo();
   const qc = useQueryClient();
-  const checar = useServerFn(souAdmin);
+  const checar = useServerFn(possoAcessarAdmin);
   const listar = useServerFn(listarUsuarios);
   const excluir = useServerFn(excluirUsuario);
   const redefinir = useServerFn(enviarRedefinicao);
@@ -33,12 +33,12 @@ function Admin() {
   const [msg, setMsg] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
 
-  const admin = useQuery({ queryKey: ["souAdmin"], queryFn: () => checar() });
-  const usuarios = useQuery({ queryKey: ["usuarios"], queryFn: () => listar(), enabled: admin.data === true });
+  const admin = useQuery({ queryKey: ["acessoAdmin", session.user.id], queryFn: () => checar() });
+  const usuarios = useQuery({ queryKey: ["usuarios", session.user.id], queryFn: () => listar(), enabled: admin.data === true });
   const permissao = useQuery({ queryKey: ["gerenciarAdministradores", session.user.id], queryFn: () => gerenciar(), enabled: admin.data === true });
 
   if (admin.isLoading) return <p className="py-20 text-center text-muted-foreground">Carregando…</p>;
-  if (!admin.data) return <p className="py-20 text-center text-muted-foreground">Esta página é só para o administrador.</p>;
+  if (!admin.data) return <p className="py-20 text-center text-muted-foreground">Esta página é exclusiva da conta proprietária.</p>;
 
   async function onExcluir(id: string, email: string) {
     if (!confirm(`Excluir a conta ${email}? Isso não pode ser desfeito.`)) return;
