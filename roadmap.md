@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Escolher Pendente ou Já pago ao lançar uma conta nas Finanças; salvamento e releitura no Painel conferidos na conta proprietária, com 16 testes aprovados e lançamentos de verificação removidos.
 - [x] Escolher a divisão ao cadastrar um produto no estoque; salvamento e releitura conferidos na conta proprietária no celular, com oito testes aprovados.
 - [x] Corrigir nomes no estoque e refletir a mesma correção na cesta de compras; conferido na conta proprietária, preservando quantidades, preços e marcações.
 - [x] Deixar a divisão dos produtos discreta em um ícone de pasta com escolhas ao clicar; conferido no celular.

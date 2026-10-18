@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
 import { useAccess } from "@/lib/access-context";
-import { Fuel } from "lucide-react";
+import { CheckCircle2, Clock, Fuel } from "lucide-react";
 import { movimentacaoGasolina } from "@/lib/moto";
 import { parcelarLancamento } from "@/lib/parcelamento";
 
@@ -44,6 +44,7 @@ function Index() {
   const [destinarGasolina, setGasolina] = useState(false);
   const gasolina = access.moto && destinarGasolina;
   const [parcelas, setParcelas] = useState("1");
+  const [pago, setPago] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -55,10 +56,10 @@ function Index() {
     if (salvando) return;
     setSalvando(true); setErro(""); setSucesso("");
     const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
-    const pago = tipo === "credito" || c !== "dinheiro";
+    const pagamento = gasolina ? true : tipo === "debito" ? pago : tipo === "credito";
     let registros;
     try {
-      registros = parcelarLancamento({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago, ...(gasolina ? movimentacaoGasolina(v) : {}) }, Number(parcelas));
+      registros = parcelarLancamento({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: pagamento, ...(gasolina ? movimentacaoGasolina(v) : {}) }, Number(parcelas));
     } catch (error) {
       setSalvando(false);
       setErro(error instanceof Error ? error.message : "Verifique as parcelas.");
@@ -101,6 +102,13 @@ function Index() {
             </div>
           </div>
         )}
+        {!gasolina && tipo === "debito" && <fieldset>
+          <legend className="mb-2 text-sm text-muted-foreground">Situação da conta</legend>
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant={pago ? "outline" : "default"} aria-pressed={!pago} onClick={() => setPago(false)}><Clock className="h-4 w-4" />Pendente</Button>
+            <Button type="button" variant={pago ? "default" : "outline"} aria-pressed={pago} onClick={() => setPago(true)}><CheckCircle2 className="h-4 w-4" />Já pago</Button>
+          </div>
+        </fieldset>}
         <input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição (ex: Salário, Aluguel)"
           className="w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         <div className="grid grid-cols-2 gap-3">
