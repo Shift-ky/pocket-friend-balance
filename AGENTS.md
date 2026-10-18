@@ -18,6 +18,6 @@
 - Purchase-to-stock and stock-to-shopping synchronization run through database triggers so automatic consistency does not depend on the acting user's visibility of the destination module; page code must not duplicate those side effects.
 - Stock drag ordering uses a nullable position column and an atomic security-invoker RPC scoped to the group under existing RLS; quantity synchronization remains independent of ordering.
 - Stale dynamic-import failures recover through one session-throttled document reload; other errors retain the normal boundary and repeated asset failures must not loop.
-- Personal appearance is stored per authenticated user with owner-only RLS and private user-folder storage; signed images render behind a strong overlay while dashboard information stays on solid surfaces.
+- Personal appearance is stored per authenticated user with owner-only RLS and private user-folder storage; signed images use the user's bounded opacity while dashboard information stays on solid surfaces.
 - Custom appearance overrides use validated semantic color roles and a bounded photo opacity per user; data panels retain solid surfaces so personalization never changes financial logic or exposes another user's settings.
 - Stock divisions are group-owned and use the stock module's access rules; a composite foreign key forbids cross-group assignments and deletion retains products, while sorting within divisions preserves the complete shared order.
