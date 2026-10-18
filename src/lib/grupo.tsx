@@ -181,5 +181,5 @@ export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "desp
     return () => { supabase.removeChannel(canal); };
   }, [tabela, grupoId, recarregar]);
 
-  return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string })[], access) : linhas, recarregar };
+  return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string; origem_modulo?: string })[], access) : linhas, recarregar };
 }
