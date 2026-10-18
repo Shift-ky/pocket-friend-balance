@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Personalizar a tela de entrada com fotos financeiras e de sonhos em uma composição delicada, mantendo entrada e recuperação de senha.
+- [x] Personalizar a tela de entrada com fotografia de economia, casa e viagem em uma composição delicada; imagem, formulários e ausência de corte verificados no computador e em dois tamanhos de celular, preservando os procedimentos de acesso.
 - [x] Adicionar porcentagem de visibilidade da foto e paleta Coringa individual com cores personalizadas; testes e salvamento/releitura verificados na conta proprietária.
 - [x] Deixar a criação e o gerenciamento de divisões mais discretos no estoque; ícone, abertura e cancelamento verificados no celular.
 - [x] Permitir minimizar e expandir cada divisão do estoque individualmente.
