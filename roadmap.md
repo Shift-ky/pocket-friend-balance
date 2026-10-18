@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Corrigir nomes no estoque e refletir a mesma correção na cesta de compras.
+- [x] Corrigir nomes no estoque e refletir a mesma correção na cesta de compras; conferido na conta proprietária, preservando quantidades, preços e marcações.
 - [x] Deixar a divisão dos produtos discreta em um ícone de pasta com escolhas ao clicar; conferido no celular.
 - [x] Mostrar mensagem suave após o login por cerca de 8 segundos e continuar automaticamente; duração testada e tela conferida no celular com sessão válida (resposta de entrada simulada), sem repetição ao recarregar.
 - [x] Personalizar a tela de entrada com fotografia de economia, casa e viagem em uma composição delicada; imagem, formulários e ausência de corte verificados no computador e em dois tamanhos de celular, preservando os procedimentos de acesso.
