@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Deixar a criação e o gerenciamento de divisões mais discretos no estoque.
+- [x] Deixar a criação e o gerenciamento de divisões mais discretos no estoque; ícone, abertura e cancelamento verificados no celular.
 - [x] Permitir minimizar e expandir cada divisão do estoque individualmente.
 - [x] Criar divisões de estoque compartilhadas; criação, renomeação, atribuição, releitura e exclusão verificadas, mantendo produtos e quantidades sem corte no celular.
 - [x] Adicionar temas individuais e imagem pessoal com contraste protegido; escolha, envio, releitura, remoção e celular verificados na conta proprietária.
