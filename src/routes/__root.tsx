@@ -119,7 +119,15 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <div className="flex min-h-dvh flex-col">
+          <div className="flex-1">{children}</div>
+          <footer className="border-t bg-card px-5 py-4 text-center text-xs text-muted-foreground">
+            <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-4 gap-y-2">
+              <span>Author: <span className="font-semibold text-foreground">Robson Costa</span></span>
+              <a href="https://github.com/Shift-ky" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">GitHub: Shift-ky</a>
+            </div>
+          </footer>
+        </div>
         <Scripts />
       </body>
     </html>
