@@ -1,0 +1,1 @@
+ALTER TABLE public.user_appearance ADD COLUMN background_visibility integer NOT NULL DEFAULT 10 CHECK (background_visibility BETWEEN 0 AND 100), ADD COLUMN custom_enabled boolean NOT NULL DEFAULT false, ADD COLUMN custom_colors jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(custom_colors) = 'object');
