@@ -95,7 +95,7 @@ function Estoque() {
       <form onSubmit={adicionar} className="mt-5 grid grid-cols-[1fr_5rem_auto] gap-2">
         <input className={input} placeholder="Produto (ex.: Arroz)" value={nome} onChange={(e) => setNome(e.target.value)} />
         <input className={input} inputMode="decimal" value={qtd} onChange={(e) => setQtd(e.target.value)} aria-label="Quantidade" />
-        <button className="rounded-lg bg-primary px-4 font-semibold text-primary-foreground">Adicionar</button>
+        <Button type="submit" className="h-auto px-4 font-semibold">Adicionar</Button>
       </form>
 
       <p role="status" className="mt-2 text-sm text-muted-foreground">{salvando ? 'Salvando ordem…' : ''}</p>
@@ -109,13 +109,13 @@ function Estoque() {
             <div className="flex items-center gap-2">
               <p className="min-w-0 flex-1 truncate font-semibold">{p.nome}</p>
               {p.qtd < p.padrao && <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase text-debit">Repor</span>}
-              <button onClick={() => excluir(p)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</button>
+              <Button variant="ghost" size="icon" onClick={() => excluir(p)} aria-label="Excluir" className="text-muted-foreground hover:text-debit">✕</Button>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <button onClick={() => mudarQtd(p, p.qtd - 1)} className="h-9 w-9 rounded-full border text-lg font-bold" aria-label="Diminuir">−</button>
+                <Button variant="outline" size="icon" onClick={() => mudarQtd(p, p.qtd - 1)} className="rounded-full text-lg font-bold" aria-label="Diminuir">−</Button>
                 <span className="w-10 text-center text-lg font-bold">{p.qtd}</span>
-                <button onClick={() => mudarQtd(p, p.qtd + 1)} className="h-9 w-9 rounded-full border text-lg font-bold" aria-label="Aumentar">+</button>
+                <Button variant="outline" size="icon" onClick={() => mudarQtd(p, p.qtd + 1)} className="rounded-full text-lg font-bold" aria-label="Aumentar">+</Button>
               </div>
               <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                 Padrão
