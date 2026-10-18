@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Escolher a divisão ao cadastrar um produto no estoque; salvamento e releitura conferidos na conta proprietária no celular, com oito testes aprovados.
 - [x] Corrigir nomes no estoque e refletir a mesma correção na cesta de compras; conferido na conta proprietária, preservando quantidades, preços e marcações.
 - [x] Deixar a divisão dos produtos discreta em um ícone de pasta com escolhas ao clicar; conferido no celular.
 - [x] Mostrar mensagem suave após o login por cerca de 8 segundos e continuar automaticamente; duração testada e tela conferida no celular com sessão válida (resposta de entrada simulada), sem repetição ao recarregar.
