@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Restringir a página Admin e suas ações à conta proprietária e verificar o acesso.
+- [x] Restringir a página Admin e suas ações à conta proprietária e verificar o acesso.
 - [x] Permitir somente à conta proprietária conceder e remover administradores, com proteção e verificação.
 - [x] Compartilhar Finanças e Feira entre celulares em tempo real (login + grupo)
 - [x] Enviar notas/recibos, IA lê e categoriza, tabela de despesas exportável
