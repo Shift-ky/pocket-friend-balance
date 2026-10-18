@@ -8,7 +8,7 @@ import { useSouAdmin } from '@/lib/use-admin';
 import { supabase } from '@/integrations/supabase/client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
 import { useAccess } from '@/lib/access-context';
-import { visibleEntries } from '@/lib/access';
+import { panelVisibility, visibleEntries } from '@/lib/access';
 import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
@@ -32,6 +32,7 @@ const dataBr = (d: string) => new Date(d.slice(0, 10) + 'T00:00').toLocaleDateSt
 function Painel() {
   const { grupo } = useGrupo();
   const access = useAccess();
+  const visible = panelVisibility(access);
   const { linhas: rawLanc, recarregar } = useTabelaAoVivo<LancamentoPainel>('lancamentos', grupo.id);
   const { linhas: moto, recarregar: recarregarMoto } = useTabelaAoVivo<DespesaMoto>('moto_despesas', grupo.id);
   const { linhas: compras } = useTabelaAoVivo<Compra>('feira_historico', grupo.id);
@@ -86,26 +87,26 @@ function Painel() {
       <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Minhas Finanças · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
       <div className="flex flex-wrap gap-2">{access.financas && <Button asChild><Link to="/financas"><Plus />Lançamento</Link></Button>}{access.moto && <Button asChild variant="outline"><Link to="/moto"><Fuel />Abastecimento</Link></Button>}</div>
     </header>
-    {(access.financas || access.moto) && <section aria-label="Saldos atuais" className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-6">
+    {visible.balances && <section aria-label="Saldos atuais" className={`mb-7 grid gap-3 ${visible.financialCards ? 'grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]' : 'grid-cols-1'}`}>
       {access.financas && <div className="min-w-0 rounded-lg bg-primary p-3 text-primary-foreground sm:p-4"><Wallet className="mb-3 h-5 w-5 opacity-80" /><p className="text-xs opacity-80">Dinheiro disponível</p><p className="mt-1 break-words font-display text-lg sm:text-xl">{brl(saldos.disponivel)}</p></div>}
       {access.financas && <div aria-label="Pendências do mês atual" className="min-w-0 rounded-lg border bg-debit-soft p-3 sm:p-4"><CalendarDays className="mb-3 h-5 w-5 text-debit" /><p className="text-xs text-muted-foreground">Pendências · mês atual</p><p className="mt-1 break-words font-display text-lg text-debit sm:text-xl">{brl(pendenciasDoMes(financialLanc))}</p></div>}
       {[{ nome: 'Dinheiro guardado', valor: saldos.guardado, Icon: PiggyBank, cor: 'text-saved' },{ nome: 'Alimentação', valor: saldos.alimentacao, Icon: ShoppingBasket, cor: 'text-credit' },{ nome: 'Refeição', valor: saldos.refeicao, Icon: Utensils, cor: 'text-debit' },{ nome: 'Gasolina disponível', valor: gasolina.saldo, Icon: Fuel, cor: 'text-saved' }].filter(item => item.nome === 'Gasolina disponível' ? access.moto : access.financas).map(({nome,valor,Icon,cor}) => <div key={nome} className="min-w-0 rounded-lg border bg-card p-3 sm:p-4"><Icon className={`mb-3 h-5 w-5 ${cor}`} /><p className="text-xs text-muted-foreground">{nome}</p><p className="mt-1 break-words font-display text-lg sm:text-xl">{brl(valor)}</p></div>)}
     </section>}
-    <section className="mb-7 border-y py-4" aria-label="Período de pesquisa">
+    {visible.period && <section className="mb-7 border-y py-4" aria-label="Período de pesquisa">
       <div className="flex flex-wrap items-end gap-3"><span className="mb-2 flex items-center gap-2 text-sm font-semibold"><CalendarDays className="h-4 w-4" />Período</span><label className="min-w-0 flex-1 text-xs text-muted-foreground sm:max-w-44">De<input aria-label="De" type="date" value={de} onChange={e => setDe(e.target.value)} className={`${campo} mt-1`} /></label><label className="min-w-0 flex-1 text-xs text-muted-foreground sm:max-w-44">Até<input aria-label="Até" type="date" value={ate} onChange={e => setAte(e.target.value)} className={`${campo} mt-1`} /></label>{(de || ate) && <Button variant="ghost" size="sm" onClick={() => {setDe('');setAte('');}}><RotateCcw />Todo o período</Button>}</div>
       {de && ate && de > ate && <p role="alert" className="mt-2 text-sm text-debit">A data final deve ser igual ou posterior à inicial.</p>}
-    </section>
-    {(access.financas || access.moto) && <div className="mb-8">
+    </section>}
+    {visible.financialSummary && <div className="mb-8">
       <section><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Entradas e saídas</h2><span className="text-xs text-muted-foreground">No período</span></div>
         <div className="mb-5 grid grid-cols-2 gap-3"><div className="rounded-lg bg-credit-soft p-3"><p className="flex items-center gap-2 text-xs text-credit"><ArrowDownLeft className="h-4 w-4" />Entradas</p><p className="mt-1 break-words font-display text-xl text-credit">{brl(entradas)}</p></div><div className="rounded-lg bg-debit-soft p-3"><p className="flex items-center gap-2 text-xs text-debit"><ArrowUpRight className="h-4 w-4" />Saídas pagas</p><p className="mt-1 break-words font-display text-xl text-debit">{brl(saidas)}</p></div></div>
         {grafico.length ? <div className="flex h-40 items-end gap-3 border-b pb-2">{grafico.map(g => <div key={g.m} className="min-w-0 flex-1"><div className="flex h-28 items-end justify-center gap-1"><div className="w-1/3 rounded-t bg-credit" style={{height:`${g.e/maior*100}%`}} title={`Entradas: ${brl(g.e)}`} /><div className="w-1/3 rounded-t bg-debit" style={{height:`${g.s/maior*100}%`}} title={`Saídas pagas: ${brl(g.s)}`} /></div><p className="mt-2 text-center text-xs text-muted-foreground">{new Date(g.m+'-01T00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</p></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>}
       </section>
     </div>}
-    <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-3" aria-label="Feira, estoque e moto">
+    {visible.moduleSummary && <section className="mb-8 grid gap-6 border-y py-5 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]" aria-label="Feira, estoque e moto">
       {access.feira && <div><p className="mb-2 flex items-center gap-2 font-semibold"><ShoppingBasket className="h-4 w-4 text-credit" />Minha feira</p><p className="font-display text-xl">{brl(feira.reduce((s,i) => s+Number(i.qtd)*Number(i.preco),0))}</p><p className="mt-1 text-xs text-muted-foreground">{feira.length} itens · {feira.filter(i => i.pego).length} no carrinho</p><Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/feira">Abrir feira →</Link></Button></div>}
       {access.estoque && <div><p className="mb-2 flex items-center gap-2 font-semibold"><Package className="h-4 w-4 text-saved" />Estoque</p><p className="font-display text-xl">{estoque.length} produtos</p><p className="mt-1 text-xs text-muted-foreground">{faltantes.length} abaixo do padrão</p>{faltantes.length > 0 && <p className="mt-1 break-words text-xs text-debit">{faltantes.map(p => `${p.nome} (${Number(p.padrao)-Number(p.qtd)})`).join(' · ')}</p>}<Button asChild variant="link" className="mt-1 h-8 px-0"><Link to="/estoque">Abrir estoque →</Link></Button></div>}
       {access.moto && <div><p className="mb-2 flex items-center gap-2 font-semibold"><Fuel className="h-4 w-4 text-saved" />Gasolina da moto</p><dl className="space-y-2 text-sm"><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Dinheiro destinado</dt><dd className="font-semibold">{brl(gasolina.reservado)}</dd></div><div className="flex justify-between gap-2"><dt className="text-muted-foreground">Gasto com gasolina</dt><dd className="font-semibold text-debit">{brl(gasolina.gasto)}</dd></div></dl></div>}
-    </section>
+    </section>}
       {access.financas && <section className="mb-8 min-w-0">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span>
           <Button variant="outline" size="sm" aria-expanded={mostrarPendentes} aria-controls="contas-pendentes-painel" onClick={() => setMostrarPendentes(mostrar => !mostrar)}>{mostrarPendentes ? <EyeOff /> : <Eye />}{mostrarPendentes ? 'Ocultar pendências' : 'Mostrar pendências'}</Button>
@@ -118,7 +119,7 @@ function Painel() {
           </Fragment>)}
         </ul>}
       </section>}
-    <section>
+    {visible.history && <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Históricos</h2>
         <Button variant="outline" size="sm" aria-expanded={mostrarHistorico} aria-controls="historicos-painel" onClick={() => setMostrarHistorico(mostrar => !mostrar)}>
@@ -134,6 +135,6 @@ function Painel() {
         {activeTab === 'compras' && <>{!compras.filter(c => noPeriodo(c.created_at)).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma compra salva neste período.</li>}{compras.filter(c => noPeriodo(c.created_at)).sort((a,b) => b.created_at.localeCompare(a.created_at)).map(c => <li key={c.id} className="py-4"><details><summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Compra de {dataBr(c.created_at)}</p><p className={`text-xs ${c.pagamento && c.pagamento!=='nenhum'?'text-credit':'text-muted-foreground'}`}>{c.pagamento && c.pagamento!=='nenhum'?`Finalizada · ${contas[c.pagamento]}`:'Não finalizada · Sem pagamento lançado'} · {c.itens.length} itens</p></div><span className="text-sm font-semibold">{brl(Number(c.total))}</span></summary><ul className="mt-3 space-y-2 border-l pl-4">{c.itens.map((i,n) => <li key={n} className="flex justify-between gap-3 text-sm"><span className="break-words">{i.qtd} × {i.nome}</span><span className="shrink-0">{brl(i.qtd*i.preco)}</span></li>)}</ul><Button asChild variant="link" className="mt-2 px-0"><Link to="/feira">Abrir compra na Feira →</Link></Button></details></li>)}</>}
       </ul>
       </div>}
-    </section>
+    </section>}
   </main>;
 }
