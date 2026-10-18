@@ -27,7 +27,7 @@
   --color-saved-soft: var(--saved-soft);
 }
 
-:root {
+:root, [data-theme="original"] {
   --radius: 1rem;
   --background: oklch(0.97 0.012 85);
   --foreground: oklch(0.22 0.02 60);
