@@ -14,14 +14,14 @@ describe('Parcelamento em dinheiro', () => {
     expect(parcelarLancamento({ ...base, data: '2027-01-31' }, 3).map(p => p.data)).toEqual(['2027-01-31', '2027-02-28', '2027-03-31']);
   });
   it('mantém uma conta já paga ao lançar sem parcelamento', () => {
-    expect(parcelarLancamento({ ...base, pago: true }, 1)[0].pago).toBe(true);
+    expect(parcelarLancamento({ ...base, pago: true }, 1)[0]?.pago).toBe(true);
   });
   it('aplica a escolha já pago a todas as parcelas', () => {
     expect(parcelarLancamento({ ...base, pago: true }, 3).map(p => p.pago)).toEqual([true, true, true]);
   });
   it('mantém contas pendentes de alimentação e refeição', () => {
     for (const conta of ['alimentacao', 'refeicao']) {
-      expect(parcelarLancamento({ ...base, conta, pago: false }, 1)[0].pago).toBe(false);
+      expect(parcelarLancamento({ ...base, conta, pago: false }, 1)[0]?.pago).toBe(false);
     }
   });
   it('mantém vales, créditos e aportes para gasolina em lançamento único', () => {
