@@ -346,6 +346,27 @@ export type Database = {
           },
         ]
       }
+      offline_operations: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          payload: Json
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_access: {
         Row: {
           estoque: boolean
@@ -434,6 +455,10 @@ export type Database = {
       ordenar_estoque: {
         Args: { _grupo_id: string; _ids: string[] }
         Returns: undefined
+      }
+      sync_offline_operation: {
+        Args: { _commands: Json; _grupo_id: string; _id: string }
+        Returns: Json
       }
     }
     Enums: {

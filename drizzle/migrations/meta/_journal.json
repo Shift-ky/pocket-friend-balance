@@ -120,6 +120,13 @@
       "when": 1792333764005,
       "tag": "0016_stock_name_correction",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792405092975,
+      "tag": "0017_offline_sync_operations",
+      "breakpoints": true
     }
   ]
 }
