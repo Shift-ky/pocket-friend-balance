@@ -7,12 +7,13 @@ import { meusAcessos } from '@/lib/admin.functions';
 import { AccessContext } from '@/lib/access-context';
 import { MODULES, type Module } from '@/lib/access';
 import { supabase } from '@/integrations/supabase/client';
+import { cachedValue } from '@/lib/offline-store';
 
 export function AccessProvider({ children }: { children: ReactNode }) {
   const { session } = useGrupo();
   const qc = useQueryClient();
   const read = useServerFn(meusAcessos);
-  const { data, isError } = useQuery({ queryKey: ['acessos', session.user.id], queryFn: () => read(), refetchInterval: 3000, staleTime: 0 });
+  const { data, isError } = useQuery({ queryKey: ['acessos', session.user.id], networkMode: 'always', queryFn: () => cachedValue(session.user.id, 'acessos', () => read()), refetchInterval: 3000, staleTime: 0 });
   useEffect(() => {
     const channel = supabase.channel(`access-${session.user.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'user_access', filter: `user_id=eq.${session.user.id}` }, () => { void qc.invalidateQueries({ queryKey: ['acessos', session.user.id] }); }).subscribe();
     return () => { void supabase.removeChannel(channel); };

@@ -167,7 +167,7 @@ function builder(table: string, calls: Call[] = []): unknown {
 export const supabase: typeof remote = new Proxy(remote, { get(target, prop) {
   if (prop === 'from') return (table: string) => scope && OFFLINE_TABLES.includes(table as typeof OFFLINE_TABLES[number]) ? builder(table) : target.from(table as typeof OFFLINE_TABLES[number]);
   if (prop === 'rpc') return (name: string, args: Record<string, unknown>) => {
-    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args._ids as string[] }]).then(() => ({ data: null, error: null }));
+    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null }));
     return target.rpc(name as 'ordenar_estoque', args as never);
   };
   const value = Reflect.get(target, prop); return typeof value === 'function' ? value.bind(target) : value;

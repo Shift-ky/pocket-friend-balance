@@ -1,4 +1,4 @@
-export type Row = Record<string, unknown>;
+export type Row = { id?: unknown; grupo_id?: unknown; created_at?: unknown } & Record<string, unknown>;
 export type Command = { table: string; action: 'insert' | 'update' | 'delete' | 'order'; rows?: Row[]; ids?: string[]; patch?: Row; before?: Row[] };
 export type Operation = { id: string; commands: Command[]; error?: string };
 export type LocalState = { tables: Record<string, Row[]>; queue: Operation[] };
