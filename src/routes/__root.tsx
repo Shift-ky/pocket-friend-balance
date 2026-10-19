@@ -21,6 +21,8 @@ import { AppearanceMenu, AppearanceProvider } from "@/components/appearance-prov
 import { useAccess } from "@/lib/access-context";
 import { recoverModuleLoad, isModuleLoadError } from '@/lib/module-recovery';
 import { Button } from '@/components/ui/button';
+import { OfflineProvider } from '@/components/offline-provider';
+import { registerOfflineShell } from '@/lib/pwa';
 
 function NotFoundComponent() {
   return (
@@ -105,6 +107,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: 'manifest', href: '/manifest.webmanifest' },
+      { rel: 'apple-touch-icon', href: '/app-icon-192.png' },
     ],
   }),
   shellComponent: RootShell,
@@ -138,6 +142,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
+    void registerOfflineShell();
     const onPreloadError = (event: Event) => {
       const payload = (event as Event & { payload?: unknown }).payload;
       if (recoverModuleLoad(payload)) event.preventDefault();
@@ -149,7 +154,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <GrupoGate>
-        <AppearanceProvider><AccessProvider><Nav /><AccessSurface><Outlet /></AccessSurface></AccessProvider></AppearanceProvider>
+        <OfflineProvider><AppearanceProvider><AccessProvider><Nav /><AccessSurface><Outlet /></AccessSurface></AccessProvider></AppearanceProvider></OfflineProvider>
       </GrupoGate>
     </QueryClientProvider>
   );

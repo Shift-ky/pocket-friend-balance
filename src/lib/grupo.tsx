@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/offline-client";
+import { readIdentity, rememberIdentity, forgetIdentity } from '@/lib/offline-store';
 import { useAccess } from "@/lib/access-context";
 import { moduleForTable, visibleEntries } from "@/lib/access";
 import { Button } from '@/components/ui/button';
@@ -156,15 +157,33 @@ export function GrupoGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (window.location.pathname === "/reset-password" || window.location.hash.includes("type=recovery")) setRecuperando(true);
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((e, s) => { if (e === "PASSWORD_RECOVERY") setRecuperando(true); setSession(s); });
-    return () => data.subscription.unsubscribe();
+    const restore = async () => {
+      if (!navigator.onLine) {
+        const identity = await readIdentity();
+        if (identity) {
+          setGrupo(identity.grupo);
+          setSession({ user: identity.user, access_token: '', refresh_token: '', expires_in: 0, token_type: 'bearer' });
+          return;
+        }
+      }
+      const { data } = await supabase.auth.getSession(); setSession(data.session);
+    };
+    void restore();
+    window.addEventListener('online', restore);
+    const { data } = supabase.auth.onAuthStateChange((e, s) => { if (e === "PASSWORD_RECOVERY") setRecuperando(true); if (navigator.onLine || s || e === 'SIGNED_OUT') setSession(s); });
+    return () => { data.subscription.unsubscribe(); window.removeEventListener('online', restore); };
   }, []);
 
   const carregarGrupo = useCallback(async () => {
+    if (!navigator.onLine) {
+      const identity = await readIdentity();
+      if (identity?.user.id === session?.user.id) setGrupo(identity.grupo);
+      return;
+    }
     const { data } = await supabase.from("grupos").select("id, nome, codigo").order("created_at").limit(1).maybeSingle();
     setGrupo(data ?? null);
-  }, []);
+    if (data && session) await rememberIdentity({ user: session.user, grupo: data });
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (session) carregarGrupo(); else setGrupo(undefined);
@@ -178,7 +197,7 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   if (!grupo) return <EscolherGrupo aoEntrar={carregarGrupo} />;
 
   return (
-    <GrupoCtx.Provider value={{ session, grupo, sair: async () => { await supabase.auth.signOut(); } }}>
+    <GrupoCtx.Provider value={{ session, grupo, sair: async () => { await forgetIdentity(); await supabase.auth.signOut({ scope: 'local' }); } }}>
       {children}
     </GrupoCtx.Provider>
   );
@@ -196,11 +215,12 @@ export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "desp
 
   useEffect(() => {
     recarregar();
+    window.addEventListener('offline-data', recarregar);
     const canal = supabase
       .channel(`${tabela}-${grupoId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: tabela, filter: `grupo_id=eq.${grupoId}` }, () => recarregar())
       .subscribe();
-    return () => { supabase.removeChannel(canal); };
+    return () => { window.removeEventListener('offline-data', recarregar); supabase.removeChannel(canal); };
   }, [tabela, grupoId, recarregar]);
 
   return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string; origem_modulo?: string })[], access) : linhas, recarregar };
