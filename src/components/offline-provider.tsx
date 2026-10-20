@@ -2,7 +2,7 @@ import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react
 import { useQueryClient } from '@tanstack/react-query';
 import { CloudCheck, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
 import { useGrupo } from '@/lib/grupo';
-import { closeOffline, discardPending, offlineStatus, openOffline, refreshOffline, subscribeOffline, syncOffline } from '@/lib/offline-client';
+import { closeOffline, discardPending, offlineStatus, openOffline, refreshOffline, retryOffline, subscribeOffline, syncOffline } from '@/lib/offline-client';
 import { Button } from '@/components/ui/button';
 
 export function OfflineProvider({ children }: { children: ReactNode }) {
@@ -36,9 +36,9 @@ function OfflineStatus() {
   const state = useSyncExternalStore(subscribeOffline, offlineStatus, offlineStatus);
   return <div role="status" className="border-b bg-card px-5 py-2 text-xs text-muted-foreground"><div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2">
     {state.online ? <CloudCheck className="h-4 w-4 text-credit" /> : <CloudOff className="h-4 w-4" />}
-    <span>{state.syncing ? 'Sincronizando…' : !state.online ? 'Sem internet · dados neste aparelho' : state.pending ? 'Alterações aguardando sincronização' : 'Sincronizado'}</span>
+    <span>{state.syncing ? 'Sincronizando…' : !state.online ? 'Sem internet · dados neste aparelho' : state.error ? 'Atualização pendente' : state.pending ? 'Alterações aguardando sincronização' : 'Sincronizado'}</span>
     {state.pending > 0 && <span>· {state.pending} pendente(s)</span>}
-    {state.online && state.pending > 0 && <Button variant="ghost" size="icon" className="h-7 w-7" disabled={state.syncing} aria-label="Tentar sincronizar" title="Tentar sincronizar" onClick={() => { void syncOffline(); }}><RefreshCw className="h-4 w-4" /></Button>}
-    {state.error && <div className="flex w-full flex-wrap items-center gap-2 text-debit"><span>{state.error}</span><Button variant="outline" size="sm" disabled={state.syncing || !state.online} onClick={() => { if (confirm('Descartar somente a primeira alteração pendente? Ela não será enviada.')) void discardPending(); }}><Trash2 />Descartar alteração</Button></div>}
+    {state.online && (state.pending > 0 || state.error) && <Button variant="ghost" size="icon" className="h-7 w-7" disabled={state.syncing} aria-label="Tentar sincronizar" title="Tentar sincronizar" onClick={() => { void retryOffline(); }}><RefreshCw className="h-4 w-4" /></Button>}
+    {state.error && <div className="flex w-full flex-wrap items-center gap-2 text-debit"><span>{state.error}</span>{state.pending > 0 && <Button variant="outline" size="sm" disabled={state.syncing || !state.online} onClick={() => { if (confirm('Descartar somente a primeira alteração pendente? Ela não será enviada.')) void discardPending(); }}><Trash2 />Descartar alteração</Button>}</div>}
   </div></div>;
 }
