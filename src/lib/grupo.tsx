@@ -177,7 +177,7 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   const carregarGrupo = useCallback(async () => {
     if (!navigator.onLine) {
       const identity = await readIdentity();
-      if (identity?.user.id === session?.user.id) setGrupo(identity.grupo);
+      if (identity && identity.user.id === session?.user.id) setGrupo(identity.grupo);
       return;
     }
     const { data } = await supabase.from("grupos").select("id, nome, codigo").order("created_at").limit(1).maybeSingle();

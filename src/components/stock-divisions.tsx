@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderPlus, Pencil, Trash2, X, Check, Settings2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/offline-client';
 import { Button } from '@/components/ui/button';
 import type { DivisaoEstoque } from '@/lib/divisoes-estoque';
 

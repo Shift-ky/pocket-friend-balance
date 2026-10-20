@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ from: vi.fn(), insert: vi.fn(), update: vi.fn(), atuais: [] as { id: string; nome: string; qtd: number }[] }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: mocks.from } }));
+vi.mock('@/lib/offline-client', () => ({ supabase: { from: mocks.from } }));
 import { entrarNoEstoque } from '@/lib/estoque';
 
 beforeEach(() => {

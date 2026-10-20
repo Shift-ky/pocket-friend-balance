@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, offlineTransaction } from "@/lib/offline-client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
 import { useAccess } from "@/lib/access-context";
@@ -66,21 +66,30 @@ function Feira() {
   const [editando, setEditando] = useState<{ id: string; pagamento: Pagamento; itens: { nome: string; qtd: string; preco: string }[] } | null>(null);
 
   const [pagamento, setPagamento] = useState<Pagamento>("nenhum");
+  const [salvando, setSalvando] = useState(false);
   async function finalizar() {
+    if (salvando) return;
     if (pagamento !== "nenhum" && !access.financas) return alert("Sem acesso às Finanças, salve sem lançamento financeiro.");
     if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens ao estoque e limpar a lista?")) return;
     const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
-    let lancamento_id: string | null = null;
-    if (pagamento !== "nenhum" && total > 0) {
-      const { data, error: financeError } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
-      if (financeError || !data) return alert("Não foi possível lançar o pagamento.");
-      lancamento_id = data.id;
-    }
-    const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
-    if (error) return alert("Não foi possível salvar.");
-
-    await excluir(itens.map((i) => i.id));
-    recarregarHist();
+    setSalvando(true);
+    try {
+      await offlineTransaction(async () => {
+        let lancamento_id: string | null = null;
+        if (pagamento !== "nenhum" && total > 0) {
+          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
+          if (error || !data) throw new Error('Não foi possível lançar o pagamento.');
+          lancamento_id = data.id;
+        }
+        // Delete the snapshot before stock triggers run; newly generated replacement items survive.
+        const { error: deleteError } = await supabase.from('feira_itens').delete().in('id', itens.map(i => i.id));
+        if (deleteError) throw deleteError;
+        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
+        if (error) throw error;
+      });
+      await recarregar(); await recarregarHist();
+    } catch { alert('Não foi possível guardar a compra. A lista foi mantida.'); }
+    finally { setSalvando(false); }
   }
   async function recuperar(h: Compra) {
     let precos: Map<string, number>;
@@ -190,7 +199,7 @@ function Feira() {
           <p className="text-xs text-muted-foreground">
             {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."}
           </p>
-          <button onClick={finalizar} className="w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90">
+          <button disabled={salvando} onClick={finalizar} className="w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50">
             ✔ Finalizar compra e salvar no histórico
           </button>
         </div>

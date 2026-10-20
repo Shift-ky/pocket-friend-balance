@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/offline-client";
 import { Button } from "@/components/ui/button";
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
