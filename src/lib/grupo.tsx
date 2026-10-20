@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/lib/offline-client";
+import { supabase, offlineStatus } from "@/lib/offline-client";
 import { readIdentity, rememberIdentity, forgetIdentity } from '@/lib/offline-store';
 import { useAccess } from "@/lib/access-context";
 import { moduleForTable, visibleEntries } from "@/lib/access";
@@ -197,7 +197,10 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   if (!grupo) return <EscolherGrupo aoEntrar={carregarGrupo} />;
 
   return (
-    <GrupoCtx.Provider value={{ session, grupo, sair: async () => { await forgetIdentity(); await supabase.auth.signOut({ scope: 'local' }); } }}>
+    <GrupoCtx.Provider value={{ session, grupo, sair: async () => {
+      if (offlineStatus().pending && !confirm('Existem alterações ainda não enviadas. Ao sair, elas ficarão guardadas para sincronizar quando você entrar novamente nesta mesma conta. Sair?')) return;
+      await forgetIdentity(); await supabase.auth.signOut({ scope: 'local' });
+    } }}>
       {children}
     </GrupoCtx.Provider>
   );

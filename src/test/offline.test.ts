@@ -9,6 +9,7 @@ vi.mock('@/lib/offline-store', () => ({
   saveState: async (u: string, g: string, value: LocalState) => { mocks.data.set(`${u}:${g}`, structuredClone(value)); },
 }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {
+  auth: { getSession: async () => ({ data: { session: { user: { id: 'user' } } } }) },
   rpc: mocks.rpc,
   from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }) }),
 } }));
@@ -45,7 +46,7 @@ describe('durable offline changes', () => {
     await openOffline('user', 'group');
     await offlineTransaction(async () => {
       const { data } = await supabase.from('lancamentos').insert({ grupo_id: 'group', tipo: 'debito', descricao: 'Feira', valor: 10, pago: true }).select('id').single();
-      await supabase.from('feira_historico').insert({ grupo_id: 'group', total: 10, pagamento: 'dinheiro', lancamento_id: data?.id });
+      await supabase.from('feira_historico').insert({ grupo_id: 'group', total: 10, pagamento: 'dinheiro', lancamento_id: data?.id ?? null });
     });
     const queue = mocks.data.get('user:group')?.queue;
     expect(queue).toHaveLength(1); expect(queue?.[0]?.commands).toHaveLength(2);

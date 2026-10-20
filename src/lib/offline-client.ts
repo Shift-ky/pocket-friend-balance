@@ -66,6 +66,8 @@ export async function syncOffline() {
       const op = s.state.queue[0];
       if (!op) break;
       if (op.blocked) break;
+      const { data: auth } = await remote.auth.getSession();
+      if (auth.session?.user.id !== s.user) { readError = 'Entre novamente na mesma conta para sincronizar.'; break; }
       const { error } = await remote.rpc('sync_offline_operation', { _id: op.id, _grupo_id: s.group, _commands: op.commands as never });
       if (scope !== s) break;
       if (error) {
