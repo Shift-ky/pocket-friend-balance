@@ -6,6 +6,7 @@ type Scope = { user: string; group: string; state: LocalState };
 let scope: Scope | undefined;
 let serial: Promise<unknown> = Promise.resolve();
 let syncing: Promise<void> | undefined;
+let refreshing: Promise<void> | undefined;
 let batch: Command[] | undefined;
 type Status = { online: boolean; pending: number; syncing: boolean; error: string };
 let status: Status = { online: true, pending: 0, syncing: false, error: '' };
@@ -28,7 +29,7 @@ export async function openOffline(user: string, group: string) {
 export function closeOffline() { scope = undefined; emit(); }
 async function persist(s: Scope) { await saveState(s.user, s.group, s.state); }
 
-export async function refreshOffline() {
+async function refreshData() {
   const s = scope;
   if (!s || !navigator.onLine) return;
   const results = await Promise.all(OFFLINE_TABLES.map(async table => {
@@ -44,12 +45,18 @@ export async function refreshOffline() {
   });
   emit();
 }
+export async function refreshOffline() {
+  if (refreshing) return refreshing;
+  refreshing = refreshData().finally(() => { refreshing = undefined; });
+  return refreshing;
+}
 
 export async function syncOffline() {
   if (syncing) return syncing;
   if (!scope || !navigator.onLine) { emit(); return; }
   const s = scope;
   const work = async () => {
+    await refreshOffline();
     while (scope === s && navigator.onLine) {
       const op = s.state.queue[0];
       if (!op) break;
@@ -167,7 +174,7 @@ function builder(table: string, calls: Call[] = []): unknown {
 export const supabase: typeof remote = new Proxy(remote, { get(target, prop) {
   if (prop === 'from') return (table: string) => scope && OFFLINE_TABLES.includes(table as typeof OFFLINE_TABLES[number]) ? builder(table) : target.from(table as typeof OFFLINE_TABLES[number]);
   if (prop === 'rpc') return (name: string, args: Record<string, unknown>) => {
-    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null }));
+    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null })).catch(() => ({ data: null, error: { message: 'Não foi possível guardar a ordem.' } }));
     return target.rpc(name as 'ordenar_estoque', args as never);
   };
   const value = Reflect.get(target, prop); return typeof value === 'function' ? value.bind(target) : value;

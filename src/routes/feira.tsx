@@ -106,31 +106,36 @@ function Feira() {
     setEditando({ id: h.id, pagamento: (h.pagamento ?? "nenhum") as Pagamento, itens: h.itens.map((i) => ({ nome: i.nome, qtd: String(i.qtd), preco: String(i.preco) })) });
   }
   async function salvarEdicao(h: Compra) {
-    if (!editando) return;
+    if (!editando || salvando) return;
     if (!access.financas && (h.pagamento !== "nenhum" || editando.pagamento !== "nenhum")) return alert("Esta edição precisa de acesso às Finanças.");
     const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
     const novos = editando.itens.filter((i) => i.nome.trim()).map((i) => ({ nome: i.nome.trim(), qtd: num(i.qtd), preco: num(i.preco) }));
     const novoTotal = novos.reduce((s, i) => s + i.qtd * i.preco, 0);
-    let lancamento_id = h.lancamento_id ?? null;
-    if (editando.pagamento !== "nenhum" && novoTotal > 0) {
-      if (lancamento_id) {
-        const { error: financeError } = await supabase.from("lancamentos").update({ valor: novoTotal, conta: editando.pagamento }).eq("id", lancamento_id);
-        if (financeError) return alert("Não foi possível atualizar o pagamento.");
-      } else {
-        const { data, error: financeError } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: novoTotal, conta: editando.pagamento, pago: true, data: h.created_at.slice(0, 10) }).select("id").single();
-        if (financeError || !data) return alert("Não foi possível lançar o pagamento.");
-      lancamento_id = data.id;
-      }
-    } else if (lancamento_id) {
-      const { error, count } = await supabase.from("lancamentos").delete({ count: "exact" }).eq("id", lancamento_id);
-      if (error || !count) return alert("Só o administrador pode tirar o lançamento desta compra das Finanças.");
-      lancamento_id = null;
-    }
-    const { error } = await supabase.from("feira_historico").update({ itens: novos, total: novoTotal, pagamento: editando.pagamento, lancamento_id }).eq("id", h.id);
-    if (error) return alert("Não foi possível salvar.");
-
-    setEditando(null);
-    recarregarHist();
+    const escolhido = editando.pagamento;
+    setSalvando(true);
+    try {
+      await offlineTransaction(async () => {
+        let lancamento_id = h.lancamento_id ?? null;
+        if (escolhido !== 'nenhum' && novoTotal > 0) {
+          if (lancamento_id) {
+            const { error } = await supabase.from('lancamentos').update({ valor: novoTotal, conta: escolhido }).eq('id', lancamento_id);
+            if (error) throw error;
+          } else {
+            const { data, error } = await supabase.from('lancamentos').insert({ grupo_id: grupo.id, origem_modulo: 'feira', tipo: 'debito', descricao: 'Compra da feira', valor: novoTotal, conta: escolhido, pago: true, data: h.created_at.slice(0, 10) }).select('id').single();
+            if (error || !data) throw new Error('Não foi possível lançar o pagamento.');
+            lancamento_id = data.id;
+          }
+        } else if (lancamento_id) {
+          const { error, count } = await supabase.from('lancamentos').delete({ count: 'exact' }).eq('id', lancamento_id);
+          if (error || !count) throw new Error('Não foi possível remover o pagamento.');
+          lancamento_id = null;
+        }
+        const { error } = await supabase.from('feira_historico').update({ itens: novos, total: novoTotal, pagamento: escolhido, lancamento_id }).eq('id', h.id);
+        if (error) throw error;
+      });
+      setEditando(null); await recarregarHist();
+    } catch { alert('Não foi possível guardar a edição.'); }
+    finally { setSalvando(false); }
   }
 
   return (
