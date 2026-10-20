@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/offline-client';
 
 type CompraPreco = { created_at: string; pagamento?: string; itens: unknown };
 const chave = (nome: string) => nome.trim().toLowerCase();

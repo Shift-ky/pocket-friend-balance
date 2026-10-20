@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/offline-client";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
 import { useAccess } from "@/lib/access-context";

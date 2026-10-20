@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EditarLinha } from '@/components/finance-editor';
 import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
 import { useSouAdmin } from '@/lib/use-admin';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/offline-client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
 import { useAccess } from '@/lib/access-context';
 import { panelVisibility, visibleEntries } from '@/lib/access';

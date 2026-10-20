@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/offline-client";
 import { ultimoPrecoFeira } from "@/lib/precos-feira";
 
 const chave = (s: string) => s.trim().toLowerCase();

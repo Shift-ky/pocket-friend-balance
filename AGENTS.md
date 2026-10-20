@@ -26,3 +26,6 @@
 - Manual stock registration passes an optional division through the shared stock insertion helper; existing products retain their division unless a new one is explicitly selected.
 - Signed-out login styling is scoped to its own semantic tokens and bundled photography; preserve the existing authentication handlers and keep personal appearance isolated to signed-in accounts.
 - The post-login welcome is triggered only by successful explicit password sign-in, not session restoration or token refresh; its isolated timer keeps authentication and group loading unchanged.
+- Offline group CRUD goes through a separate IndexedDB journal partitioned by authenticated user and group; the generated client stays intact, and a security-invoker RPC atomically validates current RLS, checks changed-field conflicts and records idempotent operation receipts.
+- Paid grocery finalization journals financial entry, snapshot deletion and purchase history as one transaction; database triggers remain the sole authoritative stock synchronization.
+- Offline shell caching uses generateSW with NetworkFirst navigations and a single preview-safe registrar; auth, account administration and image uploads remain online-only, and cached access is presentation-only, never server authorization.

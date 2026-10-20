@@ -7,6 +7,7 @@ import { TEMAS, CORES_CORINGA, coresValidas, visibilidadeValida, textoDoBotao, t
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cachedValue } from '@/lib/offline-store';
 
 type Aparencia = { theme: Tema; background_path: string | null; imagem: string | null; background_visibility: number; custom_enabled: boolean; custom_colors: CoresCoringa };
 
@@ -14,7 +15,8 @@ function useAparencia() {
   const { session } = useGrupo();
   return useQuery({
     queryKey: ['aparencia', session.user.id],
-    queryFn: async (): Promise<Aparencia> => {
+    networkMode: 'always',
+    queryFn: () => cachedValue(session.user.id, 'aparencia', async (): Promise<Aparencia> => {
       const { data, error } = await supabase.from('user_appearance').select('theme, background_path, background_visibility, custom_enabled, custom_colors').eq('user_id', session.user.id).maybeSingle();
       if (error) throw error;
       let imagem: string | null = null;
@@ -24,7 +26,7 @@ function useAparencia() {
         imagem = resultado.data.signedUrl;
       }
       return { theme: temaValido(data?.theme), background_path: data?.background_path ?? null, imagem, background_visibility: visibilidadeValida(data?.background_visibility), custom_enabled: data?.custom_enabled ?? false, custom_colors: coresValidas(data?.custom_colors) };
-    },
+    }),
     staleTime: 50 * 60 * 1000,
     refetchInterval: 50 * 60 * 1000,
   });

@@ -6,6 +6,8 @@ type Scope = { user: string; group: string; state: LocalState };
 let scope: Scope | undefined;
 let serial: Promise<unknown> = Promise.resolve();
 let syncing: Promise<void> | undefined;
+let refreshing: Promise<void> | undefined;
+let readError = '';
 let batch: Command[] | undefined;
 type Status = { online: boolean; pending: number; syncing: boolean; error: string };
 let status: Status = { online: true, pending: 0, syncing: false, error: '' };
@@ -13,7 +15,7 @@ const listeners = new Set<() => void>();
 export const subscribeOffline = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
 export const offlineStatus = () => status;
 function emit() {
-  status = { online: navigator.onLine, pending: scope?.state.queue.length ?? 0, syncing: !!syncing, error: scope?.state.queue[0]?.error ?? '' };
+  status = { online: navigator.onLine, pending: scope?.state.queue.length ?? 0, syncing: !!syncing, error: scope?.state.queue[0]?.error || readError };
   listeners.forEach(fn => fn());
   window.dispatchEvent(new Event('offline-data'));
 }
@@ -21,14 +23,17 @@ function exclusive<T>(fn: () => Promise<T>): Promise<T> {
   const run = serial.then(fn, fn); serial = run.catch(() => undefined); return run;
 }
 export async function openOffline(user: string, group: string) {
+  if (syncing) await syncing;
+  if (refreshing) await refreshing;
+  readError = '';
   await exclusive(async () => { scope = { user, group, state: await loadState(user, group) }; });
   emit();
   if (navigator.onLine) await syncOffline();
 }
-export function closeOffline() { scope = undefined; emit(); }
+export function closeOffline() { scope = undefined; readError = ''; emit(); }
 async function persist(s: Scope) { await saveState(s.user, s.group, s.state); }
 
-export async function refreshOffline() {
+async function refreshData() {
   const s = scope;
   if (!s || !navigator.onLine) return;
   const results = await Promise.all(OFFLINE_TABLES.map(async table => {
@@ -37,6 +42,7 @@ export async function refreshOffline() {
   }));
   await exclusive(async () => {
     if (scope !== s) return;
+    readError = results.some(r => r.error) ? 'Alguns dados não foram atualizados. Aguardando conexão.' : '';
     for (const r of results) if (!r.error) s.state.tables[r.table] = r.data as unknown as Row[];
     // Pending writes remain local until the server acknowledges their transaction.
     for (const operation of s.state.queue) for (const command of operation.commands) applyCommand(s.state.tables, command);
@@ -44,19 +50,32 @@ export async function refreshOffline() {
   });
   emit();
 }
+export async function refreshOffline() {
+  if (refreshing) return refreshing;
+  refreshing = refreshData().finally(() => { refreshing = undefined; });
+  return refreshing;
+}
 
 export async function syncOffline() {
   if (syncing) return syncing;
   if (!scope || !navigator.onLine) { emit(); return; }
   const s = scope;
   const work = async () => {
+    await refreshOffline();
     while (scope === s && navigator.onLine) {
       const op = s.state.queue[0];
       if (!op) break;
+      if (op.blocked) break;
+      const { data: auth } = await remote.auth.getSession();
+      if (auth.session?.user.id !== s.user) { readError = 'Entre novamente na mesma conta para sincronizar.'; break; }
       const { error } = await remote.rpc('sync_offline_operation', { _id: op.id, _grupo_id: s.group, _commands: op.commands as never });
       if (scope !== s) break;
       if (error) {
-        await exclusive(async () => { op.error = navigator.onLine ? error.message : ''; await persist(s); });
+        await exclusive(async () => {
+          op.error = navigator.onLine ? error.message : '';
+          op.blocked = ['P0001', '42501', '23505', '23514', '23503', '22023'].includes(error.code);
+          await persist(s);
+        });
         break;
       }
       await exclusive(async () => { s.state.queue = s.state.queue.filter(o => o.id !== op.id); await persist(s); });
@@ -65,6 +84,11 @@ export async function syncOffline() {
   };
   syncing = work().finally(() => { syncing = undefined; emit(); });
   emit(); return syncing;
+}
+
+export async function retryOffline() {
+  if (scope?.state.queue[0]) scope.state.queue[0].blocked = false;
+  await syncOffline();
 }
 
 export async function discardPending() {
@@ -113,6 +137,8 @@ async function execute(table: string, calls: Call[]) {
   try {
     const s = scope;
     if (!s) throw new Error('Dados locais indisponíveis.');
+    const supported = ['eq', 'neq', 'in', 'insert', 'update', 'delete', 'select', 'order', 'limit', 'single', 'maybeSingle'];
+    if (calls.some(c => !supported.includes(c.method))) throw new Error('Esta ação precisa de uma conexão com a internet.');
     const filters = calls.filter(c => ['eq', 'neq', 'in'].includes(c.method));
     const mutation = calls.find(c => ['insert', 'update', 'delete'].includes(c.method));
     const select = calls.find(c => c.method === 'select');
@@ -167,7 +193,7 @@ function builder(table: string, calls: Call[] = []): unknown {
 export const supabase: typeof remote = new Proxy(remote, { get(target, prop) {
   if (prop === 'from') return (table: string) => scope && OFFLINE_TABLES.includes(table as typeof OFFLINE_TABLES[number]) ? builder(table) : target.from(table as typeof OFFLINE_TABLES[number]);
   if (prop === 'rpc') return (name: string, args: Record<string, unknown>) => {
-    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null }));
+    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null })).catch(() => ({ data: null, error: { message: 'Não foi possível guardar a ordem.' } }));
     return target.rpc(name as 'ordenar_estoque', args as never);
   };
   const value = Reflect.get(target, prop); return typeof value === 'function' ? value.bind(target) : value;

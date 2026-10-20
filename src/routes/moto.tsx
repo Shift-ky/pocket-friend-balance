@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Fuel, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/offline-client";
 import { useGrupo } from "@/lib/grupo";
 
 export const Route = createFileRoute("/moto")({
