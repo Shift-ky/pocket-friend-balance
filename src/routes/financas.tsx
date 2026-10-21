@@ -126,7 +126,19 @@ function Index() {
         {!gasolina && tipo === "debito" && conta === "dinheiro" && <label className="block text-sm text-muted-foreground">Quantidade de parcelas
           <input aria-label="Quantidade de parcelas" type="number" min="1" step="1" required value={parcelas} onChange={e => setParcelas(e.target.value)} className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring" />
         </label>}
-        <Button disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>
+        {confirmando && (
+          <div className="space-y-2 rounded-lg border-2 border-primary bg-card p-3">
+            <p className="text-sm font-semibold">Confirmar lançamento?</p>
+            <p className="text-sm text-muted-foreground">
+              {INFO[gasolina ? "debito" : tipo].label} de R$ {valor.replace(".", ",")} — {descricao.trim()}{gasolina ? " (Gasolina da moto)" : ""}
+            </p>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={salvando} className="flex-1">{salvando ? "Salvando…" : "Confirmar"}</Button>
+              <Button type="button" variant="outline" onClick={() => setConfirmando(false)} className="flex-1">Cancelar</Button>
+            </div>
+          </div>
+        )}
+        {!confirmando && <Button type="submit" disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>}
         {sucesso && <p role="status" className="text-sm text-credit">{sucesso}</p>}
         {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
       </form>
