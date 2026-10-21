@@ -49,12 +49,15 @@ function Index() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [confirmando, setConfirmando] = useState(false);
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!access.financas || (gasolina && !access.moto)) return setErro("Você não tem acesso a este lançamento.");
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
     if (salvando) return;
+    if (!confirmando) { setErro(""); setSucesso(""); setConfirmando(true); return; }
+    setConfirmando(false);
     setSalvando(true); setErro(""); setSucesso("");
     const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
     const pagamento = gasolina ? true : tipo === "debito" ? pago : tipo === "credito";
