@@ -26,3 +26,4 @@
 - [x] Integrar saldos sem duplicar despesas e verificar o fluxo
 - [x] Centralizar saldos, históricos e gerenciamento no Painel
 - [x] Deixar Finanças e Moto somente com lançamentos e conferir as telas
+- [x] Exibir aviso de confirmação no topo da tela ao adicionar lançamento nas Finanças, com etapa "Confirmar lançamento?" antes de salvar; compilação conferida.
