@@ -49,6 +49,11 @@ function Index() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [confirmando, setConfirmando] = useState(false);
+  useEffect(() => {
+    if (!sucesso) return;
+    const t = setTimeout(() => setSucesso(""), 4000);
+    return () => clearTimeout(t);
+  }, [sucesso]);
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!access.financas || (gasolina && !access.moto)) return setErro("Você não tem acesso a este lançamento.");
@@ -72,12 +77,15 @@ function Index() {
     setSalvando(false);
     if (error) return setErro("Não foi possível adicionar. Tente novamente.");
     setDescricao(""); setValor(""); setParcelas("1");
-    const msg = registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.";
-    setSucesso(msg);
-    toast.success(msg);
+    setSucesso(registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.");
   }
   return (
     <main className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-10">
+      {sucesso && (
+        <div role="status" className="fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] rounded-lg bg-credit px-4 py-2 text-center text-sm font-semibold text-primary-foreground shadow-lg">
+          {sucesso}
+        </div>
+      )}
       <header className="mb-8">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">Meu caixa</p>
         <h1 className="font-display text-3xl sm:text-5xl">Finanças</h1>
@@ -138,7 +146,6 @@ function Index() {
           </div>
         )}
         {!confirmando && <Button type="submit" disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>}
-        {sucesso && <p role="status" className="text-sm text-credit">{sucesso}</p>}
         {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
       </form>
 
