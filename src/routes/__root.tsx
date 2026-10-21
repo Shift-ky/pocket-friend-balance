@@ -157,7 +157,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <GrupoGate>
         <OfflineProvider><AppearanceProvider><AccessProvider><Nav /><AccessSurface><Outlet /></AccessSurface></AccessProvider></AppearanceProvider></OfflineProvider>
-        <Toaster />
+        <Toaster position="top-center" />
       </GrupoGate>
     </QueryClientProvider>
   );
