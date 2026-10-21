@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/offline-client";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { useAccess } from "@/lib/access-context";
 import { CheckCircle2, Clock, Fuel } from "lucide-react";
 import { movimentacaoGasolina } from "@/lib/moto";
 import { parcelarLancamento } from "@/lib/parcelamento";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -49,12 +48,20 @@ function Index() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [confirmando, setConfirmando] = useState(false);
+  useEffect(() => {
+    if (!sucesso) return;
+    const t = setTimeout(() => setSucesso(""), 4000);
+    return () => clearTimeout(t);
+  }, [sucesso]);
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!access.financas || (gasolina && !access.moto)) return setErro("Você não tem acesso a este lançamento.");
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return;
     if (salvando) return;
+    if (!confirmando) { setErro(""); setSucesso(""); setConfirmando(true); return; }
+    setConfirmando(false);
     setSalvando(true); setErro(""); setSucesso("");
     const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
     const pagamento = gasolina ? true : tipo === "debito" ? pago : tipo === "credito";
@@ -70,12 +77,15 @@ function Index() {
     setSalvando(false);
     if (error) return setErro("Não foi possível adicionar. Tente novamente.");
     setDescricao(""); setValor(""); setParcelas("1");
-    const msg = registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.";
-    setSucesso(msg);
-    toast.success(msg);
+    setSucesso(registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.");
   }
   return (
     <main className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-10">
+      {sucesso && (
+        <div role="status" className="fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] rounded-lg bg-credit px-4 py-2 text-center text-sm font-semibold text-primary-foreground shadow-lg">
+          {sucesso}
+        </div>
+      )}
       <header className="mb-8">
         <p className="text-sm uppercase tracking-widest text-muted-foreground">Meu caixa</p>
         <h1 className="font-display text-3xl sm:text-5xl">Finanças</h1>
@@ -123,8 +133,19 @@ function Index() {
         {!gasolina && tipo === "debito" && conta === "dinheiro" && <label className="block text-sm text-muted-foreground">Quantidade de parcelas
           <input aria-label="Quantidade de parcelas" type="number" min="1" step="1" required value={parcelas} onChange={e => setParcelas(e.target.value)} className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring" />
         </label>}
-        <Button disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>
-        {sucesso && <p role="status" className="text-sm text-credit">{sucesso}</p>}
+        {confirmando && (
+          <div className="space-y-2 rounded-lg border-2 border-primary bg-card p-3">
+            <p className="text-sm font-semibold">Confirmar lançamento?</p>
+            <p className="text-sm text-muted-foreground">
+              {INFO[gasolina ? "debito" : tipo].label} de R$ {valor.replace(".", ",")} — {descricao.trim()}{gasolina ? " (Gasolina da moto)" : ""}
+            </p>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={salvando} className="flex-1">{salvando ? "Salvando…" : "Confirmar"}</Button>
+              <Button type="button" variant="outline" onClick={() => setConfirmando(false)} className="flex-1">Cancelar</Button>
+            </div>
+          </div>
+        )}
+        {!confirmando && <Button type="submit" disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>}
         {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
       </form>
 
