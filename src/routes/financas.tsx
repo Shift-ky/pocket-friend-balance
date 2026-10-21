@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/offline-client";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { useAccess } from "@/lib/access-context";
 import { CheckCircle2, Clock, Fuel } from "lucide-react";
 import { movimentacaoGasolina } from "@/lib/moto";
 import { parcelarLancamento } from "@/lib/parcelamento";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({

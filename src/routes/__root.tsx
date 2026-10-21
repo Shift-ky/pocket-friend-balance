@@ -23,7 +23,6 @@ import { recoverModuleLoad, isModuleLoadError } from '@/lib/module-recovery';
 import { Button } from '@/components/ui/button';
 import { OfflineProvider } from '@/components/offline-provider';
 import { registerOfflineShell } from '@/lib/pwa';
-import { Toaster } from '@/components/ui/sonner';
 
 function NotFoundComponent() {
   return (
