@@ -9,6 +9,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [VitePWA({
+    outDir: 'dist/client',
     strategies: 'generateSW', filename: 'sw.js', registerType: 'autoUpdate', injectRegister: null,
     devOptions: { enabled: false },
     manifest: {

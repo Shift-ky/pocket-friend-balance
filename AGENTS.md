@@ -29,3 +29,4 @@
 - Offline group CRUD goes through a separate IndexedDB journal partitioned by authenticated user and group; the generated client stays intact, and a security-invoker RPC atomically validates current RLS, checks changed-field conflicts and records idempotent operation receipts.
 - Paid grocery finalization journals financial entry, snapshot deletion and purchase history as one transaction; database triggers remain the sole authoritative stock synchronization.
 - Offline shell caching uses generateSW with NetworkFirst navigations and a single preview-safe registrar; auth, account administration and image uploads remain online-only, and cached access is presentation-only, never server authorization.
+- The offline fallback is TanStack's prerendered public SPA shell; group gates must remain effect-driven so cached navigation HTML contains no private data, and PWA output targets the deployed client-assets directory.

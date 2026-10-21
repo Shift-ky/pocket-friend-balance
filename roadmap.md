@@ -1,5 +1,7 @@
 # Roadmap
-- [ ] Preparar abertura offline, dados locais por conta e fila durável de alterações com sincronização automática e verificação.
+- [x] Implementar dados locais por conta/grupo e fila durável; lançamento sem rede, restauração após reabrir, sincronização real, releitura e repetição sem duplicata conferidos; 78 testes aprovados e registros de verificação removidos.
+- [x] Preparar abertura offline com página pública de abertura, arquivos guardados e registro bloqueado na prévia.
+- [ ] Conferir abertura totalmente sem internet no aplicativo publicado; depende de publicar esta versão e abrir uma vez conectado (a prévia não registra o cache offline).
 - [x] Escolher Pendente ou Já pago ao lançar uma conta nas Finanças; salvamento e releitura no Painel conferidos na conta proprietária, com 16 testes aprovados e lançamentos de verificação removidos.
 - [x] Escolher a divisão ao cadastrar um produto no estoque; salvamento e releitura conferidos na conta proprietária no celular, com oito testes aprovados.
 - [x] Corrigir nomes no estoque e refletir a mesma correção na cesta de compras; conferido na conta proprietária, preservando quantidades, preços e marcações.
