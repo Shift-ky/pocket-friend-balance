@@ -7,6 +7,7 @@ import { useAccess } from "@/lib/access-context";
 import { CheckCircle2, Clock, Fuel } from "lucide-react";
 import { movimentacaoGasolina } from "@/lib/moto";
 import { parcelarLancamento } from "@/lib/parcelamento";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -69,7 +70,9 @@ function Index() {
     setSalvando(false);
     if (error) return setErro("Não foi possível adicionar. Tente novamente.");
     setDescricao(""); setValor(""); setParcelas("1");
-    setSucesso(registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.");
+    const msg = registros.length > 1 ? `${registros.length} parcelas salvas.` : "Lançamento salvo.";
+    setSucesso(msg);
+    toast.success(msg);
   }
   return (
     <main className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-10">
