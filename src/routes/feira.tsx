@@ -5,6 +5,7 @@ import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
 import { useAccess } from "@/lib/access-context";
 import { buscarPrecosFeira, ultimoPrecoFeira } from "@/lib/precos-feira";
+import { alternarPego, definirComprada, itensComprados, valorCarrinho, valorPrevisto } from "@/lib/feira";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/feira")({
   component: Feira,
 });
 
-type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
+type Item = { id: string; nome: string; qtd: number; qtd_comprada: number; preco: number; pego: boolean };
 type Compra = { id: string; total: number; created_at: string; pagamento?: string; lancamento_id?: string | null; itens: { nome: string; qtd: number; preco: number }[] };
 type Pagamento = "nenhum" | "dinheiro" | "alimentacao" | "refeicao";
 const PAGAMENTOS = [["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const;
@@ -32,13 +33,13 @@ function Feira() {
   const access = useAccess();
   const { grupo } = useGrupo();
   const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
-  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), preco: Number(i.preco) }));
+  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), qtd_comprada: Number(i.qtd_comprada ?? 0), preco: Number(i.preco) }));
   const [nome, setNome] = useState("");
   const [qtd, setQtd] = useState("1");
   const [preco, setPreco] = useState("");
 
-  const total = itens.reduce((s, i) => s + i.qtd * i.preco, 0);
-  const noCarrinho = itens.filter((i) => i.pego).reduce((s, i) => s + i.qtd * i.preco, 0);
+  const total = valorPrevisto(itens);
+  const noCarrinho = valorCarrinho(itens);
 
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
