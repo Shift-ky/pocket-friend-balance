@@ -213,7 +213,7 @@ function Feira() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."}
+            {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."} Somente os itens com quantidade comprada entram no histórico e no estoque.
           </p>
           <button disabled={salvando} onClick={finalizar} className="w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50">
             ✔ Finalizar compra e salvar no histórico
