@@ -27,3 +27,4 @@
 - [x] Centralizar saldos, históricos e gerenciamento no Painel
 - [x] Deixar Finanças e Moto somente com lançamentos e conferir as telas
 - [x] Exibir aviso de confirmação no topo da tela ao adicionar lançamento nas Finanças, com etapa "Confirmar lançamento?" antes de salvar; compilação conferida.
+- [x] Trocar a caixa do navegador por um painel de confirmação de exclusão no Painel, no mesmo estilo da confirmação de lançamento; aparição, cancelamento e ausência de erros conferidos no navegador.
