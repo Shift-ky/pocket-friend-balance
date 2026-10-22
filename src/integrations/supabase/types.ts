@@ -179,6 +179,7 @@ export type Database = {
           pego: boolean
           preco: number
           qtd: number
+          qtd_comprada: number
         }
         Insert: {
           created_at?: string
@@ -188,6 +189,7 @@ export type Database = {
           pego?: boolean
           preco?: number
           qtd?: number
+          qtd_comprada?: number
         }
         Update: {
           created_at?: string
@@ -197,6 +199,7 @@ export type Database = {
           pego?: boolean
           preco?: number
           qtd?: number
+          qtd_comprada?: number
         }
         Relationships: [
           {
@@ -262,6 +265,7 @@ export type Database = {
         Row: {
           conta: string
           created_at: string
+          criado_por: string | null
           data: string
           descricao: string
           destino: string
@@ -275,6 +279,7 @@ export type Database = {
         Insert: {
           conta?: string
           created_at?: string
+          criado_por?: string | null
           data?: string
           descricao: string
           destino?: string
@@ -288,6 +293,7 @@ export type Database = {
         Update: {
           conta?: string
           created_at?: string
+          criado_por?: string | null
           data?: string
           descricao?: string
           destino?: string
@@ -312,6 +318,7 @@ export type Database = {
         Row: {
           conta: string
           created_at: string
+          criado_por: string | null
           data: string
           descricao: string
           grupo_id: string
@@ -321,6 +328,7 @@ export type Database = {
         Insert: {
           conta?: string
           created_at?: string
+          criado_por?: string | null
           data?: string
           descricao: string
           grupo_id: string
@@ -330,6 +338,7 @@ export type Database = {
         Update: {
           conta?: string
           created_at?: string
+          criado_por?: string | null
           data?: string
           descricao?: string
           grupo_id?: string

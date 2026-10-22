@@ -1,4 +1,4 @@
-export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string; origem_modulo?: string };
+export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string; origem_modulo?: string; criado_por?: string | null; created_at?: string };
 export const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 export function ordenarPorVencimento<T extends { data: string }>(itens: T[]): T[] {
   return [...itens].sort((a, b) => a.data.localeCompare(b.data));

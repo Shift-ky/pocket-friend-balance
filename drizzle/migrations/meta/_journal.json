@@ -127,6 +127,13 @@
       "when": 1792405092975,
       "tag": "0017_offline_sync_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792627894140,
+      "tag": "0018_feira_comprado_e_autoria",
+      "breakpoints": true
     }
   ]
 }

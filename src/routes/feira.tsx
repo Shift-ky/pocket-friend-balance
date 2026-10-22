@@ -5,6 +5,7 @@ import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
 import { useAccess } from "@/lib/access-context";
 import { buscarPrecosFeira, ultimoPrecoFeira } from "@/lib/precos-feira";
+import { alternarPego, definirComprada, itensComprados, valorCarrinho, valorPrevisto } from "@/lib/feira";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/feira")({
   component: Feira,
 });
 
-type Item = { id: string; nome: string; qtd: number; preco: number; pego: boolean };
+type Item = { id: string; nome: string; qtd: number; qtd_comprada: number; preco: number; pego: boolean };
 type Compra = { id: string; total: number; created_at: string; pagamento?: string; lancamento_id?: string | null; itens: { nome: string; qtd: number; preco: number }[] };
 type Pagamento = "nenhum" | "dinheiro" | "alimentacao" | "refeicao";
 const PAGAMENTOS = [["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const;
@@ -32,13 +33,13 @@ function Feira() {
   const access = useAccess();
   const { grupo } = useGrupo();
   const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
-  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), preco: Number(i.preco) }));
+  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), qtd_comprada: Number(i.qtd_comprada ?? 0), preco: Number(i.preco) }));
   const [nome, setNome] = useState("");
   const [qtd, setQtd] = useState("1");
   const [preco, setPreco] = useState("");
 
-  const total = itens.reduce((s, i) => s + i.qtd * i.preco, 0);
-  const noCarrinho = itens.filter((i) => i.pego).reduce((s, i) => s + i.qtd * i.preco, 0);
+  const total = valorPrevisto(itens);
+  const noCarrinho = valorCarrinho(itens);
 
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
@@ -70,21 +71,24 @@ function Feira() {
   async function finalizar() {
     if (salvando) return;
     if (pagamento !== "nenhum" && !access.financas) return alert("Sem acesso às Finanças, salve sem lançamento financeiro.");
-    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens ao estoque e limpar a lista?")) return;
-    const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
+    const comprados = itensComprados(itens);
+    if (!comprados.length) return alert("Informe a quantidade comprada de pelo menos um item antes de finalizar.");
+    const totalComprado = valorCarrinho(itens);
+    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens comprados ao estoque e limpar a lista?")) return;
+    const copia = comprados;
     setSalvando(true);
     try {
       await offlineTransaction(async () => {
         let lancamento_id: string | null = null;
-        if (pagamento !== "nenhum" && total > 0) {
-          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
+        if (pagamento !== "nenhum" && totalComprado > 0) {
+          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: totalComprado, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
           if (error || !data) throw new Error('Não foi possível lançar o pagamento.');
           lancamento_id = data.id;
         }
         // Delete the snapshot before stock triggers run; newly generated replacement items survive.
         const { error: deleteError } = await supabase.from('feira_itens').delete().in('id', itens.map(i => i.id));
         if (deleteError) throw deleteError;
-        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
+        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total: totalComprado, itens: copia, pagamento, lancamento_id });
         if (error) throw error;
       });
       await recarregar(); await recarregarHist();
@@ -154,7 +158,7 @@ function Feira() {
         <section className="rounded-xl bg-credit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">No carrinho</p>
           <p className="font-display truncate text-lg sm:text-xl">{brl(noCarrinho)}</p>
-          <p className="mt-1 text-xs opacity-70">{itens.filter((i) => i.pego).length} itens pegos</p>
+          <p className="mt-1 text-xs opacity-70">{itens.filter((i) => i.qtd_comprada > 0).length} itens comprados</p>
         </section>
       </div>
 
@@ -175,16 +179,23 @@ function Feira() {
         {itens.length === 0 && <li className="py-10 text-center text-muted-foreground">Sua lista está vazia.</li>}
         {itens.map((i) => (
           <li key={i.id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 sm:gap-3">
-            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 shrink-0 accent-credit" />
+            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, alternarPego(i))} className="h-5 w-5 shrink-0 accent-credit" />
             <p className={`min-w-0 flex-1 break-words font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
             <button onClick={() => excluir([i.id])} aria-label="Excluir" className="shrink-0 text-muted-foreground hover:text-debit sm:order-last">✕</button>
-            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-              <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
-                className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
-              <span className="text-sm text-muted-foreground">×</span>
-              <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
-                className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
-              <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">Prev.
+                <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+                  className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade prevista" />
+              </label>
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">Comprado
+                <input key={`c${i.qtd_comprada}`} defaultValue={i.qtd_comprada} onBlur={(e) => atualizar(i.id, definirComprada(i, parseFloat(e.target.value.replace(",", ".")) || 0))} inputMode="decimal"
+                  className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade comprada" />
+              </label>
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">Preço
+                <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+                  className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
+              </label>
+              <span className="w-24 text-right font-semibold">{brl(i.qtd_comprada * i.preco)}</span>
             </div>
           </li>
         ))}
@@ -202,7 +213,7 @@ function Feira() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."}
+            {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."} Somente os itens com quantidade comprada entram no histórico e no estoque.
           </p>
           <button disabled={salvando} onClick={finalizar} className="w-full rounded-lg bg-credit py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50">
             ✔ Finalizar compra e salvar no histórico
