@@ -158,7 +158,7 @@ function Feira() {
         <section className="rounded-xl bg-credit p-3 text-primary-foreground">
           <p className="text-xs opacity-80">No carrinho</p>
           <p className="font-display truncate text-lg sm:text-xl">{brl(noCarrinho)}</p>
-          <p className="mt-1 text-xs opacity-70">{itens.filter((i) => i.pego).length} itens pegos</p>
+          <p className="mt-1 text-xs opacity-70">{itens.filter((i) => i.qtd_comprada > 0).length} itens comprados</p>
         </section>
       </div>
 
@@ -179,16 +179,23 @@ function Feira() {
         {itens.length === 0 && <li className="py-10 text-center text-muted-foreground">Sua lista está vazia.</li>}
         {itens.map((i) => (
           <li key={i.id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 sm:gap-3">
-            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, { pego: !i.pego })} className="h-5 w-5 shrink-0 accent-credit" />
+            <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, alternarPego(i))} className="h-5 w-5 shrink-0 accent-credit" />
             <p className={`min-w-0 flex-1 break-words font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
             <button onClick={() => excluir([i.id])} aria-label="Excluir" className="shrink-0 text-muted-foreground hover:text-debit sm:order-last">✕</button>
-            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-              <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
-                className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade" />
-              <span className="text-sm text-muted-foreground">×</span>
-              <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
-                className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
-              <span className="w-24 text-right font-semibold">{brl(i.qtd * i.preco)}</span>
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">Prev.
+                <input key={`q${i.qtd}`} defaultValue={i.qtd} onBlur={(e) => atualizar(i.id, { qtd: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+                  className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade prevista" />
+              </label>
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">Comprado
+                <input key={`c${i.qtd_comprada}`} defaultValue={i.qtd_comprada} onBlur={(e) => atualizar(i.id, definirComprada(i, parseFloat(e.target.value.replace(",", ".")) || 0))} inputMode="decimal"
+                  className="w-14 rounded-md border bg-background px-2 py-1 text-center text-sm" aria-label="Quantidade comprada" />
+              </label>
+              <label className="flex items-center gap-1 text-xs text-muted-foreground">Preço
+                <input key={`p${i.preco}`} defaultValue={i.preco} onBlur={(e) => atualizar(i.id, { preco: parseFloat(e.target.value.replace(",", ".")) || 0 })} inputMode="decimal"
+                  className="w-20 rounded-md border bg-background px-2 py-1 text-right text-sm" aria-label="Preço" />
+              </label>
+              <span className="w-24 text-right font-semibold">{brl(i.qtd_comprada * i.preco)}</span>
             </div>
           </li>
         ))}
