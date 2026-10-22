@@ -47,6 +47,7 @@ function Painel() {
   const [mostrarPendentes, setMostrarPendentes] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+  const [excluindo, setExcluindo] = useState<{ id: string; ehMoto: boolean; nome: string } | null>(null);
   const noPeriodo = (data: string) => (!de || data.slice(0,10) >= de) && (!ate || data.slice(0,10) <= ate);
   const lanc = visibleEntries(rawLanc, access);
   const financialLanc = access.financas ? lanc : [];
@@ -68,17 +69,24 @@ function Painel() {
     const { error } = await supabase.from('lancamentos').update({ pago: !item.pago }).eq('id',item.id);
     if (error) setErro('Não foi possível atualizar o pagamento.'); else await recarregar();
   }
-  async function excluir(id: string, ehMoto: boolean) {
-    if (!admin || !confirm('Excluir esta movimentação?')) return;
+  function pedirExclusao(id: string, ehMoto: boolean, nome: string) {
+    if (!admin) return;
+    setErro('');
+    setExcluindo({ id, ehMoto, nome });
+  }
+  async function excluir() {
+    if (!excluindo) return;
+    const { id, ehMoto } = excluindo;
+    setExcluindo(null);
     const { error, count } = await supabase.from(ehMoto ? 'moto_despesas' : 'lancamentos').delete({ count: 'exact' }).eq('id',id).eq('grupo_id',grupo.id);
     if (error || !count) setErro('Não foi possível excluir esta movimentação.');
     else { await recarregar(); await recarregarMoto(); }
   }
-  function controles(item: LancamentoPainel | null, id: string, ehMoto: boolean) {
+  function controles(item: LancamentoPainel | null, id: string, ehMoto: boolean, nome: string) {
     return <div className="flex shrink-0 items-center gap-1">
       {item?.tipo === 'debito' && item.destino !== 'gasolina' && <Button variant="ghost" size="sm" className={item.pago ? 'text-credit' : 'text-debit'} onClick={() => pagar(item)}>{item.pago ? 'Pago' : 'Pagar'}</Button>}
       {item && access.financas && <Button size="icon" variant="ghost" aria-label={`Editar ${item.descricao}`} title="Editar" onClick={() => setEditando(item.id)}><Pencil /></Button>}
-      {admin && (ehMoto ? access.moto : access.financas) && <Button size="icon" variant="ghost" aria-label={ehMoto ? 'Excluir abastecimento' : 'Excluir movimentação'} title="Excluir" onClick={() => excluir(id,ehMoto)}><Trash2 /></Button>}
+      {admin && (ehMoto ? access.moto : access.financas) && <Button size="icon" variant="ghost" aria-label={ehMoto ? 'Excluir abastecimento' : 'Excluir movimentação'} title="Excluir" onClick={() => pedirExclusao(id,ehMoto,nome)}><Trash2 /></Button>}
     </div>;
   }
 
