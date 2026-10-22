@@ -71,21 +71,24 @@ function Feira() {
   async function finalizar() {
     if (salvando) return;
     if (pagamento !== "nenhum" && !access.financas) return alert("Sem acesso às Finanças, salve sem lançamento financeiro.");
-    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens ao estoque e limpar a lista?")) return;
-    const copia = itens.map(({ nome, qtd, preco, pego }) => ({ nome, qtd, preco, pego }));
+    const comprados = itensComprados(itens);
+    if (!comprados.length) return alert("Informe a quantidade comprada de pelo menos um item antes de finalizar.");
+    const totalComprado = valorCarrinho(itens);
+    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens comprados ao estoque e limpar a lista?")) return;
+    const copia = comprados;
     setSalvando(true);
     try {
       await offlineTransaction(async () => {
         let lancamento_id: string | null = null;
-        if (pagamento !== "nenhum" && total > 0) {
-          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: total, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
+        if (pagamento !== "nenhum" && totalComprado > 0) {
+          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: totalComprado, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
           if (error || !data) throw new Error('Não foi possível lançar o pagamento.');
           lancamento_id = data.id;
         }
         // Delete the snapshot before stock triggers run; newly generated replacement items survive.
         const { error: deleteError } = await supabase.from('feira_itens').delete().in('id', itens.map(i => i.id));
         if (deleteError) throw deleteError;
-        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total, itens: copia, pagamento, lancamento_id });
+        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total: totalComprado, itens: copia, pagamento, lancamento_id });
         if (error) throw error;
       });
       await recarregar(); await recarregarHist();
