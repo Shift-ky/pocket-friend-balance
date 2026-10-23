@@ -134,6 +134,13 @@
       "when": 1792627894140,
       "tag": "0018_feira_comprado_e_autoria",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792714554254,
+      "tag": "0019_sync_offline_qtd_comprada",
+      "breakpoints": true
     }
   ]
 }

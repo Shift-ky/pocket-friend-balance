@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditarLinha } from '@/components/finance-editor';
@@ -39,6 +39,18 @@ function Painel() {
   const { linhas: estoque } = useTabelaAoVivo<Produto>('estoque', grupo.id);
   const { linhas: feira } = useTabelaAoVivo<ItemFeira>('feira_itens', grupo.id);
   const admin = useSouAdmin();
+  const [membros, setMembros] = useState<Record<string, string>>({});
+  useEffect(() => {
+    supabase.from('grupo_membros').select('user_id,email').eq('grupo_id', grupo.id).then(({ data }) => {
+      setMembros(Object.fromEntries((data ?? []).map(m => [m.user_id, m.email ?? ''])));
+    });
+  }, [grupo.id]);
+  const autor = (uid?: string | null) => (uid ? membros[uid] || '' : '');
+  const hora = (iso?: string) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+  const registro = (criado_por?: string | null, created_at?: string) => {
+    const partes = [hora(created_at) && `lançado ${hora(created_at)}`, autor(criado_por) && `por ${autor(criado_por)}`].filter(Boolean);
+    return partes.length ? ` · ${partes.join(' ')}` : '';
+  };
   const [de, setDe] = useState(''); const [ate, setAte] = useState('');
   const [aba, setAba] = useState<'movimentos' | 'gasolina' | 'compras'>('movimentos');
   const availableTabs = ([{id:'movimentos',nome:'Todas as movimentações', allowed:access.financas || access.moto},{id:'gasolina',nome:'Moto e aportes', allowed:access.moto},{id:'compras',nome:'Compras da feira', allowed:access.feira}] as const).filter(t => t.allowed);
@@ -53,8 +65,8 @@ function Painel() {
   const financialLanc = access.financas ? lanc : [];
   const saldos = saldosPainel(financialLanc); const gasolina = totaisMoto(lanc, moto);
   const todos = [
-    ...financialLanc.filter(l => l.destino !== 'gasolina').map(l => ({ id: l.id, data: l.data, nome: l.descricao, valor: Number(l.valor), entrada: l.tipo === 'credito' || l.tipo === 'resgate', pendente: l.tipo === 'debito' && !l.pago, origem: `${tipos[l.tipo]} · ${contas[l.conta ?? 'dinheiro']}`, item: l, moto: false })),
-    ...moto.map(d => ({ id: d.id, data: d.data, nome: d.descricao, valor: Number(d.valor), entrada: false, pendente: false, origem: 'Moto · Dinheiro', item: null, moto: true })),
+    ...financialLanc.filter(l => l.destino !== 'gasolina').map(l => ({ id: l.id, data: l.data, nome: l.descricao, valor: Number(l.valor), entrada: l.tipo === 'credito' || l.tipo === 'resgate', pendente: l.tipo === 'debito' && !l.pago, origem: `${tipos[l.tipo]} · ${contas[l.conta ?? 'dinheiro']}`, item: l, moto: false, criado_por: l.criado_por, created_at: l.created_at })),
+    ...moto.map(d => ({ id: d.id, data: d.data, nome: d.descricao, valor: Number(d.valor), entrada: false, pendente: false, origem: 'Moto · Dinheiro', item: null, moto: true, criado_por: d.criado_por, created_at: d.created_at })),
   ].sort((a,b) => b.data.localeCompare(a.data));
   const lista = todos.filter(m => noPeriodo(m.data));
   const pendentes = ordenarPorVencimento(lista.filter(m => m.pendente));
@@ -133,7 +145,7 @@ function Painel() {
           {!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}
           {pendentes.map((m, i) => <Fragment key={m.id}>
             {(i === 0 || pendentes[i - 1]?.data.slice(0, 7) !== m.data.slice(0, 7)) && <li className="border-b py-2 text-xs font-semibold capitalize text-muted-foreground">{new Date(m.data.slice(0, 7) + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</li>}
-            {editando === m.id && m.item ? <EditarLinha item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false,m.nome)}</li>}
+            {editando === m.id && m.item ? <EditarLinha item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}{registro(m.criado_por, m.created_at)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false,m.nome)}</li>}
           </Fragment>)}
         </ul>}
       </section>}
@@ -148,8 +160,8 @@ function Painel() {
       <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Históricos">{availableTabs.map(t => <Button key={t.id} role="tab" aria-selected={activeTab===t.id} variant={activeTab===t.id?'default':'outline'} size="sm" onClick={() => setAba(t.id)}>{t.nome}</Button>)}</div>
       {erro && <p role="alert" className="mb-3 text-sm text-debit">{erro}</p>}
       <ul className="divide-y">
-        {activeTab === 'movimentos' && <>{!lista.filter(m => !m.pendente).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma movimentação neste período.</li>}{lista.filter(m => !m.pendente).map(m => editando === m.id && m.item ? <EditarLinha key={m.id} item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={m.id} className="flex flex-wrap items-center gap-3 py-4"><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${m.entrada?'bg-credit-soft text-credit':'bg-debit-soft text-debit'}`}>{m.entrada?<ArrowDownLeft className="h-4 w-4" />:<ArrowUpRight className="h-4 w-4" />}</span><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">{m.origem} · {dataBr(m.data)}</p></div><span className={`text-sm font-semibold ${m.entrada?'text-credit':'text-debit'}`}>{m.entrada?'+':'−'} {brl(m.valor)}</span>{controles(m.item,m.id,m.moto,m.nome)}</li>)}</>}
-        {activeTab === 'gasolina' && <>{!moto.filter(d => noPeriodo(d.data)).length && !aportes.length && <li className="py-8 text-sm text-muted-foreground">Nenhum abastecimento ou aporte neste período.</li>}{[...moto.filter(d => noPeriodo(d.data)).map(d => ({...d,aporte:false})),...aportes.map(d => ({...d,aporte:true}))].sort((a,b) => b.data.localeCompare(a.data)).map(d => {const item = d.aporte ? lanc.find(l => l.id===d.id) ?? null : null; return editando === d.id && item && access.financas ? <EditarLinha key={d.id} item={item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={d.id} className="flex flex-wrap items-center gap-3 py-4"><Fuel className="h-5 w-5 shrink-0 text-saved" /><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{d.descricao}</p><p className="text-xs text-muted-foreground">{d.aporte?'Aporte para gasolina':'Abastecimento · Dinheiro · Pago'} · {dataBr(d.data)}</p></div><span className={`text-sm font-semibold ${d.aporte?'text-saved':'text-debit'}`}>{d.aporte?'+':'−'} {brl(Number(d.valor))}</span>{controles(item,d.id,!d.aporte,d.descricao)}</li>;})}</>}
+        {activeTab === 'movimentos' && <>{!lista.filter(m => !m.pendente).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma movimentação neste período.</li>}{lista.filter(m => !m.pendente).map(m => editando === m.id && m.item ? <EditarLinha key={m.id} item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={m.id} className="flex flex-wrap items-center gap-3 py-4"><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${m.entrada?'bg-credit-soft text-credit':'bg-debit-soft text-debit'}`}>{m.entrada?<ArrowDownLeft className="h-4 w-4" />:<ArrowUpRight className="h-4 w-4" />}</span><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">{m.origem} · {dataBr(m.data)}{registro(m.criado_por, m.created_at)}</p></div><span className={`text-sm font-semibold ${m.entrada?'text-credit':'text-debit'}`}>{m.entrada?'+':'−'} {brl(m.valor)}</span>{controles(m.item,m.id,m.moto,m.nome)}</li>)}</>}
+        {activeTab === 'gasolina' && <>{!moto.filter(d => noPeriodo(d.data)).length && !aportes.length && <li className="py-8 text-sm text-muted-foreground">Nenhum abastecimento ou aporte neste período.</li>}{[...moto.filter(d => noPeriodo(d.data)).map(d => ({...d,aporte:false})),...aportes.map(d => ({...d,aporte:true}))].sort((a,b) => b.data.localeCompare(a.data)).map(d => {const item = d.aporte ? lanc.find(l => l.id===d.id) ?? null : null; return editando === d.id && item && access.financas ? <EditarLinha key={d.id} item={item} onFechar={() => {setEditando(null);recarregar();}} /> : <li key={d.id} className="flex flex-wrap items-center gap-3 py-4"><Fuel className="h-5 w-5 shrink-0 text-saved" /><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{d.descricao}</p><p className="text-xs text-muted-foreground">{d.aporte?'Aporte para gasolina':'Abastecimento · Dinheiro · Pago'} · {dataBr(d.data)}{registro(d.criado_por, d.created_at)}</p></div><span className={`text-sm font-semibold ${d.aporte?'text-saved':'text-debit'}`}>{d.aporte?'+':'−'} {brl(Number(d.valor))}</span>{controles(item,d.id,!d.aporte,d.descricao)}</li>;})}</>}
         {activeTab === 'compras' && <>{!compras.filter(c => noPeriodo(c.created_at)).length && <li className="py-8 text-sm text-muted-foreground">Nenhuma compra salva neste período.</li>}{compras.filter(c => noPeriodo(c.created_at)).sort((a,b) => b.created_at.localeCompare(a.created_at)).map(c => <li key={c.id} className="py-4"><details><summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold">Compra de {dataBr(c.created_at)}</p><p className={`text-xs ${c.pagamento && c.pagamento!=='nenhum'?'text-credit':'text-muted-foreground'}`}>{c.pagamento && c.pagamento!=='nenhum'?`Finalizada · ${contas[c.pagamento]}`:'Não finalizada · Sem pagamento lançado'} · {c.itens.length} itens</p></div><span className="text-sm font-semibold">{brl(Number(c.total))}</span></summary><ul className="mt-3 space-y-2 border-l pl-4">{c.itens.map((i,n) => <li key={n} className="flex justify-between gap-3 text-sm"><span className="break-words">{i.qtd} × {i.nome}</span><span className="shrink-0">{brl(i.qtd*i.preco)}</span></li>)}</ul><Button asChild variant="link" className="mt-2 px-0"><Link to="/feira">Abrir compra na Feira →</Link></Button></details></li>)}</>}
       </ul>
       </div>}
