@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EditarLinha } from '@/components/finance-editor';
@@ -39,6 +39,18 @@ function Painel() {
   const { linhas: estoque } = useTabelaAoVivo<Produto>('estoque', grupo.id);
   const { linhas: feira } = useTabelaAoVivo<ItemFeira>('feira_itens', grupo.id);
   const admin = useSouAdmin();
+  const [membros, setMembros] = useState<Record<string, string>>({});
+  useEffect(() => {
+    supabase.from('grupo_membros').select('user_id,email').eq('grupo_id', grupo.id).then(({ data }) => {
+      setMembros(Object.fromEntries((data ?? []).map(m => [m.user_id, m.email ?? ''])));
+    });
+  }, [grupo.id]);
+  const autor = (uid?: string | null) => (uid ? membros[uid] || '' : '');
+  const hora = (iso?: string) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+  const registro = (criado_por?: string | null, created_at?: string) => {
+    const partes = [hora(created_at) && `lançado ${hora(created_at)}`, autor(criado_por) && `por ${autor(criado_por)}`].filter(Boolean);
+    return partes.length ? ` · ${partes.join(' ')}` : '';
+  };
   const [de, setDe] = useState(''); const [ate, setAte] = useState('');
   const [aba, setAba] = useState<'movimentos' | 'gasolina' | 'compras'>('movimentos');
   const availableTabs = ([{id:'movimentos',nome:'Todas as movimentações', allowed:access.financas || access.moto},{id:'gasolina',nome:'Moto e aportes', allowed:access.moto},{id:'compras',nome:'Compras da feira', allowed:access.feira}] as const).filter(t => t.allowed);
