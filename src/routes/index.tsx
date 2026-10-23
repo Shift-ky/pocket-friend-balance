@@ -65,8 +65,8 @@ function Painel() {
   const financialLanc = access.financas ? lanc : [];
   const saldos = saldosPainel(financialLanc); const gasolina = totaisMoto(lanc, moto);
   const todos = [
-    ...financialLanc.filter(l => l.destino !== 'gasolina').map(l => ({ id: l.id, data: l.data, nome: l.descricao, valor: Number(l.valor), entrada: l.tipo === 'credito' || l.tipo === 'resgate', pendente: l.tipo === 'debito' && !l.pago, origem: `${tipos[l.tipo]} · ${contas[l.conta ?? 'dinheiro']}`, item: l, moto: false })),
-    ...moto.map(d => ({ id: d.id, data: d.data, nome: d.descricao, valor: Number(d.valor), entrada: false, pendente: false, origem: 'Moto · Dinheiro', item: null, moto: true })),
+    ...financialLanc.filter(l => l.destino !== 'gasolina').map(l => ({ id: l.id, data: l.data, nome: l.descricao, valor: Number(l.valor), entrada: l.tipo === 'credito' || l.tipo === 'resgate', pendente: l.tipo === 'debito' && !l.pago, origem: `${tipos[l.tipo]} · ${contas[l.conta ?? 'dinheiro']}`, item: l, moto: false, criado_por: l.criado_por, created_at: l.created_at })),
+    ...moto.map(d => ({ id: d.id, data: d.data, nome: d.descricao, valor: Number(d.valor), entrada: false, pendente: false, origem: 'Moto · Dinheiro', item: null, moto: true, criado_por: d.criado_por, created_at: d.created_at })),
   ].sort((a,b) => b.data.localeCompare(a.data));
   const lista = todos.filter(m => noPeriodo(m.data));
   const pendentes = ordenarPorVencimento(lista.filter(m => m.pendente));
