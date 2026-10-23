@@ -28,3 +28,6 @@
 - [x] Deixar Finanças e Moto somente com lançamentos e conferir as telas
 - [x] Exibir aviso de confirmação no topo da tela ao adicionar lançamento nas Finanças, com etapa "Confirmar lançamento?" antes de salvar; compilação conferida.
 - [x] Trocar a caixa do navegador por um painel de confirmação de exclusão no Painel, no mesmo estilo da confirmação de lançamento; aparição, cancelamento e ausência de erros conferidos no navegador.
+- [x] Quantidade comprada na Feira governa o carrinho (marca o checkbox ao atingir a previsão e zera ao desmarcar); finalização salva no histórico só os produtos comprados com a quantidade comprada — conferido no navegador com sincronização corrigida.
+- [x] Mostrar hora e autor (e-mail) nos lançamentos, contas pendentes e gasolina do Painel — conferido no navegador com a conta proprietária.
+- [x] Corrigir a sincronização: a lista de campos aceitos pela operação de sincronização não incluía a quantidade comprada da Feira, o que prendia alterações pendentes; migração aplicada e fluxo completo reverificado.
