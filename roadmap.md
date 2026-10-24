@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Manter na lista de compras os produtos e quantidades ainda pendentes no estoque após finalizar, verificando compras parciais e itens não comprados.
 - [x] Implementar dados locais por conta/grupo e fila durável; lançamento sem rede, restauração após reabrir, sincronização real, releitura e repetição sem duplicata conferidos; 78 testes aprovados e registros de verificação removidos.
 - [x] Preparar abertura offline com página pública de abertura, arquivos guardados e registro bloqueado na prévia.
 - [ ] Conferir abertura totalmente sem internet no aplicativo publicado; depende de publicar esta versão e abrir uma vez conectado (a prévia não registra o cache offline).
