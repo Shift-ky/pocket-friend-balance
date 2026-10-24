@@ -1,6 +1,6 @@
 # Roadmap
-- [ ] Criar aba de contas e entradas fixas com período, dia mensal e geração automática de créditos, aportes e débitos pendentes sem duplicatas.
-- [ ] Recolher pendências dos meses futuros ao fim da lista do Painel com “Ver todas”; verificar regras mensais e fluxo na conta autenticada.
+- [x] Criar aba de contas e entradas fixas com período e dia mensal; rotina diária ativa às 00h05 de Brasília, três carteiras e aportes pagos conferidos, saídas pendentes, 15 ocorrências sem duplicatas e cadastro offline sincronizado; 95 testes aprovados.
+- [x] Recolher pendências dos meses futuros no fim do Painel com “Ver todas”; abertura/recolhimento e meses anteriores e vigentes conferidos na conta autenticada, sem erros e sem corte no celular.
 - [x] Manter produtos e quantidades pendentes na lista após finalizar; compra parcial conferida com previsão 5, compra 3 e restante 2, outro produto não comprado manteve 5; carrinho reiniciado, 19 testes aprovados e dados de teste removidos.
 - [x] Implementar dados locais por conta/grupo e fila durável; lançamento sem rede, restauração após reabrir, sincronização real, releitura e repetição sem duplicata conferidos; 78 testes aprovados e registros de verificação removidos.
 - [x] Preparar abertura offline com página pública de abertura, arquivos guardados e registro bloqueado na prévia.
