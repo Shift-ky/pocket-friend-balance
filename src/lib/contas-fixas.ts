@@ -4,7 +4,8 @@ export type ContaFixa = {
 };
 export const carteirasFixas = { dinheiro: 'Dinheiro', alimentacao: 'Alimentação', refeicao: 'Refeição' } as const;
 export function dataMensal(mes: string, dia: number) {
-  const [ano, numeroMes] = mes.slice(0, 7).split('-').map(Number);
+  const ano = Number(mes.slice(0, 4));
+  const numeroMes = Number(mes.slice(5, 7));
   const ultimo = new Date(ano, numeroMes, 0).getDate();
   return `${mes.slice(0, 7)}-${String(Math.min(dia, ultimo)).padStart(2, '0')}`;
 }
@@ -16,7 +17,8 @@ export function ocorrenciasFixas(fixa: Pick<ContaFixa, 'inicio' | 'fim' | 'dia' 
   while (mes <= limite.slice(0, 7)) {
     const data = dataMensal(mes, fixa.dia);
     if (data >= fixa.inicio && data <= limite) datas.push(data);
-    const [ano, numeroMes] = mes.split('-').map(Number);
+    const ano = Number(mes.slice(0, 4));
+    const numeroMes = Number(mes.slice(5, 7));
     mes = numeroMes === 12 ? `${ano + 1}-01` : `${ano}-${String(numeroMes + 1).padStart(2, '0')}`;
   }
   return datas;
