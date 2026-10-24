@@ -9,7 +9,7 @@ import { supabase } from '@/lib/offline-client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
 import { useAccess } from '@/lib/access-context';
 import { panelVisibility, visibleEntries } from '@/lib/access';
-import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, type LancamentoPainel } from '@/lib/painel';
+import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -57,6 +57,7 @@ function Painel() {
   const activeTab = availableTabs.some(t => t.id === aba) ? aba : availableTabs[0]?.id;
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mostrarPendentes, setMostrarPendentes] = useState(false);
+  const [mostrarFuturas, setMostrarFuturas] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [erro, setErro] = useState('');
   const [excluindo, setExcluindo] = useState<{ id: string; ehMoto: boolean; nome: string } | null>(null);
@@ -70,6 +71,8 @@ function Painel() {
   ].sort((a,b) => b.data.localeCompare(a.data));
   const lista = todos.filter(m => noPeriodo(m.data));
   const pendentes = ordenarPorVencimento(lista.filter(m => m.pendente));
+  const { atuais: pendentesAtuais, futuras: pendentesFuturas } = separarPendencias(pendentes);
+  const pendentesVisiveis = mostrarFuturas ? pendentes : pendentesAtuais;
   const entradas = lista.filter(m => m.entrada).reduce((s,m) => s + m.valor, 0);
   const saidas = lista.filter(m => !m.entrada && !m.pendente).reduce((s,m) => s + m.valor, 0);
   const meses = [...new Set(lista.map(m => m.data.slice(0,7)))].sort().slice(-6);
@@ -139,14 +142,15 @@ function Painel() {
     </section>}
       {access.financas && <section className="mb-8 min-w-0 bg-card p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Contas pendentes</h2><span className="text-sm text-muted-foreground">{pendentes.length}</span>
-          <Button variant="outline" size="sm" aria-expanded={mostrarPendentes} aria-controls="contas-pendentes-painel" onClick={() => setMostrarPendentes(mostrar => !mostrar)}>{mostrarPendentes ? <EyeOff /> : <Eye />}{mostrarPendentes ? 'Ocultar pendências' : 'Mostrar pendências'}</Button>
+          <Button variant="outline" size="sm" aria-expanded={mostrarPendentes} aria-controls="contas-pendentes-painel" onClick={() => { setMostrarPendentes(mostrar => !mostrar); setMostrarFuturas(false); }}>{mostrarPendentes ? <EyeOff /> : <Eye />}{mostrarPendentes ? 'Ocultar pendências' : 'Mostrar pendências'}</Button>
         </div>
         {mostrarPendentes && <ul id="contas-pendentes-painel" className="max-h-72 overflow-y-auto">
-          {!pendentes.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta a pagar neste período.</li>}
-          {pendentes.map((m, i) => <Fragment key={m.id}>
-            {(i === 0 || pendentes[i - 1]?.data.slice(0, 7) !== m.data.slice(0, 7)) && <li className="border-b py-2 text-xs font-semibold capitalize text-muted-foreground">{new Date(m.data.slice(0, 7) + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</li>}
+          {!pendentesVisiveis.length && <li className="py-8 text-sm text-muted-foreground">Nenhuma conta pendente do mês vigente ou dos anteriores neste período.</li>}
+          {pendentesVisiveis.map((m, i) => <Fragment key={m.id}>
+            {(i === 0 || pendentesVisiveis[i - 1]?.data.slice(0, 7) !== m.data.slice(0, 7)) && <li className="border-b py-2 text-xs font-semibold capitalize text-muted-foreground">{new Date(m.data.slice(0, 7) + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</li>}
             {editando === m.id && m.item ? <EditarLinha item={m.item} onFechar={() => {setEditando(null);recarregar();}} /> : <li className="flex flex-wrap items-center gap-2 border-b py-3"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{m.nome}</p><p className="text-xs text-muted-foreground">Vence {dataBr(m.data)}{registro(m.criado_por, m.created_at)}</p></div><span className="text-sm font-semibold text-debit">{brl(m.valor)}</span>{controles(m.item,m.id,false,m.nome)}</li>}
           </Fragment>)}
+          {pendentesFuturas.length > 0 && <li className="flex flex-wrap items-center justify-between gap-2 border-t py-2 text-xs text-muted-foreground"><span>{pendentesFuturas.length} {pendentesFuturas.length === 1 ? 'conta futura' : 'contas futuras'}</span><Button variant="ghost" size="sm" aria-expanded={mostrarFuturas} onClick={() => setMostrarFuturas(v => !v)}>{mostrarFuturas ? <EyeOff /> : <Eye />}{mostrarFuturas ? 'Recolher futuras' : 'Ver todas'}</Button></li>}
         </ul>}
       </section>}
     {visible.history && <section className="bg-card p-4 sm:p-5">
