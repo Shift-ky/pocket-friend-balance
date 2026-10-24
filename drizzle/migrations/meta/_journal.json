@@ -148,6 +148,13 @@
       "when": 1792801364827,
       "tag": "0020_contas_fixas_mensais",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792801447358,
+      "tag": "0021_offline_contas_fixas",
+      "breakpoints": true
     }
   ]
 }
