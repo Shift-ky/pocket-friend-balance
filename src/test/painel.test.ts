@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { saldosPainel, pendenciasDoMes, ordenarPorVencimento, type LancamentoPainel } from '@/lib/painel';
+import { saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, type LancamentoPainel } from '@/lib/painel';
 
 const item = (values: Partial<LancamentoPainel>): LancamentoPainel => ({ id: '1', tipo: 'credito', descricao: 'Teste', valor: 100, data: '2026-10-17', pago: true, conta: 'dinheiro', ...values });
 describe('Pendências do mês vigente', () => {
+  it('separa futuras e mantém meses anteriores e todo o mês vigente na lista inicial', () => {
+    const datas = ['2026-09-30', '2026-10-31', '2026-11-01', '2027-01-01'];
+    const { atuais, futuras } = separarPendencias(datas.map(data => item({ data })), new Date(2026, 9, 24));
+    expect(atuais.map(i => i.data)).toEqual(['2026-09-30', '2026-10-31']);
+    expect(futuras.map(i => i.data)).toEqual(['2026-11-01', '2027-01-01']);
+  });
   it('ordena vencimentos do mais próximo ao mais distante por mês e dia, sem alterar a origem', () => {
     const datas = ['2027-01-01', '2026-11-20', '2026-10-30', '2026-11-05', '2026-09-15'];
     const itens = datas.map(data => item({ data, tipo: 'debito', pago: false }));

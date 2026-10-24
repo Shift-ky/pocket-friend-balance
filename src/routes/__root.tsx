@@ -181,6 +181,10 @@ function Nav() {
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Finanças
         </Link>}
+        {access.financas && <Link to="/contas-fixas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
+          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
+          Contas fixas
+        </Link>}
         {access.feira && <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
           activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
           Feira

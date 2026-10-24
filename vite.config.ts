@@ -22,7 +22,7 @@ export default defineConfig({
       additionalManifestEntries: [{ url: '/_shell.html', revision: new Date().toISOString() }],
       navigateFallback: null, cleanupOutdatedCaches: true,
       runtimeCaching: [
-        { urlPattern: ({ request, url }) => request.mode === 'navigate' && url.origin === self.location.origin && ['/', '/financas', '/feira', '/estoque', '/moto'].includes(url.pathname), handler: 'NetworkFirst', options: { cacheName: 'finance-pages', networkTimeoutSeconds: 4, cacheableResponse: { statuses: [200] }, precacheFallback: { fallbackURL: '/_shell.html' } } },
+        { urlPattern: ({ request, url }) => request.mode === 'navigate' && url.origin === self.location.origin && ['/', '/financas', '/contas-fixas', '/feira', '/estoque', '/moto'].includes(url.pathname), handler: 'NetworkFirst', options: { cacheName: 'finance-pages', networkTimeoutSeconds: 4, cacheableResponse: { statuses: [200] }, precacheFallback: { fallbackURL: '/_shell.html' } } },
         { urlPattern: ({ url }) => url.origin === self.location.origin && /\/assets\/[^/]+-[a-zA-Z0-9_-]{8,}\.(js|css|jpg|png|woff2)$/.test(url.pathname), handler: 'CacheFirst', options: { cacheName: 'finance-hashed-assets', cacheableResponse: { statuses: [200] } } },
       ],
     },

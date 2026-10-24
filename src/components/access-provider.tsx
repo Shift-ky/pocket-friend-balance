@@ -26,7 +26,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
 export function AccessSurface({ children }: { children: ReactNode }) {
   const pathname = useLocation({ select: location => location.pathname });
   return <AccessContext.Consumer>{access => {
-    const section = pathname.split('/')[1];
+    const section = pathname.split('/')[1] === 'contas-fixas' ? 'financas' : pathname.split('/')[1];
     const module = MODULES.find(m => m === section) as Module | undefined;
     return module && !access[module] ? <main className="mx-auto max-w-3xl px-5 py-12"><p role="alert" className="text-muted-foreground">Você não tem acesso a esta página.</p></main> : children;
   }}</AccessContext.Consumer>;

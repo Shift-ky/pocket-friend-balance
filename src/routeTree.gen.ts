@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ContasFixasRouteImport } from './routes/contas-fixas'
 import { Route as EstoqueRouteImport } from './routes/estoque'
 import { Route as FeiraRouteImport } from './routes/feira'
 import { Route as FinancasRouteImport } from './routes/financas'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContasFixasRoute = ContasFixasRouteImport.update({
+  id: '/contas-fixas',
+  path: '/contas-fixas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EstoqueRoute = EstoqueRouteImport.update({
@@ -56,6 +62,7 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/contas-fixas': typeof ContasFixasRoute
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/contas-fixas': typeof ContasFixasRoute
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/contas-fixas': typeof ContasFixasRoute
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/contas-fixas'
     | '/estoque'
     | '/feira'
     | '/financas'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/contas-fixas'
     | '/estoque'
     | '/feira'
     | '/financas'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/contas-fixas'
     | '/estoque'
     | '/feira'
     | '/financas'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ContasFixasRoute: typeof ContasFixasRoute
   EstoqueRoute: typeof EstoqueRoute
   FeiraRoute: typeof FeiraRoute
   FinancasRoute: typeof FinancasRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contas-fixas': {
+      id: '/contas-fixas'
+      path: '/contas-fixas'
+      fullPath: '/contas-fixas'
+      preLoaderRoute: typeof ContasFixasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/estoque': {
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ContasFixasRoute: ContasFixasRoute,
   EstoqueRoute: EstoqueRoute,
   FeiraRoute: FeiraRoute,
   FinancasRoute: FinancasRoute,

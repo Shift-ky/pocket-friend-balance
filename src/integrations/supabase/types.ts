@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      contas_fixas: {
+        Row: {
+          ativa: boolean
+          conta: string
+          created_at: string
+          criado_por: string
+          descricao: string
+          dia: number
+          fim: string | null
+          grupo_id: string
+          id: string
+          inicio: string
+          modalidade: string
+          valor: number
+        }
+        Insert: {
+          ativa?: boolean
+          conta?: string
+          created_at?: string
+          criado_por?: string
+          descricao: string
+          dia: number
+          fim?: string | null
+          grupo_id: string
+          id?: string
+          inicio: string
+          modalidade: string
+          valor: number
+        }
+        Update: {
+          ativa?: boolean
+          conta?: string
+          created_at?: string
+          criado_por?: string
+          descricao?: string
+          dia?: number
+          fim?: string | null
+          grupo_id?: string
+          id?: string
+          inicio?: string
+          modalidade?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_fixas_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contas_fixas_ocorrencias: {
+        Row: {
+          competencia: string
+          created_at: string
+          fixa_id: string
+          lancamento_id: string
+        }
+        Insert: {
+          competencia: string
+          created_at?: string
+          fixa_id: string
+          lancamento_id: string
+        }
+        Update: {
+          competencia?: string
+          created_at?: string
+          fixa_id?: string
+          lancamento_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_fixas_ocorrencias_fixa_id_fkey"
+            columns: ["fixa_id"]
+            isOneToOne: false
+            referencedRelation: "contas_fixas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       despesas: {
         Row: {
           categoria: string
@@ -451,8 +533,10 @@ export type Database = {
     }
     Functions: {
       criar_grupo: { Args: { _nome: string }; Returns: string }
+      data_conta_fixa: { Args: { _dia: number; _mes: string }; Returns: string }
       e_membro: { Args: { _grupo: string }; Returns: boolean }
       entrar_grupo: { Args: { _codigo: string }; Returns: string }
+      gerar_contas_fixas: { Args: { _id?: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
