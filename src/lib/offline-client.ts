@@ -148,7 +148,7 @@ async function execute(table: string, calls: Call[]) {
       let cmd: Command;
       if (mutation.method === 'insert') {
         const input = Array.isArray(mutation.args[0]) ? mutation.args[0] : [mutation.args[0]];
-        const defaults: Record<string, Row> = { lancamentos: { pago: false, conta: 'dinheiro', destino: 'geral', origem_modulo: 'financas' }, feira_itens: { qtd: 1, preco: 0, pego: false }, feira_historico: { pagamento: 'nenhum', lancamento_id: null }, estoque: { qtd: 0, padrao: 1, divisao_id: null, ordem: null } };
+        const defaults: Record<string, Row> = { lancamentos: { pago: false, conta: 'dinheiro', destino: 'geral', origem_modulo: 'financas' }, feira_itens: { qtd: 1, preco: 0, pego: false }, feira_historico: { pagamento: 'nenhum', lancamento_id: null }, estoque: { qtd: 0, padrao: 1, divisao_id: null, ordem: null }, contas_fixas: { conta: 'dinheiro', fim: null, ativa: true } };
         rows = input.map(value => ({ ...defaults[table], ...value as Row, id: (value as Row).id ?? crypto.randomUUID(), created_at: (value as Row).created_at ?? new Date().toISOString() }));
         if (rows.some(r => r.grupo_id !== s.group)) throw new Error('Grupo inválido.');
         cmd = { table, action: 'insert', rows };

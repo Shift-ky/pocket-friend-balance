@@ -3,6 +3,10 @@ export const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency',
 export function ordenarPorVencimento<T extends { data: string }>(itens: T[]): T[] {
   return [...itens].sort((a, b) => a.data.localeCompare(b.data));
 }
+export function separarPendencias<T extends { data: string }>(itens: T[], hoje = new Date()) {
+  const mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  return { atuais: itens.filter(i => i.data.slice(0, 7) <= mes), futuras: itens.filter(i => i.data.slice(0, 7) > mes) };
+}
 export function pendenciasDoMes(itens: LancamentoPainel[], hoje = new Date()) {
   const mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   return itens.filter(i => i.tipo === 'debito' && !i.pago && i.data.slice(0, 7) === mes)
