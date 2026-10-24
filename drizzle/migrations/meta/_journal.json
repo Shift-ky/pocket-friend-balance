@@ -141,6 +141,13 @@
       "when": 1792714554254,
       "tag": "0019_sync_offline_qtd_comprada",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792801364827,
+      "tag": "0020_contas_fixas_mensais",
+      "breakpoints": true
     }
   ]
 }
