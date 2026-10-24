@@ -5,7 +5,7 @@ import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
 import { useAccess } from "@/lib/access-context";
 import { buscarPrecosFeira, ultimoPrecoFeira } from "@/lib/precos-feira";
-import { alternarPego, definirComprada, itensComprados, valorCarrinho, valorPrevisto } from "@/lib/feira";
+import { alternarPego, definirComprada, itensComprados, prepararListaAposCompra, valorCarrinho, valorPrevisto } from "@/lib/feira";
 
 export const Route = createFileRoute("/feira")({
   head: () => ({
@@ -74,8 +74,9 @@ function Feira() {
     const comprados = itensComprados(itens);
     if (!comprados.length) return alert("Informe a quantidade comprada de pelo menos um item antes de finalizar.");
     const totalComprado = valorCarrinho(itens);
-    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico (não finalizada) e limpar a lista?" : "Finalizar esta compra, somar os itens comprados ao estoque e limpar a lista?")) return;
+    if (!confirm(pagamento === "nenhum" ? "Salvar esta compra no histórico, sem alterar o estoque e mantendo as pendências na lista?" : "Finalizar esta compra, somar os itens comprados ao estoque e manter as quantidades que ainda faltam na lista?")) return;
     const copia = comprados;
+    const pendencias = prepararListaAposCompra(itens, pagamento !== "nenhum");
     setSalvando(true);
     try {
       await offlineTransaction(async () => {
@@ -85,9 +86,15 @@ function Feira() {
           if (error || !data) throw new Error('Não foi possível lançar o pagamento.');
           lancamento_id = data.id;
         }
-        // Delete the snapshot before stock triggers run; newly generated replacement items survive.
-        const { error: deleteError } = await supabase.from('feira_itens').delete().in('id', itens.map(i => i.id));
-        if (deleteError) throw deleteError;
+        // Keep unbought and partial rows. Stock triggers own the remaining deficit quantities.
+        if (pendencias.remover.length) {
+          const { error } = await supabase.from('feira_itens').delete().in('id', pendencias.remover);
+          if (error) throw error;
+        }
+        if (pendencias.reiniciar.length) {
+          const { error } = await supabase.from('feira_itens').update({ qtd_comprada: 0, pego: false }).in('id', pendencias.reiniciar);
+          if (error) throw error;
+        }
         const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total: totalComprado, itens: copia, pagamento, lancamento_id });
         if (error) throw error;
       });

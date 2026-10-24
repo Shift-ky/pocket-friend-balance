@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Manter produtos e quantidades pendentes na lista após finalizar; compra parcial conferida com previsão 5, compra 3 e restante 2, outro produto não comprado manteve 5; carrinho reiniciado, 19 testes aprovados e dados de teste removidos.
 - [x] Implementar dados locais por conta/grupo e fila durável; lançamento sem rede, restauração após reabrir, sincronização real, releitura e repetição sem duplicata conferidos; 78 testes aprovados e registros de verificação removidos.
 - [x] Preparar abertura offline com página pública de abertura, arquivos guardados e registro bloqueado na prévia.
 - [ ] Conferir abertura totalmente sem internet no aplicativo publicado; depende de publicar esta versão e abrir uma vez conectado (a prévia não registra o cache offline).

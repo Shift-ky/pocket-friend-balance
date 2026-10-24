@@ -1,11 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { alternarPego, definirComprada, itensComprados, valorCarrinho, valorPrevisto } from "@/lib/feira";
+import { alternarPego, definirComprada, itensComprados, prepararListaAposCompra, valorCarrinho, valorPrevisto } from "@/lib/feira";
 
 const item = (over: Partial<{ qtd: number; qtd_comprada: number; preco: number; pego: boolean; nome: string }> = {}) => ({
   nome: "Arroz", qtd: 2, qtd_comprada: 0, preco: 10, pego: false, ...over,
 });
 
 describe("quantidade comprada da feira", () => {
+  it("mantém produtos não comprados fora da remoção e do reinício", () => {
+    expect(prepararListaAposCompra([{ ...item({ qtd: 5 }), id: 'pendente' }], true)).toEqual({ remover: [], reiniciar: [] });
+  });
+
+  it("preserva compras parciais para o estoque recalcular o déficit e reinicia o carrinho", () => {
+    expect(prepararListaAposCompra([
+      { ...item({ qtd: 5, qtd_comprada: 3 }), id: 'parcial' },
+      { ...item({ qtd: 2, qtd_comprada: 2 }), id: 'completo' },
+    ], true)).toEqual({ remover: ['completo'], reiniciar: ['parcial'] });
+  });
+
+  it("salvar sem pagamento mantém a previsão pois o estoque não recebe produtos", () => {
+    expect(prepararListaAposCompra([{ ...item({ qtd: 5, qtd_comprada: 5 }), id: 'sem-pagamento' }], false)).toEqual({ remover: [], reiniciar: ['sem-pagamento'] });
+  });
+
   it("marcar o checkbox adiciona a quantidade prevista em comprados", () => {
     expect(alternarPego(item())).toEqual({ pego: true, qtd_comprada: 2 });
   });

@@ -25,3 +25,10 @@ export function definirComprada(item: ItemCesta, comprada: number): { qtd_compra
 export function itensComprados(itens: ItemCesta[]) {
   return itens.filter((i) => i.qtd_comprada > 0).map((i) => ({ nome: (i.nome ?? "").trim(), qtd: i.qtd_comprada, preco: i.preco, pego: true }));
 }
+
+/** Preserve untouched deficits; stock triggers reconcile quantities after a paid purchase. */
+export function prepararListaAposCompra(itens: (ItemCesta & { id: string })[], paga: boolean) {
+  const remover = itens.filter(i => paga && i.qtd_comprada > 0 && i.qtd_comprada >= i.qtd).map(i => i.id);
+  const reiniciar = itens.filter(i => i.qtd_comprada > 0 && !remover.includes(i.id)).map(i => i.id);
+  return { remover, reiniciar };
+}
