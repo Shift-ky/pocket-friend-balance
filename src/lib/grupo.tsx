@@ -71,6 +71,7 @@ function Login({ aoEntrar }: { aoEntrar: () => void }) {
   return (
     <main data-login className="relative isolate bg-background text-foreground">
       <img src={loginDreams} alt="Moedas guardadas ao lado de fotografias de uma casa e de uma viagem à praia" width={1536} height={1024} fetchPriority="high" className="absolute inset-x-0 top-0 -z-10 h-[290px] w-full object-cover object-bottom lg:h-full lg:object-center" />
+      <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[290px] bg-gradient-to-b from-background via-background/75 to-transparent lg:h-full lg:bg-gradient-to-r lg:from-background lg:via-background/60 lg:to-transparent" />
       <div className="mx-auto grid max-w-7xl lg:min-h-[calc(100dvh-65px)] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <header className="flex h-[290px] flex-col px-6 pt-7 lg:h-auto lg:px-12 lg:py-14">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase"><img src={mariaLogo} alt="" width={1024} height={1024} className="h-5 w-5" />Um passo de cada vez</p>
