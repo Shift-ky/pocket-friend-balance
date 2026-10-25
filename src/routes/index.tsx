@@ -13,9 +13,9 @@ import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPenden
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
-    { title: 'Painel — Minhas Finanças' },
+    { title: 'MarIA — Painel' },
     { name: 'description', content: 'Seus saldos, contas, compras, estoque e gasolina em um painel único.' },
-    { property: 'og:title', content: 'Painel — Minhas Finanças' },
+    { property: 'og:title', content: 'MarIA — Painel' },
     { property: 'og:description', content: 'Acompanhe suas finanças, compras e despesas da moto em um só lugar.' },
     { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary' },
   ] }), component: Painel,

@@ -11,9 +11,9 @@ import { brl } from '@/lib/painel';
 
 export const Route = createFileRoute('/contas-fixas')({
   head: () => ({ meta: [
-    { title: 'Contas e entradas fixas — Minhas Finanças' },
+    { title: 'MarIA — Contas e entradas fixas' },
     { name: 'description', content: 'Cadastre entradas, aportes e contas mensais com data inicial e duração definida ou indefinida.' },
-    { property: 'og:title', content: 'Contas e entradas fixas — Minhas Finanças' },
+    { property: 'og:title', content: 'MarIA — Contas e entradas fixas' },
     { property: 'og:description', content: 'Organize seus recebimentos e contas mensais automáticos.' },
     { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary' },
   ] }), component: ContasFixas,
