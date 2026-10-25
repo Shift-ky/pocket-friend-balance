@@ -11,9 +11,9 @@ import { parcelarLancamento } from "@/lib/parcelamento";
 export const Route = createFileRoute("/financas")({
   head: () => ({
     meta: [
-      { title: "Minhas Finanças — Créditos e Débitos" },
+      { title: "MarIA — Créditos e Débitos" },
       { name: "description", content: "Controle o que você recebe e o que precisa pagar." },
-      { property: "og:title", content: "Minhas Finanças" },
+      { property: "og:title", content: "MarIA — Créditos e Débitos" },
       { property: "og:description", content: "Controle seus créditos e débitos de forma simples." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -7,7 +7,7 @@ import { useGrupo } from "@/lib/grupo";
 
 export const Route = createFileRoute("/moto")({
   head: () => ({ meta: [
-    { title: "Moto — Gasolina e abastecimentos" },
+    { title: "MarIA — Moto" },
     { name: "description", content: "Registre as despesas de gasolina da sua moto em dinheiro." },
     { property: "og:title", content: "Moto — Gasolina e abastecimentos" },
     { property: "og:description", content: "Registre abastecimentos pagos em dinheiro." },

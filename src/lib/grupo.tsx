@@ -5,8 +5,9 @@ import { readIdentity, rememberIdentity, forgetIdentity } from '@/lib/offline-st
 import { useAccess } from "@/lib/access-context";
 import { moduleForTable, visibleEntries } from "@/lib/access";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Sprout } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import loginDreams from '@/assets/login-dreams.jpg';
+import mariaLogo from '@/assets/maria-logo.png';
 import { LoginWelcome } from '@/components/login-welcome';
 
 type Grupo = { id: string; nome: string; codigo: string };
@@ -70,16 +71,17 @@ function Login({ aoEntrar }: { aoEntrar: () => void }) {
   return (
     <main data-login className="relative isolate bg-background text-foreground">
       <img src={loginDreams} alt="Moedas guardadas ao lado de fotografias de uma casa e de uma viagem à praia" width={1536} height={1024} fetchPriority="high" className="absolute inset-x-0 top-0 -z-10 h-[290px] w-full object-cover object-bottom lg:h-full lg:object-center" />
+      <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-[290px] bg-gradient-to-b from-background via-background/75 to-transparent lg:h-full lg:bg-gradient-to-r lg:from-background lg:via-background/60 lg:to-transparent" />
       <div className="mx-auto grid max-w-7xl lg:min-h-[calc(100dvh-65px)] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <header className="flex h-[290px] flex-col px-6 pt-7 lg:h-auto lg:px-12 lg:py-14">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase"><Sprout className="h-4 w-4" />Um passo de cada vez</p>
-          <h1 className="mt-4 font-display text-4xl lg:mt-8 lg:text-5xl">Minhas Finanças</h1>
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase"><img src={mariaLogo} alt="" width={1024} height={1024} className="h-5 w-5" />Um passo de cada vez</p>
+          <h1 className="mt-4 font-display text-4xl font-bold lg:mt-8 lg:text-5xl">MarIA</h1>
           <p className="mt-3 max-w-xs text-sm leading-relaxed lg:text-base">Cuide do seu dinheiro.<br />Dê espaço aos seus sonhos.</p>
           <p className="mt-auto hidden max-w-xs border-l-2 border-primary pl-4 text-sm leading-relaxed lg:block">A sua próxima conquista começa<br />com o cuidado de hoje.</p>
         </header>
         <section aria-label="Acesso à sua conta" className="flex items-center bg-card px-6 py-9 lg:bg-card/95 lg:px-12 lg:py-14">
           <div className="mx-auto w-full max-w-sm">
-            <span className="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted text-primary"><Sprout className="h-5 w-5" /></span>
+            <span className="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted"><img src={mariaLogo} alt="MarIA" width={1024} height={1024} className="h-6 w-6" /></span>
             <p className="text-xs font-semibold uppercase text-muted-foreground">Seu futuro, com carinho</p>
             <h2 className="mt-2 font-display text-3xl">{modo === 'entrar' ? 'Que bom ter você aqui.' : modo === 'criar' ? 'Comece a cuidar dos seus sonhos.' : 'Vamos recuperar seu acesso.'}</h2>
             <p className="mb-7 mt-3 text-sm leading-relaxed text-muted-foreground">{modo === 'entrar' ? 'Entre na sua conta e continue construindo suas conquistas.' : modo === 'criar' ? 'Crie sua conta para começar uma nova etapa.' : 'Receba por e-mail um link para criar uma nova senha.'}</p>

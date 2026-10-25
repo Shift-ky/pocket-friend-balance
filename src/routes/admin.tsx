@@ -11,9 +11,9 @@ import { ShieldPlus, ShieldMinus, KeyRound, Trash2 } from "lucide-react";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Administração — Finanças" },
+      { title: "MarIA — Administração" },
       { name: "description", content: "Gerencie as contas cadastradas no app." },
-      { property: "og:title", content: "Administração — Finanças" },
+      { property: "og:title", content: "MarIA — Administração" },
       { property: "og:description", content: "Gerencie as contas cadastradas no app." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
