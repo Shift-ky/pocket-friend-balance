@@ -17,7 +17,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRad
 export const Route = createFileRoute("/estoque")({
   head: () => ({
     meta: [
-      { title: "Estoque — Minhas Finanças" },
+      { title: "MarIA — Estoque" },
       { name: "description", content: "Controle o estoque de casa e reponha o que falta na lista da feira." },
       { property: "og:title", content: "Estoque de casa" },
       { property: "og:description", content: "Controle o que tem em casa e gere a lista da feira com o que falta." },

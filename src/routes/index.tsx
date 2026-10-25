@@ -117,7 +117,7 @@ function Painel() {
       </div>
     )}
     <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
-      <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Minhas Finanças · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
+      <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">MarIA · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
       <div className="flex flex-wrap gap-2">{access.financas && <Button asChild><Link to="/financas"><Plus />Lançamento</Link></Button>}{access.moto && <Button asChild variant="outline"><Link to="/moto"><Fuel />Abastecimento</Link></Button>}</div>
     </header>
     {visible.balances && <section aria-label="Saldos atuais" className={`mb-7 grid gap-3 ${visible.financialCards ? 'grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]' : 'grid-cols-1'}`}>

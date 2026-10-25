@@ -10,7 +10,7 @@ import { alternarPego, definirComprada, itensComprados, prepararListaAposCompra,
 export const Route = createFileRoute("/feira")({
   head: () => ({
     meta: [
-      { title: "Lista da Feira — Minhas Finanças" },
+      { title: "MarIA — Lista da Feira" },
       { name: "description", content: "Anote os itens da sua feira e acompanhe o total." },
       { property: "og:title", content: "Lista da Feira" },
       { property: "og:description", content: "Anote os itens da sua feira e acompanhe o total." },
