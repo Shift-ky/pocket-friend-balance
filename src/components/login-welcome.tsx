@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Sprout, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import loginDreams from '@/assets/login-dreams.jpg';
+import mariaLogo from '@/assets/maria-logo.png';
 
 export function LoginWelcome({ aoConcluir }: { aoConcluir: () => void }) {
   const [saindo, setSaindo] = useState(false);
@@ -16,7 +17,7 @@ export function LoginWelcome({ aoConcluir }: { aoConcluir: () => void }) {
     <section data-login aria-label="Mensagem de boas-vindas" className={`login-welcome fixed inset-0 z-50 flex overflow-y-auto bg-background text-foreground ${saindo ? 'login-welcome-exit' : ''}`}>
       <img src={loginDreams} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-10" />
       <div className="relative m-auto w-full max-w-2xl px-7 py-10 text-center sm:px-12">
-        <Sprout aria-hidden className="mx-auto mb-8 h-8 w-8 text-primary" />
+        <img src={mariaLogo} alt="" aria-hidden width={1024} height={1024} className="mx-auto mb-8 h-10 w-10" />
         <blockquote className="font-display text-2xl leading-relaxed sm:text-3xl">
           “Uma reserva pequena e constante vale mais do que uma meta grande abandonada.”
         </blockquote>
