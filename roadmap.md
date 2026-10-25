@@ -34,3 +34,4 @@
 - [x] Quantidade comprada na Feira governa o carrinho (marca o checkbox ao atingir a previsão e zera ao desmarcar); finalização salva no histórico só os produtos comprados com a quantidade comprada — conferido no navegador com sincronização corrigida.
 - [x] Mostrar hora e autor (e-mail) nos lançamentos, contas pendentes e gasolina do Painel — conferido no navegador com a conta proprietária.
 - [x] Corrigir a sincronização: a lista de campos aceitos pela operação de sincronização não incluía a quantidade comprada da Feira, o que prendia alterações pendentes; migração aplicada e fluxo completo reverificado.
+- [ ] Aplicar identidade visual MarIA: paleta Azul Profundo e Ciano Neon no tema Original, logotipo oficial e tipografia Montserrat, mantendo os temas atuais selecionáveis; conferir login, barra superior e Painel.
