@@ -176,33 +176,8 @@ function Nav() {
           <div className="flex shrink-0 items-center gap-4"><AppearanceMenu /><Button variant="link" size="sm" onClick={sair} className="shrink-0 px-0 text-xs text-muted-foreground">Sair</Button></div>
         </div>
       </div>
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-5 py-3">
-        <Link to="/" activeOptions={{ exact: true }} className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Início
-        </Link>
-        {access.financas && <Link to="/financas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Finanças
-        </Link>}
-        {access.financas && <Link to="/contas-fixas" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Contas fixas
-        </Link>}
-        {access.feira && <Link to="/feira" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Feira
-        </Link>}
-        {access.estoque && <Link to="/estoque" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Estoque
-        </Link>}
-        {access.moto && <Link to="/moto" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-          activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-          Moto
-        </Link>}
-        <AdminLink />
-      </div>
+      <DesktopPillNav />
+      <FloatingOrb />
     </nav>
   );
 }
