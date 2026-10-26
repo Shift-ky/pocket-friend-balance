@@ -32,7 +32,7 @@ export function FluxoChart({ dados }: { dados: Fluxo }) {
   if (!dados.length) return <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>;
   return <div className="h-56 w-full">
     <ResponsiveContainer>
-      <BarChart data={dados} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+      <BarChart data={dados} maxBarSize={48} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--border)" />
         <XAxis dataKey="mes" tickFormatter={mesCurto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -48,7 +48,7 @@ export function CarteirasChart({ dados }: { dados: Carteira }) {
   if (!dados.length) return null;
   return <div className="h-52 w-full">
     <ResponsiveContainer>
-      <BarChart data={dados} layout="vertical" margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
+      <BarChart data={dados} layout="vertical" maxBarSize={28} margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
         <CartesianGrid horizontal={false} stroke="var(--border)" />
         <XAxis type="number" tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis type="category" dataKey="nome" width={90} tick={{ fill: "var(--foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
