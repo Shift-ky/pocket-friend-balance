@@ -17,3 +17,20 @@ export function saldosPainel(itens: LancamentoPainel[]) {
   const guardado = soma('aplicacao') - soma('resgate');
   return { disponivel: soma('credito', 'dinheiro') - soma('debito', 'dinheiro') - guardado, guardado, alimentacao: soma('credito', 'alimentacao') - soma('debito', 'alimentacao'), refeicao: soma('credito', 'refeicao') - soma('debito', 'refeicao') };
 }
+export type MovimentoKpi = { data: string; valor: number; entrada: boolean; pendente: boolean };
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export function kpisPainel(movs: MovimentoKpi[], hoje = new Date()) {
+  const mes = iso(hoje).slice(0, 7); const inicio = iso(hoje);
+  const limite = new Date(hoje); limite.setDate(limite.getDate() + 7); const fim = iso(limite);
+  const doMes = movs.filter(m => m.data.slice(0, 7) === mes);
+  const vencer = movs.filter(m => m.pendente && m.data.slice(0, 10) >= inicio && m.data.slice(0, 10) <= fim);
+  return {
+    entradasMes: doMes.filter(m => m.entrada).reduce((s, m) => s + m.valor, 0),
+    saidasPagasMes: doMes.filter(m => !m.entrada && !m.pendente).reduce((s, m) => s + m.valor, 0),
+    aVencer7: vencer.reduce((s, m) => s + m.valor, 0), qtdAVencer7: vencer.length,
+  };
+}
+export function fluxoMensal(movs: MovimentoKpi[], meses = 6) {
+  const chaves = [...new Set(movs.map(m => m.data.slice(0, 7)))].sort().slice(-meses);
+  return chaves.map(m => ({ mes: m, entradas: movs.filter(x => x.data.startsWith(m) && x.entrada).reduce((s, x) => s + x.valor, 0), saidas: movs.filter(x => x.data.startsWith(m) && !x.entrada && !x.pendente).reduce((s, x) => s + x.valor, 0) }));
+}
