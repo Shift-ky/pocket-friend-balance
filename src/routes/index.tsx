@@ -10,7 +10,7 @@ import { supabase } from '@/lib/offline-client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
 import { useAccess } from '@/lib/access-context';
 import { panelVisibility, visibleEntries } from '@/lib/access';
-import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, type LancamentoPainel } from '@/lib/painel';
+import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, kpisPainel, fluxoMensal, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -76,10 +76,7 @@ function Painel() {
   const pendentesVisiveis = mostrarFuturas ? pendentes : pendentesAtuais;
   const entradas = lista.filter(m => m.entrada).reduce((s,m) => s + m.valor, 0);
   const saidas = lista.filter(m => !m.entrada && !m.pendente).reduce((s,m) => s + m.valor, 0);
-  const meses = [...new Set(lista.map(m => m.data.slice(0,7)))].sort().slice(-6);
-  void meses;
   const grafico = fluxoMensal(lista);
-  const _old = meses.map(m => ({ m, e: lista.filter(x => x.data.startsWith(m) && x.entrada).reduce((s,x) => s+x.valor,0), s: lista.filter(x => x.data.startsWith(m) && !x.entrada && !x.pendente).reduce((s,x) => s+x.valor,0) }));
   const kpis = { ...kpisPainel(todos), consolidado: (access.financas ? saldos.disponivel + saldos.guardado + saldos.alimentacao + saldos.refeicao : 0) + (access.moto ? gasolina.saldo : 0) };
   const carteiras = [...(access.financas ? [{ nome: 'Dinheiro', valor: saldos.disponivel, cor: 'var(--primary)' },{ nome: 'Alimentação', valor: saldos.alimentacao, cor: 'var(--credit)' },{ nome: 'Refeição', valor: saldos.refeicao, cor: 'var(--debit)' }] : []), ...(access.moto ? [{ nome: 'Moto/Aporte', valor: gasolina.saldo, cor: 'var(--saved)' }] : [])];
   const faltantes = estoque.filter(p => Number(p.qtd) < Number(p.padrao));
