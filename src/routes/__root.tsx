@@ -1,6 +1,3 @@
-import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { possoAcessarAdmin } from "@/lib/admin.functions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -19,7 +16,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GrupoGate, useGrupo } from "@/lib/grupo";
 import { AccessProvider, AccessSurface } from "@/components/access-provider";
 import { AppearanceMenu, AppearanceProvider } from "@/components/appearance-provider";
-import { useAccess } from "@/lib/access-context";
+import { DesktopPillNav, FloatingOrb } from "@/components/app-nav";
 import { recoverModuleLoad, isModuleLoadError } from '@/lib/module-recovery';
 import { Button } from '@/components/ui/button';
 import { OfflineProvider } from '@/components/offline-provider';
@@ -164,7 +161,6 @@ function RootComponent() {
 
 function Nav() {
   const { grupo, sair } = useGrupo();
-  const access = useAccess();
   return (
     <nav className="border-b bg-card">
       <div className="border-b">
@@ -179,18 +175,5 @@ function Nav() {
       <DesktopPillNav />
       <FloatingOrb />
     </nav>
-  );
-}
-
-function AdminLink() {
-  const { session } = useGrupo();
-  const checar = useServerFn(possoAcessarAdmin);
-  const { data } = useQuery({ queryKey: ["acessoAdmin", session.user.id], queryFn: () => checar() });
-  if (!data) return null;
-  return (
-    <Link to="/admin" className="rounded-full px-4 py-1.5 text-sm font-semibold"
-      activeProps={{ className: "bg-primary text-primary-foreground" }} inactiveProps={{ className: "text-muted-foreground" }}>
-      Admin
-    </Link>
   );
 }
