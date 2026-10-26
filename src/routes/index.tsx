@@ -1,3 +1,4 @@
+import { KpiCards, FluxoChart, CarteirasChart } from '@/components/painel-analitico';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Fragment, useEffect, useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Wallet, PiggyBank, Utensils, ShoppingBasket, Fuel, Pencil, Trash2, Plus, Package, CalendarDays, RotateCcw, Eye, EyeOff } from 'lucide-react';
@@ -9,7 +10,7 @@ import { supabase } from '@/lib/offline-client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
 import { useAccess } from '@/lib/access-context';
 import { panelVisibility, visibleEntries } from '@/lib/access';
-import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, type LancamentoPainel } from '@/lib/painel';
+import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, kpisPainel, fluxoMensal, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -75,9 +76,9 @@ function Painel() {
   const pendentesVisiveis = mostrarFuturas ? pendentes : pendentesAtuais;
   const entradas = lista.filter(m => m.entrada).reduce((s,m) => s + m.valor, 0);
   const saidas = lista.filter(m => !m.entrada && !m.pendente).reduce((s,m) => s + m.valor, 0);
-  const meses = [...new Set(lista.map(m => m.data.slice(0,7)))].sort().slice(-6);
-  const grafico = meses.map(m => ({ m, e: lista.filter(x => x.data.startsWith(m) && x.entrada).reduce((s,x) => s+x.valor,0), s: lista.filter(x => x.data.startsWith(m) && !x.entrada && !x.pendente).reduce((s,x) => s+x.valor,0) }));
-  const maior = Math.max(1,...grafico.flatMap(g => [g.e,g.s]));
+  const grafico = fluxoMensal(lista);
+  const kpis = { ...kpisPainel(todos), consolidado: (access.financas ? saldos.disponivel + saldos.guardado + saldos.alimentacao + saldos.refeicao : 0) + (access.moto ? gasolina.saldo : 0) };
+  const carteiras = [...(access.financas ? [{ nome: 'Dinheiro', valor: saldos.disponivel, cor: 'var(--primary)' },{ nome: 'Alimentação', valor: saldos.alimentacao, cor: 'var(--credit)' },{ nome: 'Refeição', valor: saldos.refeicao, cor: 'var(--debit)' }] : []), ...(access.moto ? [{ nome: 'Moto/Aporte', valor: gasolina.saldo, cor: 'var(--saved)' }] : [])];
   const faltantes = estoque.filter(p => Number(p.qtd) < Number(p.padrao));
   const aportes = access.moto ? lanc.filter(l => l.destino === 'gasolina' && noPeriodo(l.data)) : [];
   async function pagar(item: LancamentoPainel) {
@@ -120,6 +121,8 @@ function Painel() {
       <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">MarIA · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
       <div className="flex flex-wrap gap-2">{access.financas && <Button asChild><Link to="/financas"><Plus />Lançamento</Link></Button>}{access.moto && <Button asChild variant="outline"><Link to="/moto"><Fuel />Abastecimento</Link></Button>}</div>
     </header>
+    {(access.financas || access.moto) && <KpiCards k={kpis} />}
+    {carteiras.length > 1 && <section aria-label="Carteiras dedicadas" className="mb-7 rounded-xl border bg-card p-4 sm:p-5"><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-xl font-bold">Carteiras dedicadas</h2><span className="text-xs text-muted-foreground">Saldo atual</span></div><CarteirasChart dados={carteiras} /></section>}
     {visible.balances && <section aria-label="Saldos atuais" className={`mb-7 grid gap-3 ${visible.financialCards ? 'grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]' : 'grid-cols-1'}`}>
       {access.financas && <div className="min-w-0 rounded-lg bg-primary p-3 text-primary-foreground sm:p-4"><Wallet className="mb-3 h-5 w-5 opacity-80" /><p className="text-xs opacity-80">Dinheiro disponível</p><p className="mt-1 break-words font-display text-lg sm:text-xl">{brl(saldos.disponivel)}</p></div>}
       {access.financas && <div aria-label="Pendências do mês atual" className="min-w-0 rounded-lg border bg-debit-soft p-3 sm:p-4"><CalendarDays className="mb-3 h-5 w-5 text-debit" /><p className="text-xs text-muted-foreground">Pendências · mês atual</p><p className="mt-1 break-words font-display text-lg text-debit sm:text-xl">{brl(pendenciasDoMes(financialLanc))}</p></div>}
@@ -132,7 +135,7 @@ function Painel() {
     {visible.financialSummary && <div className="mb-8 bg-card p-4 sm:p-5">
       <section><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Entradas e saídas</h2><span className="text-xs text-muted-foreground">No período</span></div>
         <div className="mb-5 grid grid-cols-2 gap-3"><div className="rounded-lg bg-credit-soft p-3"><p className="flex items-center gap-2 text-xs text-credit"><ArrowDownLeft className="h-4 w-4" />Entradas</p><p className="mt-1 break-words font-display text-xl text-credit">{brl(entradas)}</p></div><div className="rounded-lg bg-debit-soft p-3"><p className="flex items-center gap-2 text-xs text-debit"><ArrowUpRight className="h-4 w-4" />Saídas pagas</p><p className="mt-1 break-words font-display text-xl text-debit">{brl(saidas)}</p></div></div>
-        {grafico.length ? <div className="flex h-40 items-end gap-3 border-b pb-2">{grafico.map(g => <div key={g.m} className="min-w-0 flex-1"><div className="flex h-28 items-end justify-center gap-1"><div className="w-1/3 rounded-t bg-credit" style={{height:`${g.e/maior*100}%`}} title={`Entradas: ${brl(g.e)}`} /><div className="w-1/3 rounded-t bg-debit" style={{height:`${g.s/maior*100}%`}} title={`Saídas pagas: ${brl(g.s)}`} /></div><p className="mt-2 text-center text-xs text-muted-foreground">{new Date(g.m+'-01T00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</p></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>}
+        <FluxoChart dados={grafico} />
       </section>
     </div>}
     {visible.moduleSummary && <section className="mb-8 grid gap-6 border-y bg-card p-4 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] sm:p-5" aria-label="Feira, estoque e moto">
