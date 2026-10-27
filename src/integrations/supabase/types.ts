@@ -725,6 +725,10 @@ export type Database = {
         }
         Returns: string
       }
+      telegram_sender_allowed: {
+        Args: { _grupo: string; _user: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"

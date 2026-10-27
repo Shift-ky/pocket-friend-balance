@@ -162,6 +162,13 @@
       "when": 1793065138506,
       "tag": "0022_telegram_review_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793065155110,
+      "tag": "0023_telegram_approval_rpc_only",
+      "breakpoints": true
     }
   ]
 }
