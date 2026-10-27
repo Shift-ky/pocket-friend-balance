@@ -18,7 +18,7 @@ export const listTelegramReviews = createServerFn({ method: 'POST' }).middleware
   return { rows: rows ?? [], linked: Boolean(link?.telegram_user_id) };
 });
 export const reviewTelegram = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator(reviewInput).handler(async ({ data, context }) => {
-  const { data: id, error } = await context.supabase.rpc('telegram_review_action', { _id: data.id, _action: data.action, _valor: data.valor ?? undefined, _data: data.data ?? undefined,
+  const { data: id, error } = await context.supabase.rpc('telegram_review_action', { _id: data.id, _action: data.action, ...(data.valor === null ? {} : { _valor: data.valor }), ...(data.data === null ? {} : { _data: data.data }),
     _descricao: data.descricao, _conta: data.conta, _categoria: data.categoria, _pago: data.pago });
   if (error) throw new Error(error.message);
   return { id };

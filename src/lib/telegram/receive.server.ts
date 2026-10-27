@@ -18,7 +18,7 @@ export async function receiveTelegram(request: Request) {
   const uid = m?.from.id ?? cb?.from.id; const chat = m?.chat.id ?? cb?.message?.chat.id;
   if (!uid || !chat || (m && m.chat.type !== 'private')) return Response.json({ ok: true });
   const start = m?.text?.match(/^\/start(?:@\w+)?\s+([a-f0-9]{48})$/);
-  if (start) {
+  if (start?.[1]) {
     const { data, error } = await db.rpc('telegram_binding', { _hash: createHash('sha256').update(start[1]).digest('hex'), _telegram: uid, _chat: chat });
     await telegram('sendMessage', { chat_id: chat, text: !error && data ? 'Conta vinculada à MarIA. Envie seu cupom, comprovante, boleto PDF ou texto para conferência.' : 'Link inválido ou expirado. Gere outro em Conferência na MarIA.' });
     return Response.json({ ok: true });
@@ -28,7 +28,7 @@ export async function receiveTelegram(request: Request) {
   if (!link || !allowed?.data) { await telegram('sendMessage', { chat_id: chat, text: 'Vincule sua conta pelo botão Conectar Telegram na aba Conferência da MarIA.' }); return Response.json({ ok: true }); }
   if (cb) {
     const match = cb.data?.match(/^(revisar|descartar):([a-f0-9-]{36})$/);
-    if (match?.[1] === 'descartar') await db.from('telegram_reviews').update({ status: 'descartado', reviewed_at: new Date().toISOString() }).eq('id', match[2]).eq('user_id', link.user_id).eq('chat_id', chat).eq('status', 'pendente');
+    if (match?.[1] === 'descartar' && match[2]) await db.from('telegram_reviews').update({ status: 'descartado', reviewed_at: new Date().toISOString() }).eq('id', match[2]).eq('user_id', link.user_id).eq('chat_id', chat).eq('status', 'pendente');
     await telegram('answerCallbackQuery', { callback_query_id: cb.id, text: match?.[1] === 'descartar' ? 'Item descartado. Nenhum lançamento criado.' : 'Revise e aprove na MarIA.' });
     return Response.json({ ok: true });
   }
@@ -38,7 +38,7 @@ export async function receiveTelegram(request: Request) {
   if (doc && mime !== 'application/pdf' && !['image/jpeg', 'image/png'].includes(mime ?? '')) { await telegram('sendMessage', { chat_id: chat, text: 'Envie foto, imagem JPG/PNG, PDF ou texto.' }); return Response.json({ ok: true }); }
   if ((doc?.file_size ?? photo?.file_size ?? 0) > 20 * 1024 * 1024) { await telegram('sendMessage', { chat_id: chat, text: 'O arquivo precisa ter até 20 MB.' }); return Response.json({ ok: true }); }
   const { data: item, error } = await db.from('telegram_reviews').insert({ update_id: u.update_id, user_id: link.user_id, grupo_id: link.grupo_id, chat_id: chat,
-    source_text: m.text ?? m.caption ?? '', file_id: photo?.file_id ?? doc?.file_id, file_name: photo ? 'comprovante.jpg' : doc?.file_name, mime_type: mime }).select('id').single();
+    source_text: m.text ?? m.caption ?? '', file_id: photo?.file_id ?? doc?.file_id ?? null, file_name: photo ? 'comprovante.jpg' : doc?.file_name ?? null, mime_type: mime ?? null }).select('id').single();
   if (error) { if (error.code === '23505') return Response.json({ ok: true }); throw new Error(error.message); }
   await telegram('sendMessage', { chat_id: chat, text: 'Recebido para conferência. Nada será lançado sem sua aprovação na MarIA.', reply_markup: { inline_keyboard: [[{ text: 'Abrir conferência', url: 'https://pocket-friend-balance.lovable.app/conferencia' }, { text: 'Descartar', callback_data: `descartar:${item.id}` }]] } });
   return Response.json({ ok: true });
