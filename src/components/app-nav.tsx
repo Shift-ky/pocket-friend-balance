@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Bike, Boxes, CalendarClock, Home, LayoutGrid, Shield, ShoppingBasket, Wallet, X } from "lucide-react";
+import { Bike, Boxes, CalendarClock, Home, LayoutGrid, Shield, ShoppingBasket, Wallet, X, Inbox } from "lucide-react";
 import { possoAcessarAdmin } from "@/lib/admin.functions";
 import { useGrupo } from "@/lib/grupo";
 import { useAccess } from "@/lib/access-context";
 import { cn } from "@/lib/utils";
 
-type Item = { to: "/" | "/financas" | "/contas-fixas" | "/feira" | "/estoque" | "/moto" | "/admin"; label: string; icon: typeof Home };
+type Item = { to: "/" | "/financas" | "/contas-fixas" | "/feira" | "/estoque" | "/moto" | "/admin" | "/conferencia"; label: string; icon: typeof Home };
 
 function useItens(): Item[] {
   const access = useAccess();
@@ -16,7 +16,7 @@ function useItens(): Item[] {
   const checar = useServerFn(possoAcessarAdmin);
   const { data: admin } = useQuery({ queryKey: ["acessoAdmin", session.user.id], queryFn: () => checar() });
   const itens: Item[] = [{ to: "/", label: "Início", icon: Home }];
-  if (access.financas) itens.push({ to: "/financas", label: "Finanças", icon: Wallet }, { to: "/contas-fixas", label: "Contas fixas", icon: CalendarClock });
+  if (access.financas) itens.push({ to: "/financas", label: "Finanças", icon: Wallet }, { to: "/contas-fixas", label: "Contas fixas", icon: CalendarClock }, { to: "/conferencia", label: "Conferência", icon: Inbox });
   if (access.feira) itens.push({ to: "/feira", label: "Feira", icon: ShoppingBasket });
   if (access.estoque) itens.push({ to: "/estoque", label: "Estoque", icon: Boxes });
   if (access.moto) itens.push({ to: "/moto", label: "Moto", icon: Bike });
