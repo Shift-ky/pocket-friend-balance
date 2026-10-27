@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Integrar Telegram oficial, vinculação segura por conta/grupo, captura de textos/fotos/PDFs, confirmação inline e fila de aprovação sem lançamentos antecipados; implementação em andamento, verificar fluxo real.
+- [x] Vincular Robson's Telegram e criar conferência privada com edição/aprovação/descarte; aprovação autenticada gerou uma única conta pendente de R$ 32,50, dados de teste removidos; leitura inteligente de texto real e 104 testes aprovados.
+- [ ] Ativar webhook Telegram e verificar envio real de foto/PDF/texto: endereço público está retornando 404, embora a recepção local protegida responda 401 corretamente; registrar setWebhook somente após disponibilização do endereço. Fotos/PDFs e download pelo Telegram ainda não verificados de ponta a ponta.
 - [x] Criar aba de contas e entradas fixas com período e dia mensal; rotina diária ativa às 00h05 de Brasília, três carteiras e aportes pagos conferidos, saídas pendentes, 15 ocorrências sem duplicatas e cadastro offline sincronizado; 95 testes aprovados.
 - [x] Recolher pendências dos meses futuros no fim do Painel com “Ver todas”; abertura/recolhimento e meses anteriores e vigentes conferidos na conta autenticada, sem erros e sem corte no celular.
 - [x] Manter produtos e quantidades pendentes na lista após finalizar; compra parcial conferida com previsão 5, compra 3 e restante 2, outro produto não comprado manteve 5; carrinho reiniciado, 19 testes aprovados e dados de teste removidos.
