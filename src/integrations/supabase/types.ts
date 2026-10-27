@@ -458,6 +458,160 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_ai_state: {
+        Row: {
+          id: boolean
+          paused: boolean
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          paused?: boolean
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          paused?: boolean
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      telegram_links: {
+        Row: {
+          chat_id: number | null
+          code_expires_at: string | null
+          code_hash: string | null
+          created_at: string
+          grupo_id: string
+          telegram_user_id: number | null
+          user_id: string
+        }
+        Insert: {
+          chat_id?: number | null
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          grupo_id: string
+          telegram_user_id?: number | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: number | null
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          grupo_id?: string
+          telegram_user_id?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_links_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_reviews: {
+        Row: {
+          beneficiario: string
+          categoria: string
+          chat_id: number
+          codigo: string | null
+          conta: string
+          created_at: string
+          data: string | null
+          descricao: string
+          documento: string
+          emissao: string | null
+          error: string | null
+          extraction_status: string
+          file_id: string | null
+          file_name: string | null
+          file_path: string | null
+          grupo_id: string
+          id: string
+          lancamento_id: string | null
+          mime_type: string | null
+          pago: boolean
+          reviewed_at: string | null
+          source_text: string
+          status: string
+          update_id: number
+          user_id: string
+          valor: number | null
+        }
+        Insert: {
+          beneficiario?: string
+          categoria?: string
+          chat_id: number
+          codigo?: string | null
+          conta?: string
+          created_at?: string
+          data?: string | null
+          descricao?: string
+          documento?: string
+          emissao?: string | null
+          error?: string | null
+          extraction_status?: string
+          file_id?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          grupo_id: string
+          id?: string
+          lancamento_id?: string | null
+          mime_type?: string | null
+          pago?: boolean
+          reviewed_at?: string | null
+          source_text?: string
+          status?: string
+          update_id: number
+          user_id: string
+          valor?: number | null
+        }
+        Update: {
+          beneficiario?: string
+          categoria?: string
+          chat_id?: number
+          codigo?: string | null
+          conta?: string
+          created_at?: string
+          data?: string | null
+          descricao?: string
+          documento?: string
+          emissao?: string | null
+          error?: string | null
+          extraction_status?: string
+          file_id?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          grupo_id?: string
+          id?: string
+          lancamento_id?: string | null
+          mime_type?: string | null
+          pago?: boolean
+          reviewed_at?: string | null
+          source_text?: string
+          status?: string
+          update_id?: number
+          user_id?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_reviews_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_access: {
         Row: {
           estoque: boolean
@@ -552,6 +706,24 @@ export type Database = {
       sync_offline_operation: {
         Args: { _commands: Json; _grupo_id: string; _id: string }
         Returns: Json
+      }
+      telegram_binding: {
+        Args: { _chat: number; _hash: string; _telegram: number }
+        Returns: boolean
+      }
+      telegram_claim: { Args: { _id: string }; Returns: boolean }
+      telegram_review_action: {
+        Args: {
+          _action: string
+          _categoria?: string
+          _conta?: string
+          _data?: string
+          _descricao?: string
+          _id: string
+          _pago?: boolean
+          _valor?: number
+        }
+        Returns: string
       }
     }
     Enums: {
