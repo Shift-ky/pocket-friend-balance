@@ -11,12 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ConferenciaRouteImport } from './routes/conferencia'
 import { Route as ContasFixasRouteImport } from './routes/contas-fixas'
 import { Route as EstoqueRouteImport } from './routes/estoque'
 import { Route as FeiraRouteImport } from './routes/feira'
 import { Route as FinancasRouteImport } from './routes/financas'
 import { Route as MotoRouteImport } from './routes/moto'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ApiPublicTelegramProcessRouteImport } from './routes/api/public/telegram/process'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -26,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConferenciaRoute = ConferenciaRouteImport.update({
+  id: '/conferencia',
+  path: '/conferencia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContasFixasRoute = ContasFixasRouteImport.update({
@@ -58,80 +66,113 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramProcessRoute =
+  ApiPublicTelegramProcessRouteImport.update({
+    id: '/api/public/telegram/process',
+    path: '/api/public/telegram/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/conferencia': typeof ConferenciaRoute
   '/contas-fixas': typeof ContasFixasRoute
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
   '/moto': typeof MotoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/telegram/process': typeof ApiPublicTelegramProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/conferencia': typeof ConferenciaRoute
   '/contas-fixas': typeof ContasFixasRoute
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
   '/moto': typeof MotoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/telegram/process': typeof ApiPublicTelegramProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/conferencia': typeof ConferenciaRoute
   '/contas-fixas': typeof ContasFixasRoute
   '/estoque': typeof EstoqueRoute
   '/feira': typeof FeiraRoute
   '/financas': typeof FinancasRoute
   '/moto': typeof MotoRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/telegram/process': typeof ApiPublicTelegramProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/conferencia'
     | '/contas-fixas'
     | '/estoque'
     | '/feira'
     | '/financas'
     | '/moto'
     | '/reset-password'
+    | '/api/public/telegram/process'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
+    | '/conferencia'
     | '/contas-fixas'
     | '/estoque'
     | '/feira'
     | '/financas'
     | '/moto'
     | '/reset-password'
+    | '/api/public/telegram/process'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/conferencia'
     | '/contas-fixas'
     | '/estoque'
     | '/feira'
     | '/financas'
     | '/moto'
     | '/reset-password'
+    | '/api/public/telegram/process'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ConferenciaRoute: typeof ConferenciaRoute
   ContasFixasRoute: typeof ContasFixasRoute
   EstoqueRoute: typeof EstoqueRoute
   FeiraRoute: typeof FeiraRoute
   FinancasRoute: typeof FinancasRoute
   MotoRoute: typeof MotoRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicTelegramProcessRoute: typeof ApiPublicTelegramProcessRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -148,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conferencia': {
+      id: '/conferencia'
+      path: '/conferencia'
+      fullPath: '/conferencia'
+      preLoaderRoute: typeof ConferenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contas-fixas': {
@@ -192,18 +240,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/process': {
+      id: '/api/public/telegram/process'
+      path: '/api/public/telegram/process'
+      fullPath: '/api/public/telegram/process'
+      preLoaderRoute: typeof ApiPublicTelegramProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ConferenciaRoute: ConferenciaRoute,
   ContasFixasRoute: ContasFixasRoute,
   EstoqueRoute: EstoqueRoute,
   FeiraRoute: FeiraRoute,
   FinancasRoute: FinancasRoute,
   MotoRoute: MotoRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicTelegramProcessRoute: ApiPublicTelegramProcessRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
