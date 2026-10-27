@@ -3,6 +3,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createLovableAiGatewayRunIdFetch } from './run-id.ts';
 import { sdkImage, sdkPDF } from './media-parts.ts';
 import { extractedSchema, normalizeExtracted } from './model';
+import { parseBankBoleto } from './boleto';
 
 export async function extractDocument(text: string, bytes?: Buffer, mime?: string, filename?: string) {
   const key = process.env['LOVABLE_API_KEY']; if (!key) throw new Error('Leitura inteligente não configurada.');
@@ -16,5 +17,8 @@ export async function extractDocument(text: string, bytes?: Buffer, mime?: strin
     messages: [{ role: 'user', content }], output: Output.object({ schema: extractedSchema }),
     providerOptions: { openai: { forceReasoning: true, reasoningEffort: 'low', reasoningSummary: 'auto', store: false, include: ['reasoning.encrypted_content'] } },
   });
-  return normalizeExtracted(await result.output);
+  const extracted = normalizeExtracted(await result.output);
+  const boleto = parseBankBoleto(extracted.codigo ?? text);
+  if (boleto) { extracted.valor = boleto.valor ?? extracted.valor; extracted.codigo = boleto.codigo; extracted.documento = 'boleto'; }
+  return extracted;
 }

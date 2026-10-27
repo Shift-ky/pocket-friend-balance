@@ -23,7 +23,7 @@ function Conference() {
       <Button variant="outline" onClick={async () => { try { const x = await link({ data: { grupo: grupo.id } }); window.location.assign(x.url); } catch(e) { setMessage(e instanceof Error ? e.message : 'Falha ao conectar'); } }}><Send />{data?.linked ? 'Vincular novamente' : 'Conectar Telegram'}</Button></header>
     {(message || error) && <p role="status" className="my-4 text-sm text-debit">{message || error?.message}</p>}
     <div className="my-6 flex gap-2">{['pendente', 'aprovado', 'descartado'].map(s => <Button key={s} variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>{s === 'pendente' ? 'Pendentes' : s === 'aprovado' ? 'Aprovados' : 'Descartados'}</Button>)}</div>
-    {!data ? <p className="text-muted-foreground">Carregando…</p> : !data.rows.some(r => r.status === filter) ? <p className="py-12 text-center text-muted-foreground">Nenhum item {filter === 'pendente' ? 'em conferência' : filter}.</p> : <div className="space-y-4">{data.rows.filter(r => r.status === filter).map(row => <Review key={row.id} row={row} done={() => { void qc.invalidateQueries({ queryKey: ['telegram', grupo.id] }); }} />)}</div>}
+    {!data ? <p className="text-muted-foreground">Carregando…</p> : !data.rows.some(r => r.status === filter) ? <p className="py-12 text-center text-muted-foreground">Nenhum item {filter === 'pendente' ? 'em conferência' : filter}.</p> : <div className="space-y-4">{data.rows.filter(r => r.status === filter).map(row => <Review key={`${row.id}:${row.extraction_status}`} row={row} done={() => { void qc.invalidateQueries({ queryKey: ['telegram', grupo.id] }); }} />)}</div>}
   </main>;
 }
 function Review({ row, done }: { row: Tables<'telegram_reviews'>; done: () => void }) {
