@@ -72,7 +72,8 @@ export function FloatingOrb() {
       <div className={cn("fixed z-50 h-14 w-14", !drag.position && "bottom-6 right-5")}
         style={drag.position ? { left: drag.position.x, top: drag.position.y } : undefined}>
       {aberto && (
-        <div className={cn("absolute grid max-h-[calc(50dvh-4rem)] w-[min(18rem,calc(100vw-2.5rem))] grid-cols-3 gap-2 overflow-y-auto rounded-3xl border bg-card p-3 shadow-2xl", drag.upperHalf ? "top-full mt-3" : "bottom-full mb-3", drag.leftHalf ? "left-0" : "right-0")}>
+        <div style={drag.position ? { left: `clamp(calc(12px - ${drag.position.x}px), 0px, calc(100vw - ${drag.position.x}px - min(18rem, calc(100vw - 2.5rem)) - 12px))` } : undefined}
+          className={cn("absolute grid max-h-[calc(50dvh-4rem)] w-[min(18rem,calc(100vw-2.5rem))] grid-cols-3 gap-2 overflow-y-auto rounded-3xl border bg-card p-3 shadow-2xl", drag.upperHalf ? "top-full mt-3" : "bottom-full mb-3", !drag.position && "right-0")}>
           {itens.map(({ to, label, icon: Icon }) => (
             <Link key={to} to={to} activeOptions={{ exact: to === "/" }}
               className="flex flex-col items-center gap-1 rounded-2xl px-1 py-3 text-[11px] font-semibold"
