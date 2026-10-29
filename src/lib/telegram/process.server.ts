@@ -24,9 +24,9 @@ export async function processReviews(ids?: string[]) {
         await db.from('telegram_reviews').update({ file_path: path }).eq('id', row.id);
       }
       const extracted = await extractDocument(row.source_text, bytes, row.mime_type ?? undefined, row.file_name ?? undefined);
-      const { error: saveError } = await db.from('telegram_reviews').update({ ...extracted, extraction_status: 'concluido', error: null }).eq('id', row.id).eq('status', 'pendente');
+      const { error: saveError } = await db.from('telegram_reviews').update({ ...extracted, extraction_status: 'concluido', error: null }).eq('id', row.id).eq('status', 'pendente').is('produtos_destino', null);
       if (saveError) throw new Error(saveError.message);
-      await telegram('sendMessage', { chat_id: row.chat_id, text: `Leitura concluída: ${extracted.descricao || 'Documento'}\nValor: ${extracted.valor === null ? 'Conferir' : `R$ ${extracted.valor.toFixed(2)}`}\nData: ${extracted.data ?? 'Conferir'}\nRevise carteira e pagamento antes de aprovar.`, reply_markup: { inline_keyboard: [[{ text: 'Conferir e aprovar', url: 'https://pocket-friend-balance.lovable.app/conferencia' }, { text: 'Descartar', callback_data: `descartar:${row.id}` }]] } });
+      await telegram('sendMessage', { chat_id: row.chat_id, text: `Leitura concluída: ${extracted.descricao || 'Documento'}\nValor: ${extracted.valor === null ? 'Conferir' : `R$ ${extracted.valor.toFixed(2)}`}\nData: ${extracted.data ?? 'Conferir'}${extracted.produtos.length ? `\nProdutos identificados: ${extracted.produtos.length}. Confira nomes e quantidades na MarIA.` : ''}\nRevise carteira e pagamento antes de aprovar.`, reply_markup: { inline_keyboard: [[{ text: 'Conferir e aprovar', url: 'https://pocket-friend-balance.lovable.app/conferencia' }, { text: 'Descartar', callback_data: `descartar:${row.id}` }]] } });
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Não foi possível ler o documento.';
       const status = APICallError.isInstance(e) ? e.statusCode : undefined;

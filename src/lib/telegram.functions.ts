@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { z } from 'zod';
-import { reviewInput } from './telegram/model';
+import { reviewInput, produtosInput } from './telegram/model';
 
 export const linkTelegram = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator(z.object({ grupo: z.string().uuid() })).handler(async ({ data, context }) => {
   const { randomBytes, createHash } = await import('node:crypto');
@@ -28,4 +28,9 @@ export const telegramFile = createServerFn({ method: 'POST' }).middleware([requi
   if (error || !row.file_path) throw new Error('Arquivo indisponível.');
   const { data: signed, error: signError } = await context.supabase.storage.from('telegram-documents').createSignedUrl(row.file_path, 300);
   if (signError) throw new Error(signError.message); return { url: signed.signedUrl };
+});
+export const reviewTelegramProducts = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator(produtosInput).handler(async ({ data, context }) => {
+  const { data: destino, error } = await context.supabase.rpc('telegram_products_action', { _id: data.id, _action: data.action, _produtos: data.produtos });
+  if (error) throw new Error(error.message);
+  return { destino };
 });
