@@ -539,6 +539,9 @@ export type Database = {
           lancamento_id: string | null
           mime_type: string | null
           pago: boolean
+          produtos: Json
+          produtos_destino: string | null
+          produtos_importados_at: string | null
           reviewed_at: string | null
           source_text: string
           status: string
@@ -567,6 +570,9 @@ export type Database = {
           lancamento_id?: string | null
           mime_type?: string | null
           pago?: boolean
+          produtos?: Json
+          produtos_destino?: string | null
+          produtos_importados_at?: string | null
           reviewed_at?: string | null
           source_text?: string
           status?: string
@@ -595,6 +601,9 @@ export type Database = {
           lancamento_id?: string | null
           mime_type?: string | null
           pago?: boolean
+          produtos?: Json
+          produtos_destino?: string | null
+          produtos_importados_at?: string | null
           reviewed_at?: string | null
           source_text?: string
           status?: string
@@ -712,6 +721,10 @@ export type Database = {
         Returns: boolean
       }
       telegram_claim: { Args: { _id: string }; Returns: boolean }
+      telegram_products_action: {
+        Args: { _action: string; _id: string; _produtos: Json }
+        Returns: string
+      }
       telegram_review_action: {
         Args: {
           _action: string

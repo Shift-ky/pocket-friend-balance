@@ -169,6 +169,13 @@
       "when": 1793065155110,
       "tag": "0023_telegram_approval_rpc_only",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793234544797,
+      "tag": "0024_telegram_receipt_products",
+      "breakpoints": true
     }
   ]
 }
