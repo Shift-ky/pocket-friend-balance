@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Extrair produtos e quantidades dos cupons Telegram, revisar e importar uma única vez para Feira ou Estoque sem lançamento financeiro automático.
 - [x] Vincular Robson's Telegram e criar conferência privada com edição/aprovação/descarte; aprovação autenticada gerou uma única conta pendente de R$ 32,50, dados de teste removidos; leitura inteligente de texto real e 104 testes aprovados.
 - [x] Corrigir a falta de resposta na vinculação do Telegram: endereço publicado aceita o segredo correto; setWebhook atualizado sem descartar mensagens, cinco entregas pendentes processadas e fila zerada sem erro de autenticação.
 - [ ] Verificar envio real de foto/PDF/texto pelo Telegram; depende de enviar esses documentos pelo chat do bot após vincular a conta.
