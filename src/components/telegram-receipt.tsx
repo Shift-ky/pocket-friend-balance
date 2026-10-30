@@ -19,6 +19,8 @@ export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:
   const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const [notice,setNotice]=useState(''); const [confirm,setConfirm]=useState<'aprovar'|'descartar'|null>(null);
   const [searches,setSearches]=useState<Record<number,string>>({});
   const suggested=useRef(false);
+  const stockOptions=options.data?.stock;
+  const stockLinks=options.data?.links;
   useEffect(()=>{
     if (!options.data || suggested.current) return;
     suggested.current=true;
@@ -29,6 +31,15 @@ export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:
       return link && options.data?.stock.some(p=>p.id===link.estoque_id) ? {...item,estoque_id:link.estoque_id} : item;
     }));
   },[options.data]);
+  useEffect(()=>{
+    if (!stockOptions) return;
+    setItems(current=>current.map(item=>{
+      const search=searches[item.id];
+      if (search===undefined || item.novo) return item;
+      const found=stockOptions.find(p=>p.nome===search)?.id ?? '';
+      return found===item.estoque_id ? item : {...item,estoque_id:found};
+    }));
+  },[stockOptions,searches]);
   const reading=row.extraction_status==='aguardando'||row.extraction_status==='processando';
   function change(id:number,patch:Partial<(typeof items)[number]>) {setConfirm(null);setItems(current=>current.map(p=>p.id===id?{...p,...patch}:p));}
   async function submit(action:'salvar'|'aprovar'|'descartar') {
