@@ -3,7 +3,7 @@ import { APICallError } from 'ai';
 export const lovableCreditPause = 'lovable:402 — Créditos de IA do Lovable esgotados.';
 
 export class ExtractionProviderError extends Error {
-  constructor(public readonly provider: 'lovable' | 'gemini', public readonly statusCode: number | undefined, message: string) {
+  constructor(public readonly provider: 'lovable' | 'gemini', public readonly statusCode: number | undefined, message: string, public readonly reason?: 'timeout') {
     super(message);
     this.name = 'ExtractionProviderError';
   }
@@ -39,3 +39,4 @@ export async function withCreditFallback<T>(primary: () => Promise<T>, fallback:
     return fallback();
   }
 }
+
