@@ -4,6 +4,10 @@ Quando a extração no Lovable responde HTTP 402, o servidor registra a pausa de
 
 O modelo padrão é gemini-3.8-flash; GEMINI_MODEL permite configurar outro modelo Gemini compatível com PDF e saída estruturada. Nenhuma dependência foi adicionada: a chamada usa a API REST oficial do Google. As instruções financeiras, validação Zod, normalização e parser de boleto permanecem compartilhados.
 
+Para reduzir latência, modelos Gemini 3/4 usam thinkingLevel LOW; modelos anteriores configurados não recebem esse parâmetro. O limite de 25 segundos inclui a resposta completa, além dos cabeçalhos, e aborta a chamada sem nova tentativa automática. Isso não é um prazo total da importação: há espera do agendamento (atualmente a cada minuto), download, armazenamento e gravação. Não reduzimos o limite de tokens, pois truncar a resposta pode perder produtos.
+
+O lote não reivindica outro item se já consumiu 20 segundos da janela do agendador. Isso reduz o risco de cancelamento de uma segunda leitura; o próximo documento continua aguardando. Logs telegram_extraction registram etapas e tempo acumulado, com ID da revisão, sem chave, nomes de arquivo, conteúdo ou dados financeiros. Um cancelamento externo do servidor pode interromper o tratamento do erro: estados antigos presos precisam de análise e recuperação pontual, sem repetir automaticamente os PDFs.
+
 Compatibilidade de produção: o servidor usa Cloudflare Workers, que não aceita redirect: error. A chamada usa redirect: manual; respostas 3xx falham sem seguir Location, preservando a chave no destino Google original. A opção incompatível causava a mensagem genérica de indisponibilidade antes do envio. Não confundir esse caso com uma quota ou chave rejeitada pelo Google.
 
 ## Comportamento
