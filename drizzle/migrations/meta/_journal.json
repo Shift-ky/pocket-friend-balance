@@ -183,6 +183,13 @@
       "when": 1793320319155,
       "tag": "0025_telegram_complete_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793320664337,
+      "tag": "0026_telegram_legacy_review_guard",
+      "breakpoints": true
     }
   ]
 }
