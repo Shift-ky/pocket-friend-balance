@@ -1,4 +1,7 @@
 # Roadmap
+- [ ] Conferir webhook e /start; habilitar carteiras e Salvar Pendência diretamente no Telegram, sem duplicação e sem aprovar cupons com produtos.
+- [ ] Conferir cupons completos no MAR IA com preços, associação de estoque, opção de novo produto e memória De/Para; aprovar compra, estoque e débito atomicamente.
+- [ ] Verificar regras de acesso, idempotência, lançamentos e leitura das compras/estoque pela interface.
 - [x] Ordenar movimentações por data de lançamento e filtrar históricos por mês e ano; 15 testes aprovados, histórico real, mês vazio e retorno a todos os meses conferidos, preservando saldos e ordem das pendências.
 - [x] Extrair produtos e quantidades dos cupons Telegram; leitura inteligente real de 2 unidades e 0,75 kg, edição e releitura, cancelamento, inclusão na Feira e no Estoque e repetição sem duplicatas conferidos; 24 testes aprovados, dados temporários removidos. Foto real continua dependente do envio ao bot.
 - [x] Vincular Robson's Telegram e criar conferência privada com edição/aprovação/descarte; aprovação autenticada gerou uma única conta pendente de R$ 32,50, dados de teste removidos; leitura inteligente de texto real e 104 testes aprovados.
