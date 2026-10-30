@@ -75,6 +75,26 @@ describe('alternativa Gemini', () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('key=private'); }));
     await expect(extractWithGemini('instruções', 'fictício')).rejects.toThrow('manualmente');
   });
+  it('usa o modo de redirecionamento compatível com Cloudflare Workers', async () => {
+    const request = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      // Reproduce the documented Workers rejection instead of Node fetch behavior.
+      if (init?.redirect === 'error') throw new TypeError('Invalid redirect value: error is not implemented');
+      expect(init?.redirect).toBe('manual');
+      return complete();
+    });
+    vi.stubGlobal('fetch', request);
+    await expect(extractWithGemini('instruções', 'fictício')).resolves.toEqual(document);
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+  it.each([301, 302, 307, 308])('não segue redirecionamento Google %s nem reenvia a chave', async status => {
+    const request = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.redirect).toBe('manual');
+      return new Response(null, { status, headers: { Location: 'https://other.example.test' } });
+    });
+    vi.stubGlobal('fetch', request);
+    await expect(extractWithGemini('instruções', 'fictício')).rejects.toMatchObject({ provider: 'gemini', statusCode: status });
+    expect(request).toHaveBeenCalledTimes(1);
+  });
   it('recusa configuração ausente e tipo inválido antes da chamada', async () => {
     const request = vi.fn(); vi.stubGlobal('fetch', request);
     await expect(extractWithGemini('instruções', '', Buffer.from('bad'), 'text/html')).rejects.toThrow('incompatível');

@@ -30,7 +30,9 @@ export async function extractWithGemini(instructions: string, text: string, byte
   let response: Response;
   try {
     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(60_000),
+      // Cloudflare Workers rejects redirect: 'error' before sending the request.
+      // Manual mode also prevents forwarding the API key to a redirect target.
+      method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(60_000),
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: instructions }] },
