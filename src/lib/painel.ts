@@ -1,6 +1,6 @@
 export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string; origem_modulo?: string; criado_por?: string | null; created_at?: string };
 export const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-type RegistroHistorico = { data?: string; created_at?: string };
+type RegistroHistorico = { data?: string | undefined; created_at?: string | undefined };
 export function dataLancamento(item: RegistroHistorico): string {
   if (item.created_at && Number.isFinite(Date.parse(item.created_at))) {
     const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(item.created_at));
