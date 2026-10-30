@@ -4,6 +4,8 @@ Quando a extração no Lovable responde HTTP 402, o servidor registra a pausa de
 
 O modelo padrão é gemini-3.8-flash; GEMINI_MODEL permite configurar outro modelo Gemini compatível com PDF e saída estruturada. Nenhuma dependência foi adicionada: a chamada usa a API REST oficial do Google. As instruções financeiras, validação Zod, normalização e parser de boleto permanecem compartilhados.
 
+Compatibilidade de produção: o servidor usa Cloudflare Workers, que não aceita redirect: error. A chamada usa redirect: manual; respostas 3xx falham sem seguir Location, preservando a chave no destino Google original. A opção incompatível causava a mensagem genérica de indisponibilidade antes do envio. Não confundir esse caso com uma quota ou chave rejeitada pelo Google.
+
 ## Comportamento
 
 - Leitura Lovable bem-sucedida: não chama Gemini.
@@ -34,3 +36,4 @@ Gemini tem quotas, condições de uso e possível cobrança conforme a conta. N�
 - https://ai.google.dev/gemini-api/docs/structured-output
 - https://ai.google.dev/gemini-api/docs/document-processing
 - https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash
+- https://developers.cloudflare.com/workers/runtime-apis/request/
