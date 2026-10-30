@@ -90,6 +90,7 @@ describe('alternativa Gemini', () => {
     await vi.advanceTimersByTimeAsync(25_000);
     await rejected;
     expect(request.mock.calls[0]![1]?.signal?.aborted).toBe(true);
+    await expect(result).rejects.toMatchObject({ reason: 'timeout' });
     expect(request).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -130,3 +131,4 @@ describe('alternativa Gemini', () => {
     expect(request).not.toHaveBeenCalled();
   });
 });
+
