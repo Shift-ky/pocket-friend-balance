@@ -217,28 +217,34 @@ export type Database = {
       feira_historico: {
         Row: {
           created_at: string
+          data_compra: string | null
           grupo_id: string
           id: string
           itens: Json
           lancamento_id: string | null
+          local: string
           pagamento: string
           total: number
         }
         Insert: {
           created_at?: string
+          data_compra?: string | null
           grupo_id: string
           id?: string
           itens?: Json
           lancamento_id?: string | null
+          local?: string
           pagamento?: string
           total?: number
         }
         Update: {
           created_at?: string
+          data_compra?: string | null
           grupo_id?: string
           id?: string
           itens?: Json
           lancamento_id?: string | null
+          local?: string
           pagamento?: string
           total?: number
         }
@@ -517,6 +523,42 @@ export type Database = {
           },
         ]
       }
+      telegram_product_links: {
+        Row: {
+          estoque_id: string
+          grupo_id: string
+          nome_cupom: string
+          updated_at: string
+        }
+        Insert: {
+          estoque_id: string
+          grupo_id: string
+          nome_cupom: string
+          updated_at?: string
+        }
+        Update: {
+          estoque_id?: string
+          grupo_id?: string
+          nome_cupom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_product_links_grupo_id_estoque_id_fkey"
+            columns: ["grupo_id", "estoque_id"]
+            isOneToOne: false
+            referencedRelation: "estoque"
+            referencedColumns: ["grupo_id", "id"]
+          },
+          {
+            foreignKeyName: "telegram_product_links_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_reviews: {
         Row: {
           beneficiario: string
@@ -531,6 +573,7 @@ export type Database = {
           emissao: string | null
           error: string | null
           extraction_status: string
+          feira_historico_id: string | null
           file_id: string | null
           file_name: string | null
           file_path: string | null
@@ -538,6 +581,7 @@ export type Database = {
           id: string
           lancamento_id: string | null
           mime_type: string | null
+          moto_despesa_id: string | null
           pago: boolean
           produtos: Json
           produtos_destino: string | null
@@ -562,6 +606,7 @@ export type Database = {
           emissao?: string | null
           error?: string | null
           extraction_status?: string
+          feira_historico_id?: string | null
           file_id?: string | null
           file_name?: string | null
           file_path?: string | null
@@ -569,6 +614,7 @@ export type Database = {
           id?: string
           lancamento_id?: string | null
           mime_type?: string | null
+          moto_despesa_id?: string | null
           pago?: boolean
           produtos?: Json
           produtos_destino?: string | null
@@ -593,6 +639,7 @@ export type Database = {
           emissao?: string | null
           error?: string | null
           extraction_status?: string
+          feira_historico_id?: string | null
           file_id?: string | null
           file_name?: string | null
           file_path?: string | null
@@ -600,6 +647,7 @@ export type Database = {
           id?: string
           lancamento_id?: string | null
           mime_type?: string | null
+          moto_despesa_id?: string | null
           pago?: boolean
           produtos?: Json
           produtos_destino?: string | null
@@ -723,6 +771,24 @@ export type Database = {
       telegram_claim: { Args: { _id: string }; Returns: boolean }
       telegram_products_action: {
         Args: { _action: string; _id: string; _produtos: Json }
+        Returns: string
+      }
+      telegram_quick_action: {
+        Args: { _action: string; _chat: number; _id: string; _telegram: number }
+        Returns: Json
+      }
+      telegram_receipt_action: {
+        Args: {
+          _action: string
+          _categoria: string
+          _conta: string
+          _data: string
+          _descricao: string
+          _id: string
+          _local: string
+          _produtos: Json
+          _valor: number
+        }
         Returns: string
       }
       telegram_review_action: {
