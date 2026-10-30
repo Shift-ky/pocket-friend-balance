@@ -20,7 +20,6 @@ export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:
   const [searches,setSearches]=useState<Record<number,string>>({});
   const suggested=useRef(false);
   const stockOptions=options.data?.stock;
-  const stockLinks=options.data?.links;
   useEffect(()=>{
     if (!options.data || suggested.current) return;
     suggested.current=true;
