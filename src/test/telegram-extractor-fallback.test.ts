@@ -7,30 +7,37 @@ const data = {
   produtos: [{ nome: 'Leite', qtd: null, preco: null }],
 };
 const response = () => Response.json({
-  candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(data) }] } }],
+  status: 'completed',
+  output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(data) }] }],
 });
 
-beforeEach(() => { vi.stubEnv('GEMINI_API_KEY', 'test-only'); });
+beforeEach(() => { vi.stubEnv('OPENAI_API_KEY', 'test-only'); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
-it('envia o documento diretamente à Gemini e normaliza os campos extraídos', async () => {
+it('envia o documento à OpenAI e normaliza os campos extraídos', async () => {
   const request = vi.fn(async () => response());
   vi.stubGlobal('fetch', request);
 
   const result = await extractDocument('Documento fictício', Buffer.from('%PDF-fake'), 'application/pdf');
 
   expect(request).toHaveBeenCalledTimes(1);
-  expect(request.mock.calls[0]![0]).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent');
+  expect(request.mock.calls[0]![0]).toBe('https://api.openai.com/v1/responses');
+  const options = request.mock.calls[0]![1] as RequestInit;
+  const body = JSON.parse(String(options.body));
+  expect(body.store).toBe(false);
+  expect(body.model).toBe('gpt-6.1-terra');
+  expect(body.input[0].content[0].type).toBe('input_file');
+  expect(body.text.format.strict).toBe(true);
   expect(result.valor).toBe(12.35);
   expect(result.data).toBeNull();
   expect(result.produtos[0]!.qtd).toBeNull();
 });
 
-it('deixa a revisão para conferência manual se a chave Gemini estiver ausente', async () => {
+it('deixa a revisão para conferência manual se a chave OpenAI estiver ausente', async () => {
   const request = vi.fn();
   vi.stubGlobal('fetch', request);
-  vi.stubEnv('GEMINI_API_KEY', '');
+  vi.stubEnv('OPENAI_API_KEY', '');
 
-  await expect(extractDocument('fictício')).rejects.toThrow('Gemini não configurado');
+  await expect(extractDocument('fictício')).rejects.toThrow('OpenAI não configurada');
   expect(request).not.toHaveBeenCalled();
 });
