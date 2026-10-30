@@ -14,6 +14,7 @@ let writes: { table: string; value: Record<string, unknown> }[];
 let filters: unknown[][];
 let pauseError: boolean;
 beforeEach(() => {
+  vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.clearAllMocks(); vi.stubEnv('GEMINI_API_KEY', 'not-a-real-key');
   pause = null; rows = [row('one')]; writes = []; filters = []; pauseError = false;
   mocks.rpc.mockResolvedValue({ data: true }); mocks.extract.mockResolvedValue(extracted); mocks.send.mockResolvedValue({});
@@ -30,7 +31,7 @@ beforeEach(() => {
     return query;
   });
 });
-afterEach(() => { vi.unstubAllEnvs(); });
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe('processamento agendado com alternativa', () => {
   it('processa novos documentos quando Lovable está pausado por crédito', async () => {
@@ -73,5 +74,14 @@ describe('processamento agendado com alternativa', () => {
     await processReviews();
     expect(writes.some(w => w.value['extraction_status'] === 'concluido')).toBe(false);
     expect(writes.some(w => w.value['extraction_status'] === 'erro')).toBe(true);
+  });
+  it('deixa próximo item aguardando quando o primeiro usa a janela de execução', async () => {
+    let now = 0; vi.spyOn(Date, 'now').mockImplementation(() => now);
+    rows = [row('one'), row('two')];
+    mocks.extract.mockImplementationOnce(async () => { now = 21_000; return extracted; });
+    await processReviews();
+    expect(mocks.extract).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc.mock.calls.filter(([name]) => name === 'telegram_claim')).toHaveLength(1);
+    expect(console.info).toHaveBeenCalledWith('telegram_extraction', expect.objectContaining({ stage: 'saved', elapsedMs: 21_000 }));
   });
 });

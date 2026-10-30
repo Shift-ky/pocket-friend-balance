@@ -5,7 +5,7 @@ import { ExtractionProviderError, isLovableCreditPause, lovableCreditPause, with
 const document = { valor: 12.34, data: '2026-10-30', emissao: null, beneficiario: 'Loja de teste', descricao: 'Compra fictícia', documento: 'comprovante', codigo: null, produtos: [] };
 const complete = (value: unknown = document, finishReason = 'STOP') => Response.json({ candidates: [{ finishReason, content: { parts: [{ text: JSON.stringify(value) }] } }] });
 beforeEach(() => { vi.stubEnv('GEMINI_API_KEY', 'test-only-not-a-real-key'); });
-afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe('alternativa Gemini', () => {
   it('mantém Lovable quando a leitura funciona', async () => {
@@ -60,6 +60,7 @@ describe('alternativa Gemini', () => {
     const body = JSON.parse(options.body as string);
     expect(body.contents[0].parts[0].inlineData.mimeType).toBe('application/pdf');
     expect(body.generationConfig.responseJsonSchema.properties.produtos.maxItems).toBe(200);
+    expect(body.generationConfig.thinkingConfig.thinkingLevel).toBe('LOW');
   });
   it.each([401, 403, 429, 500])('erro Google %s não expõe resposta do provedor', async status => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('private-provider-body-and-key', { status })));
@@ -74,6 +75,32 @@ describe('alternativa Gemini', () => {
   it('rede indisponível preserva mensagem de conferência manual', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('key=private'); }));
     await expect(extractWithGemini('instruções', 'fictício')).rejects.toThrow('manualmente');
+  });
+  it.each(['headers', 'body'])('encerra em 25 segundos mesmo com %s travado', async stage => {
+    vi.useFakeTimers();
+    const request = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => {
+      if (stage === 'headers') return new Promise<Response>(() => {});
+      const response = complete();
+      response.json = () => new Promise(() => {});
+      return response;
+    });
+    vi.stubGlobal('fetch', request);
+    const result = extractWithGemini('instruções', 'fictício');
+    const rejected = expect(result).rejects.toThrow('25 segundos');
+    await vi.advanceTimersByTimeAsync(25_000);
+    await rejected;
+    expect(request.mock.calls[0]![1]?.signal?.aborted).toBe(true);
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('não envia parâmetro de Gemini 3 para modelo anterior configurado', async () => {
+    vi.stubEnv('GEMINI_MODEL', 'gemini-2.5-flash');
+    const request = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      expect(JSON.parse(init!.body as string).generationConfig.thinkingConfig).toBeUndefined();
+      return complete();
+    });
+    vi.stubGlobal('fetch', request);
+    await extractWithGemini('instruções', 'fictício');
   });
   it('usa o modo de redirecionamento compatível com Cloudflare Workers', async () => {
     const request = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
