@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { z } from 'zod';
-import { reviewInput, produtosInput } from './telegram/model';
+import { reviewInput, produtosInput, receiptInput } from './telegram/model';
 
 export const linkTelegram = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth]).inputValidator(z.object({ grupo: z.string().uuid() })).handler(async ({ data, context }) => {
   const { randomBytes, createHash } = await import('node:crypto');
@@ -33,4 +33,15 @@ export const reviewTelegramProducts = createServerFn({ method: 'POST' }).middlew
   const { data: destino, error } = await context.supabase.rpc('telegram_products_action', { _id: data.id, _action: data.action, _produtos: data.produtos });
   if (error) throw new Error(error.message);
   return { destino };
+});
+export const receiptOptions = createServerFn({ method:'POST' }).middleware([requireSupabaseAuth]).inputValidator(z.object({ grupo:z.string().uuid() })).handler(async ({data,context}) => {
+  const stock = await context.supabase.from('estoque').select('id,nome').eq('grupo_id',data.grupo).order('nome');
+  const links = await context.supabase.from('telegram_product_links').select('nome_cupom,estoque_id').eq('grupo_id',data.grupo);
+  if (stock.error || links.error) throw new Error('Não foi possível consultar os produtos do estoque.');
+  return { stock:stock.data ?? [], links:links.data ?? [] };
+});
+export const reviewTelegramReceipt = createServerFn({ method:'POST' }).middleware([requireSupabaseAuth]).inputValidator(receiptInput).handler(async ({data,context}) => {
+  const result = await context.supabase.rpc('telegram_receipt_action',{ _id:data.id,_action:data.action,_valor:data.valor,_data:data.data,_descricao:data.descricao,_local:data.local,_conta:data.conta,_categoria:data.categoria,_produtos:data.produtos });
+  if (result.error) throw new Error(result.error.message);
+  return { id:result.data };
 });
