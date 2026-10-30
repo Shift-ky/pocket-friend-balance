@@ -10,7 +10,7 @@ import { supabase } from '@/lib/offline-client';
 import { totaisMoto, type DespesaMoto } from '@/lib/moto';
 import { useAccess } from '@/lib/access-context';
 import { panelVisibility, visibleEntries } from '@/lib/access';
-import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, kpisPainel, fluxoMensal, type LancamentoPainel } from '@/lib/painel';
+import { brl, saldosPainel, pendenciasDoMes, ordenarPorVencimento, separarPendencias, kpisPainel, fluxoMensal, historicoPorMes, type LancamentoPainel } from '@/lib/painel';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -61,6 +61,7 @@ function Painel() {
   const availableTabs = ([{id:'movimentos',nome:'Todas as movimentações', allowed:access.financas || access.moto},{id:'gasolina',nome:'Moto e aportes', allowed:access.moto},{id:'compras',nome:'Compras da feira', allowed:access.feira}] as const).filter(t => t.allowed);
   const activeTab = availableTabs.some(t => t.id === aba) ? aba : availableTabs[0]?.id;
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
+  const [mesHistorico, setMesHistorico] = useState('');
   const [mostrarPendentes, setMostrarPendentes] = useState(false);
   const [mostrarFuturas, setMostrarFuturas] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
@@ -84,7 +85,12 @@ function Painel() {
   const kpis = { ...kpisPainel(todos), consolidado: (access.financas ? saldos.disponivel + saldos.guardado + saldos.alimentacao + saldos.refeicao : 0) + (access.moto ? gasolina.saldo : 0) };
   const carteiras = [...(access.financas ? [{ nome: 'Dinheiro', valor: saldos.disponivel, cor: 'var(--primary)' },{ nome: 'Alimentação', valor: saldos.alimentacao, cor: 'var(--credit)' },{ nome: 'Refeição', valor: saldos.refeicao, cor: 'var(--debit)' }] : []), ...(access.moto ? [{ nome: 'Moto/Aporte', valor: gasolina.saldo, cor: 'var(--saved)' }] : [])];
   const faltantes = estoque.filter(p => Number(p.qtd) < Number(p.padrao));
-  const aportes = access.moto ? lanc.filter(l => l.destino === 'gasolina' && noPeriodo(l.data)) : [];
+  const historicoMovimentos = historicoPorMes(todos.filter(m => !m.pendente), mesHistorico);
+  const historicoMoto = historicoPorMes([
+    ...moto.map(d => ({ ...d, aporte: false })),
+    ...(access.moto ? lanc.filter(l => l.destino === 'gasolina').map(d => ({ ...d, aporte: true })) : []),
+  ], mesHistorico);
+  const historicoCompras = historicoPorMes(compras, mesHistorico);
   async function pagar(item: LancamentoPainel) {
     const { error } = await supabase.from('lancamentos').update({ pago: !item.pago }).eq('id',item.id);
     if (error) setErro('Não foi possível atualizar o pagamento.'); else await recarregar();
@@ -168,6 +174,10 @@ function Painel() {
         </Button>
       </div>
       {mostrarHistorico && <div id="historicos-painel">
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <label className="w-full min-w-0 text-xs text-muted-foreground sm:max-w-56">Mês de lançamento<input type="month" aria-label="Mês de lançamento" value={mesHistorico} onChange={e => setMesHistorico(e.target.value)} className={`${campo} mt-1`} /></label>
+        {mesHistorico && <Button variant="outline" size="sm" onClick={() => setMesHistorico('')}><RotateCcw />Todos os meses</Button>}
+      </div>
       <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Históricos">{availableTabs.map(t => <Button key={t.id} role="tab" aria-selected={activeTab===t.id} variant={activeTab===t.id?'default':'outline'} size="sm" onClick={() => setAba(t.id)}>{t.nome}</Button>)}</div>
       {erro && <p role="alert" className="mb-3 text-sm text-debit">{erro}</p>}
       <ul className="divide-y">

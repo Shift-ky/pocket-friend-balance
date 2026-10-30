@@ -1,5 +1,19 @@
 export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string; origem_modulo?: string; criado_por?: string | null; created_at?: string };
 export const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+type RegistroHistorico = { data?: string; created_at?: string };
+export function dataLancamento(item: RegistroHistorico): string {
+  if (item.created_at && Number.isFinite(Date.parse(item.created_at))) {
+    const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(item.created_at));
+    const parte = (tipo: string) => partes.find(p => p.type === tipo)?.value ?? '';
+    return `${parte('year')}-${parte('month')}-${parte('day')}`;
+  }
+  return item.data?.slice(0, 10) ?? '';
+}
+export function historicoPorMes<T extends RegistroHistorico>(itens: T[], mes = ''): T[] {
+  const instante = (item: T) => Date.parse(item.created_at ?? '') || Date.parse(`${item.data?.slice(0, 10)}T00:00:00-03:00`) || 0;
+  return itens.filter(item => !mes || dataLancamento(item).slice(0, 7) === mes)
+    .sort((a, b) => instante(b) - instante(a));
+}
 export function ordenarPorVencimento<T extends { data: string }>(itens: T[]): T[] {
   return [...itens].sort((a, b) => a.data.localeCompare(b.data));
 }
