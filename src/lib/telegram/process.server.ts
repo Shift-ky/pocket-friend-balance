@@ -1,6 +1,7 @@
 import { APICallError } from 'ai';
 import { downloadTelegram, telegram } from './gateway.server';
 import { extractDocument } from './extract.server';
+import { telegramActions } from './model';
 
 export async function processReviews(ids?: string[]) {
   const { supabaseAdmin: db } = await import('@/integrations/supabase/client.server');
@@ -26,7 +27,9 @@ export async function processReviews(ids?: string[]) {
       const extracted = await extractDocument(row.source_text, bytes, row.mime_type ?? undefined, row.file_name ?? undefined);
       const { error: saveError } = await db.from('telegram_reviews').update({ ...extracted, extraction_status: 'concluido', error: null }).eq('id', row.id).eq('status', 'pendente').is('produtos_destino', null);
       if (saveError) throw new Error(saveError.message);
-      await telegram('sendMessage', { chat_id: row.chat_id, text: `Leitura concluída: ${extracted.descricao || 'Documento'}\nValor: ${extracted.valor === null ? 'Conferir' : `R$ ${extracted.valor.toFixed(2)}`}\nData: ${extracted.data ?? 'Conferir'}${extracted.produtos.length ? `\nProdutos identificados: ${extracted.produtos.length}. Confira nomes e quantidades na MarIA.` : ''}\nRevise carteira e pagamento antes de aprovar.`, reply_markup: { inline_keyboard: [[{ text: 'Conferir e aprovar', url: 'https://pocket-friend-balance.lovable.app/conferencia' }, { text: 'Descartar', callback_data: `descartar:${row.id}` }]] } });
+      const {data:permissions}=await db.from('user_access').select('moto').eq('user_id',row.user_id).maybeSingle();
+      const hasMoto=row.user_id==='3f3f6b62-d686-4451-b75f-a108adfb813d' || permissions?.moto !== false;
+      await telegram('sendMessage', { chat_id: row.chat_id, text: `Leitura concluída: ${extracted.descricao || 'Documento'}\nValor: ${extracted.valor === null ? 'Conferir' : `R$ ${extracted.valor.toFixed(2)}`}\nData: ${extracted.data ?? 'Conferir'}${extracted.documento==='cupom' || extracted.produtos.length ? `\nCupom com produtos: confirme a compra no MAR IA para validar o estoque (${extracted.produtos.length} itens).` : '\nSelecione a carteira para aprovar.'}`, reply_markup: { inline_keyboard:telegramActions({...extracted,id:row.id},hasMoto) } });
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Não foi possível ler o documento.';
       const status = APICallError.isInstance(e) ? e.statusCode : undefined;

@@ -22,7 +22,7 @@ export const Route = createFileRoute("/feira")({
 });
 
 type Item = { id: string; nome: string; qtd: number; qtd_comprada: number; preco: number; pego: boolean };
-type Compra = { id: string; total: number; created_at: string; pagamento?: string; lancamento_id?: string | null; itens: { nome: string; qtd: number; preco: number }[] };
+type Compra = { id: string; total: number; created_at: string; data_compra?: string | null; local?: string; pagamento?: string; lancamento_id?: string | null; itens: { nome: string; qtd: number; preco: number; nome_cupom?:string }[] };
 type Pagamento = "nenhum" | "dinheiro" | "alimentacao" | "refeicao";
 const PAGAMENTOS = [["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const;
 const nomePag = (p?: string) => PAGAMENTOS.find(([k]) => k === p)?.[1] ?? "Não lançar";
@@ -236,12 +236,13 @@ function Feira() {
             <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setAberto(aberto === h.id ? null : h.id)} className="min-w-0 flex-1 text-left">
                 <p className="flex flex-wrap items-center gap-2 font-semibold">
-                  {new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens
+                  {h.data_compra ? new Date(h.data_compra+'T12:00:00').toLocaleDateString('pt-BR') : new Date(h.created_at).toLocaleDateString("pt-BR")} · {h.itens.length} itens
                   {h.pagamento && h.pagamento !== "nenhum"
                     ? <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">Finalizada</span>
                     : <span className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">Não finalizada</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">{h.pagamento && h.pagamento !== "nenhum" ? `Pago com ${nomePag(h.pagamento)}` : "Sem pagamento lançado"} · {aberto === h.id ? "Esconder itens" : "Ver itens"}</p>
+                {h.local && <p className="mt-1 break-words text-sm text-muted-foreground">{h.local}</p>}
               </button>
               <span className="shrink-0 font-semibold">{brl(Number(h.total))}</span>
               <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
@@ -280,7 +281,7 @@ function Feira() {
             ) : aberto === h.id && (
               <ul className="mt-3 space-y-1 border-t pt-3 text-sm">
                 {h.itens.map((i, n) => (
-                  <li key={n} className="flex justify-between"><span>{i.qtd} × {i.nome}</span><span>{brl(i.qtd * i.preco)}</span></li>
+                  <li key={n} className="flex items-start justify-between gap-3"><span className="min-w-0 break-words">{i.qtd} × {i.nome}{i.nome_cupom && i.nome_cupom!==i.nome && <small className="block text-muted-foreground">Cupom: {i.nome_cupom}</small>}</span><span className="shrink-0">{brl(i.qtd * i.preco)}</span></li>
                 ))}
               </ul>
             )}
