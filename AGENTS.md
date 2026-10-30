@@ -33,3 +33,4 @@
 - Telegram is online-only with expiring one-use account binding and current group/finance checks. Private documents enter a user-owned queue; only the atomic authenticated approval RPC creates debits. Scheduled extraction persists AI denial pauses and never automatically replays failed reads.
 - Telegram receipt products use a separate atomic, idempotent reviewed import into one destination, enforcing its current module access; stock triggers remain authoritative and product imports never create financial entries or purchase history.
 - Mobile navigation keeps pointer-drag state separate from menu clicks and clamps the orb to the viewport; dragging must not navigate or open the menu.
+- Dashboard histories share a pure monthly filter and newest-first creation timestamp ordering with Brazilian calendar dates and legacy date fallback; this filter stays independent of balances, analytical periods and pending due-date ordering.
