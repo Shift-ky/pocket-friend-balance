@@ -18,7 +18,8 @@ export async function processReviews(ids?: string[]) {
     if (!allowed) continue;
     const { data: claimed } = await db.rpc('telegram_claim', { _id: row.id }); if (!claimed) continue;
     const started = Date.now();
-    const progress = (stage: string) => console.info('telegram_extraction', { reviewId: row.id, stage, elapsedMs: Date.now() - started });
+    const progress = (stage: string, details: Record<string, string | number | undefined> = {}) =>
+      console.info('telegram_extraction', { reviewId: row.id, stage, elapsedMs: Date.now() - started, ...details });
     progress('claimed');
     try {
       let bytes: Buffer | undefined;
@@ -29,7 +30,9 @@ export async function processReviews(ids?: string[]) {
         const path = `${row.user_id}/${row.id}/${row.mime_type === 'application/pdf' ? 'documento.pdf' : 'imagem.jpg'}`;
         const { error: uploadError } = await db.storage.from('telegram-documents').upload(path, bytes, { contentType: row.mime_type ?? 'application/octet-stream', upsert: true });
         if (uploadError) throw new Error(uploadError.message);
-        await db.from('telegram_reviews').update({ file_path: path }).eq('id', row.id);
+        const { data: storedReview, error: pathError } = await db.from('telegram_reviews')
+          .update({ file_path: path }).eq('id', row.id).select('id').maybeSingle();
+        if (pathError || !storedReview) throw new Error('Não foi possível salvar o caminho do arquivo para conferência.');
         progress('stored');
       }
       const extracted = await extractDocument(row.source_text, bytes, row.mime_type ?? undefined, row.file_name ?? undefined, {
@@ -41,14 +44,30 @@ export async function processReviews(ids?: string[]) {
         },
       });
       progress('extracted');
-      const { error: saveError } = await db.from('telegram_reviews').update({ ...extracted, extraction_status: 'concluido', error: null }).eq('id', row.id).eq('status', 'pendente').is('produtos_destino', null);
+      const { data: savedReview, error: saveError } = await db.from('telegram_reviews')
+        .update({ ...extracted, extraction_status: 'concluido', error: null })
+        .eq('id', row.id).eq('status', 'pendente').is('produtos_destino', null).select('id').maybeSingle();
       if (saveError) throw new Error(saveError.message);
+      if (!savedReview) {
+        progress('save_skipped');
+        continue;
+      }
       progress('saved');
       const {data:permissions}=await db.from('user_access').select('moto').eq('user_id',row.user_id).maybeSingle();
       const hasMoto=row.user_id==='3f3f6b62-d686-4451-b75f-a108adfb813d' || permissions?.moto !== false;
-      await telegram('sendMessage', { chat_id: row.chat_id, text: `Leitura concluída: ${extracted.descricao || 'Documento'}\nValor: ${extracted.valor === null ? 'Conferir' : `R$ ${extracted.valor.toFixed(2)}`}\nData: ${extracted.data ?? 'Conferir'}${extracted.documento==='cupom' || extracted.produtos.length ? `\nCupom com produtos: confirme a compra no MAR IA para validar o estoque (${extracted.produtos.length} itens).` : '\nSelecione a carteira para aprovar.'}`, reply_markup: { inline_keyboard:telegramActions({...extracted,id:row.id},hasMoto) } });
+      try {
+        await telegram('sendMessage', { chat_id: row.chat_id, text: `Leitura concluída: ${extracted.descricao || 'Documento'}\nValor: ${extracted.valor === null ? 'Conferir' : `R$ ${extracted.valor.toFixed(2)}`}\nData: ${extracted.data ?? 'Conferir'}${extracted.documento==='cupom' || extracted.produtos.length ? `\nCupom com produtos: confirme a compra no MAR IA para validar o estoque (${extracted.produtos.length} itens).` : '\nSelecione a carteira para aprovar.'}`, reply_markup: { inline_keyboard:telegramActions({...extracted,id:row.id},hasMoto) } });
+      } catch {
+        // Extraction is already durable; a Telegram delivery failure must not mark it as failed.
+        progress('notification_failed');
+      }
     } catch (e) {
-      progress('failed');
+      progress('failed', {
+        errorKind: e instanceof ExtractionProviderError
+          ? e.reason === 'timeout' ? 'gemini_timeout' : `provider_${e.provider}`
+          : 'processing',
+        statusCode: extractionHttpStatus(e),
+      });
       const message = e instanceof Error ? e.message : 'Não foi possível ler o documento.';
       const status = extractionHttpStatus(e);
       await db.from('telegram_reviews').update({ extraction_status: 'erro', error: message.slice(0, 1000) }).eq('id', row.id);
@@ -62,3 +81,4 @@ export async function processReviews(ids?: string[]) {
   }
   return { paused: false };
 }
+
