@@ -1,43 +1,23 @@
-# Leitura alternativa de documentos pelo Gemini
+# Leitura de documentos do Telegram pela Gemini
 
-Quando a extração no Lovable responde HTTP 402, o servidor registra a pausa desse provedor e tenta Gemini uma vez. A chave é lida de GEMINI_API_KEY no servidor. Não criar VITE_GEMINI_API_KEY nem incluir chaves no repositório.
+A extração de texto, imagem, comprovante, cupom e boleto usa a API Gemini diretamente. O servidor chama `extractWithGemini` como único provedor de leitura; não tenta primeiro o gateway de IA do Lovable nem muda de provedor em caso de erro.
 
-O modelo padrão é gemini-3.8-flash; GEMINI_MODEL permite configurar outro modelo Gemini compatível com PDF e saída estruturada. Nenhuma dependência foi adicionada: a chamada usa a API REST oficial do Google. As instruções financeiras, validação Zod, normalização e parser de boleto permanecem compartilhados.
+A chave deve existir como segredo de servidor `GEMINI_API_KEY` no ambiente de produção do Lovable. Não use `VITE_GEMINI_API_KEY` e não grave a chave no repositório. `GEMINI_MODEL` é opcional; o padrão é `gemini-3.8-flash`. A integração usa a API REST do Google e saída estruturada validada pelo schema Zod já usado pelo aplicativo.
 
-Para reduzir latência, modelos Gemini 3/4 usam thinkingLevel LOW; modelos anteriores configurados não recebem esse parâmetro. O limite de 25 segundos inclui a resposta completa, além dos cabeçalhos, e aborta a chamada sem nova tentativa automática. Isso não é um prazo total da importação: há espera do agendamento (atualmente a cada minuto), download, armazenamento e gravação. Não reduzimos o limite de tokens, pois truncar a resposta pode perder produtos.
+## Fluxo
 
-O lote não reivindica outro item se já consumiu 20 segundos da janela do agendador. Isso reduz o risco de cancelamento de uma segunda leitura; o próximo documento continua aguardando. Logs telegram_extraction registram etapas e tempo acumulado, com ID da revisão, sem chave, nomes de arquivo, conteúdo ou dados financeiros. Um cancelamento externo do servidor pode interromper o tratamento do erro: estados antigos presos precisam de análise e recuperação pontual, sem repetir automaticamente os PDFs.
+1. O webhook do Telegram valida o segredo e guarda a mensagem/documento na fila privada do Supabase.
+2. O endpoint de processamento baixa e armazena o arquivo, chama Gemini e salva os campos extraídos na revisão.
+3. O Telegram recebe uma notificação com o resultado.
+4. A pessoa confere os dados na Pocket e aprova ou descarta. A extração nunca cria um lançamento financeiro por conta própria.
 
-Compatibilidade de produção: o servidor usa Cloudflare Workers, que não aceita redirect: error. A chamada usa redirect: manual; respostas 3xx falham sem seguir Location, preservando a chave no destino Google original. A opção incompatível causava a mensagem genérica de indisponibilidade antes do envio. Não confundir esse caso com uma quota ou chave rejeitada pelo Google.
+Erros da Gemini ficam registrados naquela revisão para conferência manual; a fila continua processando outros documentos. Pausas antigas do provedor de IA do Lovable não bloqueiam mais a leitura. A rota de processamento continua protegida por `LOVABLE_CRON_SECRET` e depende de um agendador configurado no ambiente.
 
-## Comportamento
+## Limites e dados
 
-- Leitura Lovable bem-sucedida: não chama Gemini.
-- HTTP 402, inclusive encapsulado em erro de streaming: registra motivo estável lovable:402, tenta Gemini se configurado e usa Gemini nos próximos itens enquanto durar essa pausa.
-- Pausas antigas com motivo explícito 402, Not enough credits ou créditos esgotados também permitem a alternativa. Uma pausa genérica ou de autorização não é ignorada: inspecionar o motivo antes de qualquer retomada.
-- 401/403/404, pausa manual ou falha de autenticação no Lovable: preserva a pausa existente. Gemini não é usado para contornar esses bloqueios.
-- Erro do Gemini: documento fica com extraction_status=erro, disponível para conferência manual; não há repetição automática ou alteração de lançamentos.
-- Só consulta itens pendentes/aguardando. Não repete documentos que já falharam, nem reseta filas ou pausas globalmente.
-- A aprovação financeira continua passando pelos RPC existentes. Nenhum débito é criado automaticamente pela extração.
+- A leitura tem limite de 25 segundos, inclui a resposta completa e aborta a chamada ao expirar.
+- Imagens JPG/PNG e PDFs de até 20 MB são enviados em linha para a API Gemini. Não é usada a Files API do Google.
+- O conteúdo do documento é enviado ao Google para extração. Os campos validados são armazenados no Supabase e apresentados para conferência.
+- Não há nova tentativa automática de uma revisão que já ficou com estado de erro. Ela continua disponível para preenchimento manual.
+- O gateway Lovable continua sendo usado para o transporte das mensagens e arquivos do Telegram. Esta alteração substitui apenas o provedor de IA da extração; `TELEGRAM_API_KEY`, `LOVABLE_API_KEY`, segredos do webhook, credenciais Supabase e o agendamento continuam necessários nos respectivos ambientes.
 
-Depois de repor créditos, a preferência permanece no Gemini enquanto o estado de crédito estiver pausado. Para voltar ao Lovable, uma pessoa autorizada deve revisar e retomar esse estado de forma explícita. Esta alteração não adiciona botão de administração nem faz essa mudança em produção.
-
-## Teste antes de publicar
-
-1. Configurar GEMINI_API_KEY como segredo de servidor no ambiente de teste/preview. A presença da chave no painel não prova que ela é válida ou tem quota.
-2. Usar documento sintético e mock HTTP 402 nos testes. Não zerar saldo, não alterar webhook e não testar com documentos financeiros reais.
-3. Confirmar que uma nova revisão é extraída pelo Gemini, que uma revisão marcada como erro não é repetida, e que a aprovação ainda exige ação explícita.
-4. Validar a chave/modelo/quota com PDF sintético no ambiente isolado antes de promoção. Não divulgar a chave em prints, logs ou mensagens.
-5. A interface do Lovable informa que segredos entram em vigor imediatamente no preview e exigem publicação para a aplicação live. Não publicar automaticamente.
-
-Os testes automatizados usam respostas simuladas, sem acesso a chaves ou dados reais. A integração Telegram continua pelo gateway Lovable e pode ter indisponibilidades/limites próprios; esta alteração substitui apenas a extração de IA. Não elimina dependência do gateway Telegram.
-
-Gemini tem quotas, condições de uso e possível cobrança conforme a conta. Não há promessa de uso gratuito ilimitado. O conteúdo do documento é enviado ao Google quando a alternativa é acionada: revisar os termos aplicáveis à conta antes de usar dados reais.
-
-## Referências verificadas em 30/10/2026
-
-- https://ai.google.dev/api/generate-content
-- https://ai.google.dev/gemini-api/docs/structured-output
-- https://ai.google.dev/gemini-api/docs/document-processing
-- https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash
-- https://developers.cloudflare.com/workers/runtime-apis/request/
