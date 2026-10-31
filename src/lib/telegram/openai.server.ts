@@ -43,7 +43,8 @@ export async function extractWithOpenAI(instructions: string, text: string, byte
       type: 'input_file',
       filename: 'documento.pdf',
       file_data: 'data:application/pdf;base64,' + bytes.toString('base64'),
-      detail: 'high',
+      // The Responses API still includes embedded PDF text at low detail; this reduces page-image work for digital bank PDFs.
+      detail: 'low',
     });
   } else if (bytes) {
     content.push({
