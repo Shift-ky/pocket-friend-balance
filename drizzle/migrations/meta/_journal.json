@@ -253,6 +253,13 @@
       "when": 1793445000002,
       "tag": "0035_dashboard_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793445000003,
+      "tag": "0036_telegram_approved_launch_edit",
+      "breakpoints": true
     }
   ]
 }

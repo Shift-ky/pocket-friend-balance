@@ -19,6 +19,20 @@ import { resumoCarteiras, movimentosAnaliticos, termometro, progressoMeta, saldo
 import { fluxoMensal, type LancamentoPainel } from '@/lib/painel';
 import type { DespesaMoto } from '@/lib/moto';
 
+function chavePreferenciasLocais(userId: string) {
+  return `pocket-friends:painel:${userId}`;
+}
+
+function lerPreferenciasLocais(userId: string): PreferenciasPainel | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(chavePreferenciasLocais(userId));
+    return raw ? normalizarPreferenciasPainel(JSON.parse(raw)) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
     { title: 'MarIA — Painel estratégico' },
@@ -48,11 +62,17 @@ function Painel() {
   });
   const { data: preferenciasSalvas = PREFERENCIAS_PADRAO_PAINEL } = useQuery({
     queryKey: preferencesKey,
-    initialData: PREFERENCIAS_PADRAO_PAINEL,
+    initialData: lerPreferenciasLocais(session.user.id) ?? PREFERENCIAS_PADRAO_PAINEL,
     queryFn: async () => {
       const { data, error } = await supabase.from('user_appearance').select('dashboard_preferences').eq('user_id', session.user.id).maybeSingle();
-      if (error) throw error;
-      return normalizarPreferenciasPainel((data as unknown as { dashboard_preferences?: unknown } | null)?.dashboard_preferences);
+      if (error) {
+        const local = lerPreferenciasLocais(session.user.id);
+        if (local) return local;
+        throw error;
+      }
+      const remoto = (data as unknown as { dashboard_preferences?: unknown } | null)?.dashboard_preferences;
+      const existePreferenciaRemota = remoto && typeof remoto === 'object' && Object.keys(remoto).length > 0;
+      return normalizarPreferenciasPainel(existePreferenciaRemota ? remoto : lerPreferenciasLocais(session.user.id) ?? remoto);
     },
   });
   const [ordemLocal, setOrdemLocal] = useState<CartaoPainelId[] | null>(null);
@@ -63,6 +83,7 @@ function Painel() {
   const [rascunhoPreferencias, setRascunhoPreferencias] = useState<PreferenciasPainel | null>(null);
   const [salvandoPreferencias, setSalvandoPreferencias] = useState(false);
   const [erroPreferencias, setErroPreferencias] = useState('');
+  const [statusPreferencias, setStatusPreferencias] = useState('');
   const ordem = normalizarOrdemPainel(ordemLocal ?? ordemSalva);
   const preferencias = rascunhoPreferencias ?? preferenciasSalvas;
   const ordemVisivel = ordem.filter(id => preferencias.caixasVisiveis[id]);
@@ -125,17 +146,28 @@ function Painel() {
     if (!rascunhoPreferencias || salvandoPreferencias) return;
     setSalvandoPreferencias(true);
     setErroPreferencias('');
+    setStatusPreferencias('');
+    const preferenciasNormalizadas = normalizarPreferenciasPainel(rascunhoPreferencias);
+    try {
+      window.localStorage.setItem(chavePreferenciasLocais(session.user.id), JSON.stringify(preferenciasNormalizadas));
+    } catch {
+      setErroPreferencias('O navegador bloqueou o armazenamento local. Verifique as permissões de dados deste site.');
+      setSalvandoPreferencias(false);
+      return;
+    }
+    queryClient.setQueryData(preferencesKey, preferenciasNormalizadas);
     try {
       const { error } = await supabase.from('user_appearance').upsert({
         user_id: session.user.id,
-        dashboard_preferences: rascunhoPreferencias as unknown as Json,
+        dashboard_preferences: preferenciasNormalizadas as unknown as Json,
       });
-      if (error) throw error;
-      queryClient.setQueryData(preferencesKey, rascunhoPreferencias);
-      setCustomizadorAberto(false);
-      setRascunhoPreferencias(null);
+      if (error) {
+        setStatusPreferencias('Salvo neste aparelho. A sincronização com sua conta não foi concluída; o banco do projeto precisa aceitar as preferências do painel.');
+      } else {
+        setStatusPreferencias('Personalização salva na sua conta.');
+      }
     } catch {
-      setErroPreferencias('Não foi possível salvar as preferências. Tente novamente.');
+      setStatusPreferencias('Salvo neste aparelho. A sincronização com sua conta não foi concluída; o banco do projeto precisa aceitar as preferências do painel.');
     } finally {
       setSalvandoPreferencias(false);
     }
@@ -160,7 +192,7 @@ function Painel() {
             {ordemVisivel.map((id, position) => {
               const card = caixas[id];
               return <PainelSortableCard key={id} id={id} nome={card.nome} valor={moeda(card.valor)} Icon={card.Icon} destaque={card.destaque}
-                size={preferencias.tamanhosCaixas[id]} position={position} total={ordemVisivel.length} editing={organizando} disabled={salvandoOrdem}
+                width={preferencias.largurasCaixas[id]} height={preferencias.alturasCaixas[id]} position={position} total={ordemVisivel.length} editing={organizando} disabled={salvandoOrdem}
                 onMove={delta => {
                   const reordered = moverCartaoPainel(ordemVisivel, id, delta);
                   let cursor = 0;
@@ -216,8 +248,8 @@ function Painel() {
         {access.financas && <Button asChild variant="outline"><Link to="/financas"><Wallet />Finanças</Link></Button>}
       </div>
     </header>
-    {customizadorAberto && rascunhoPreferencias && <PainelCustomizer value={preferencias} onChange={setRascunhoPreferencias} saving={salvandoPreferencias} error={erroPreferencias}
-      onSave={() => void salvarPreferencias()} onCancel={() => { setCustomizadorAberto(false); setRascunhoPreferencias(null); setErroPreferencias(''); }} />}
+    {customizadorAberto && rascunhoPreferencias && <PainelCustomizer value={preferencias} onChange={next => { setRascunhoPreferencias(next); setStatusPreferencias(''); }} saving={salvandoPreferencias} error={erroPreferencias} status={statusPreferencias}
+      onSave={() => void salvarPreferencias()} onCancel={() => { setCustomizadorAberto(false); setRascunhoPreferencias(null); setErroPreferencias(''); setStatusPreferencias(''); }} />}
     {(totals.semCotacao || erroCotacao) && carteiras.some(w => w.moeda !== 'BRL' && w.no_painel) &&
       <p role="status" className="mb-5 text-sm text-muted-foreground">{totals.semCotacao ? 'Carteiras sem cotação não estão incluídas no consolidado.' : erroCotacao}</p>}
     <div className={`grid min-w-0 gap-8 ${gridGraficos}`}>

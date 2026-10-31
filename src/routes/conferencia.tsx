@@ -2,13 +2,15 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
-import { Check, ExternalLink, FileText, Send, Trash2, Save } from 'lucide-react';
+import { Check, ExternalLink, FileText, Send, Trash2, Save, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGrupo } from '@/lib/grupo';
 import { linkTelegram, listTelegramReviews, reviewTelegram, telegramFile } from '@/lib/telegram.functions';
 import type { Tables } from '@/integrations/supabase/types';
 import { TelegramProducts } from '@/components/telegram-products';
 import { TelegramReceipt } from '@/components/telegram-receipt';
+import { supabase } from '@/integrations/supabase/client';
+import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from '@/lib/categorias-financas';
 
 export const Route = createFileRoute('/conferencia')({ head: () => ({ meta: [
   { title: 'MarIA — Conferência do Telegram' }, { name: 'description', content: 'Revise cupons e boletos recebidos pelo Telegram antes de lançar nas carteiras.' },
@@ -33,7 +35,7 @@ function Review({ row, done }: { row: Tables<'telegram_reviews'>; done: () => vo
   const [valor, setValor] = useState(String(row.valor ?? '')); const [data, setData] = useState(row.data ?? '');
   const [descricao, setDescricao] = useState(row.descricao); const [conta, setConta] = useState<'dinheiro'|'alimentacao'|'refeicao'>(row.conta as 'dinheiro');
   const [categoria, setCategoria] = useState(row.categoria); const [pago, setPago] = useState(row.pago);
-  const [confirm, setConfirm] = useState<'aprovar'|'descartar'|null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [confirm, setConfirm] = useState<'aprovar'|'descartar'|null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [editingApproved, setEditingApproved] = useState(false);
   async function action(kind: 'salvar'|'aprovar'|'descartar') {
     setBusy(true); setError(''); try { await act({ data: { id: row.id, action: kind, valor: Number(valor.replace(',', '.')) || null, data: data || null, descricao, conta, categoria, pago } }); setConfirm(null); done(); } catch(e) { setError(e instanceof Error ? e.message : 'Falha ao salvar'); } finally { setBusy(false); }
   }
@@ -48,7 +50,55 @@ function Review({ row, done }: { row: Tables<'telegram_reviews'>; done: () => vo
       <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-sm">Valor (R$)<input aria-label="Valor" inputMode="decimal" value={valor} onChange={e => setValor(e.target.value)} className={field} /></label><label className="text-sm">Vencimento / emissão<input aria-label="Data" type="date" value={data} onChange={e => setData(e.target.value)} className={field} /></label><label className="text-sm sm:col-span-2">Descrição / favorecido<input aria-label="Descrição" maxLength={200} value={descricao} onChange={e => setDescricao(e.target.value)} className={field} /></label><label className="text-sm">Carteira<select aria-label="Carteira" value={conta} onChange={e => setConta(e.target.value as typeof conta)} className={field}><option value="dinheiro">Dinheiro</option><option value="alimentacao">Alimentação</option><option value="refeicao">Refeição</option></select></label><label className="text-sm">Categoria<input aria-label="Categoria" maxLength={100} value={categoria} onChange={e => setCategoria(e.target.value)} className={field} /></label></div>
       <label className="my-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={pago} onChange={e => setPago(e.target.checked)} />Já pago</label>
       {confirm ? <div role="alertdialog" aria-label="Confirmar conferência" className="border-l-2 border-primary pl-4"><p className="mb-3 text-sm">{confirm === 'aprovar' ? `Efetivar ${pago ? 'como saída paga' : 'nas contas pendentes'}?` : 'Descartar sem criar lançamento?'}</p><div className="flex gap-2"><Button disabled={busy} onClick={() => action(confirm)}>Confirmar</Button><Button variant="outline" disabled={busy} onClick={() => setConfirm(null)}>Cancelar</Button></div></div> : <div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => setConfirm('aprovar')}><Check />Aprovar</Button><Button variant="outline" disabled={busy} onClick={() => action('salvar')}><Save />Salvar revisão</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirm('descartar')}><Trash2 />Descartar</Button></div>}
-    </> : <p className="mt-4 text-sm">{row.descricao} · R$ {Number(row.valor ?? 0).toFixed(2)} · {row.status === 'aprovado' ? (row.pago ? 'Saída paga' : 'Conta pendente') : 'Descartado'}</p>}
+    </> : <div className="mt-4 space-y-3"><p className="text-sm">{row.descricao} · R$ {Number(row.valor ?? 0).toFixed(2)} · {row.status === 'aprovado' ? (row.pago ? 'Saída paga' : 'Conta pendente') : 'Descartado'}</p>{row.status === 'aprovado' && row.lancamento_id && <Button type="button" variant="outline" size="sm" onClick={() => setEditingApproved(v => !v)}><Pencil />{editingApproved ? 'Fechar edição' : 'Editar lançamento'}</Button>}{editingApproved && row.status === 'aprovado' && <EditarLancamentoTelegram row={row} onCancel={() => setEditingApproved(false)} onSaved={() => { setEditingApproved(false); done(); }} />}</div>}
     {error && <p role="alert" className="mt-3 text-sm text-debit">{error}</p>}
   </article>;
+}
+function EditarLancamentoTelegram({ row, onCancel, onSaved }: {
+  row: Tables<'telegram_reviews'>;
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [descricao, setDescricao] = useState(row.descricao);
+  const [valor, setValor] = useState(String(row.valor ?? '').replace('.', ','));
+  const [data, setData] = useState(row.data ?? '');
+  const [conta, setConta] = useState<'dinheiro'|'alimentacao'|'refeicao'>(row.conta as 'dinheiro'|'alimentacao'|'refeicao');
+  const [categoria, setCategoria] = useState(row.categoria || 'Outros');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  async function save() {
+    const amount = Number(valor.replace(',', '.'));
+    if (!descricao.trim() || !Number.isFinite(amount) || amount <= 0 || !data) {
+      setError('Preencha descrição, valor e data corretamente.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const { error: saveError } = await supabase.rpc('telegram_edit_approved_launch', {
+        _id: row.id, _valor: amount, _data: data, _descricao: descricao.trim(), _conta: conta, _categoria: categoria,
+      });
+      if (saveError) throw saveError;
+      onSaved();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível editar o lançamento.');
+    } finally {
+      setSaving(false);
+    }
+  }
+  return <div className="space-y-3 rounded-lg border border-primary/50 bg-background p-4">
+    <h3 className="text-sm font-semibold">Editar lançamento aprovado pelo Telegram</h3>
+    <label className="block text-sm">Descrição<input aria-label="Descrição do lançamento" maxLength={200} value={descricao} onChange={e => setDescricao(e.target.value)} className={field} /></label>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="block text-sm">Valor (R$)<input aria-label="Valor do lançamento" inputMode="decimal" value={valor} onChange={e => setValor(e.target.value)} className={field} /></label>
+      <label className="block text-sm">Data<input aria-label="Data do lançamento" type="date" value={data} onChange={e => setData(e.target.value)} className={field} /></label>
+    </div>
+    <label className="block text-sm">Carteira<select aria-label="Carteira do lançamento" value={conta} onChange={e => setConta(e.target.value as typeof conta)} className={field}><option value="dinheiro">Dinheiro</option><option value="alimentacao">Alimentação</option><option value="refeicao">Refeição</option></select></label>
+    <label className="block text-sm">Categoria<select aria-label="Categoria do lançamento" value={categoria} onChange={e => setCategoria(e.target.value)} className={field}>
+      {!CATEGORIAS_SAIDA.includes(categoria as typeof CATEGORIAS_SAIDA[number]) && categoria && <option value={categoria}>{categoria} (atual)</option>}
+      {GRUPOS_CATEGORIAS_SAIDA.map(group => <optgroup key={group.nome} label={group.nome}>{group.categorias.map(option => <option key={option} value={option}>{option}</option>)}</optgroup>)}
+    </select></label>
+    {error && <p role="alert" className="text-sm text-debit">{error}</p>}
+    <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving} onClick={() => void save()}>{saving ? 'Salvando…' : 'Salvar edição'}</Button><Button type="button" variant="outline" disabled={saving} onClick={onCancel}>Cancelar</Button></div>
+  </div>;
 }

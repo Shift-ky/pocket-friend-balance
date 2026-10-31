@@ -957,6 +957,17 @@ export type Database = {
         }
         Returns: string
       }
+      telegram_edit_approved_launch: {
+        Args: {
+          _categoria: string
+          _conta: string
+          _data: string
+          _descricao: string
+          _id: string
+          _valor: number
+        }
+        Returns: string
+      }
       telegram_review_action: {
         Args: {
           _action: string
