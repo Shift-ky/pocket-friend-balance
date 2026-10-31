@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAccess } from '@/lib/access-context';
 import { receiptOptions, reviewTelegramReceipt, reviewTelegram } from '@/lib/telegram.functions';
 import { produtosExtraidos } from '@/lib/telegram/model';
+import { receiptQualityWarnings } from '@/lib/telegram/quality';
 import type { Tables } from '@/integrations/supabase/types';
 
 const field='mt-1 w-full min-w-0 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
@@ -40,6 +41,7 @@ export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:
     }));
   },[stockOptions,searches]);
   const reading=row.extraction_status==='aguardando'||row.extraction_status==='processando';
+  const qualityWarnings=receiptQualityWarnings({valor:number(valor),data,produtos:items.map(item=>({qtd:number(item.qtd),preco:number(item.preco)}))});
   function change(id:number,patch:Partial<(typeof items)[number]>) {setConfirm(null);setItems(current=>current.map(p=>p.id===id?{...p,...patch}:p));}
   async function submit(action:'salvar'|'aprovar'|'descartar') {
     setBusy(true);setError('');setNotice('');
@@ -58,6 +60,8 @@ export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:
       <label className="min-w-0 text-sm">Carteira<select aria-label="Carteira da compra" className={field} value={wallet} onChange={e=>setWallet(e.target.value as typeof wallet)}><option value="dinheiro">Dinheiro</option><option value="alimentacao">Alimentação</option><option value="refeicao">Refeição</option></select></label>
       <label className="min-w-0 text-sm">Categoria<input aria-label="Categoria da compra" className={field} maxLength={100} value={category} onChange={e=>setCategory(e.target.value)} /></label>
     </div>
+    {!reading && <p className="text-xs text-muted-foreground">Para uma leitura melhor, envie uma foto nítida, sem reflexo, com o cupom inteiro e na posição correta.</p>}
+    {!reading && qualityWarnings.length > 0 && <div role="status" aria-label="Pontos para conferir" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm"><p className="font-semibold">Confira estes pontos antes de aprovar</p><ul className="mt-2 list-disc space-y-1 pl-5">{qualityWarnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul></div>}
     <section aria-label="Produtos do cupom" className="border-y py-4">
       <h3 className="font-semibold">Produtos do cupom · {items.length}</h3>
       {reading && <p className="mt-3 text-sm text-muted-foreground">Aguardando leitura dos produtos…</p>}
