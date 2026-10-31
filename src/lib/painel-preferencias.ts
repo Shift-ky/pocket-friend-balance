@@ -18,6 +18,7 @@ export type WidgetPainel = {
   largura: LarguraCartaoPainel;
   altura: AlturaCartaoPainel;
   grafico?: TipoGraficoCategorias | TipoGraficoFluxo;
+  cor?: string;
 };
 export type SecaoPainel = {
   id: string;
@@ -94,6 +95,7 @@ export const PREFERENCIAS_PADRAO_PAINEL: PreferenciasPainel = {
 const validWidths = [1, 2, 3, 4] as const;
 const isWidth = (value: unknown): value is LarguraCartaoPainel => typeof value === "number" && validWidths.includes(value as LarguraCartaoPainel);
 const fonteValida = (value: unknown): value is FonteWidgetPainel => typeof value === "string" && FONTES_WIDGET.some(source => source.id === value);
+const corValida = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 
 function normalizarWidget(value: unknown, index: number): WidgetPainel | null {
   if (!value || typeof value !== "object") return null;
@@ -113,6 +115,7 @@ function normalizarWidget(value: unknown, index: number): WidgetPainel | null {
     largura: isWidth(raw.largura) ? raw.largura : 1,
     altura,
     ...(grafico ? { grafico } : {}),
+    ...(corValida(raw.cor) ? { cor: raw.cor.toLowerCase() } : {}),
   };
 }
 
