@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { PainelCustomizer } from '@/components/painel-customizer';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CategoriasChart, CarteirasChart, FluxoChart } from '@/components/painel-analitico';
 import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
 import { useCarteiras } from '@/hooks/use-carteiras';
@@ -153,6 +154,7 @@ function Painel() {
     const valueStyle = { fontSize: 'clamp(1.25rem, 9cqi, 3rem)' };
     const detailStyle = { fontSize: 'clamp(0.6875rem, 3cqi, 0.875rem)' };
     const iconStyle = { width: 'clamp(1rem, 4cqi, 1.5rem)', height: 'clamp(1rem, 4cqi, 1.5rem)' };
+    const cardStyle = { containerType: 'inline-size' as const, ...(widget.cor ? { backgroundColor: `color-mix(in srgb, ${widget.cor} 11%, transparent)`, borderTopWidth: '3px', borderTopColor: widget.cor } : {}) };
     const span = classesLargura[width];
     const title = widget.titulo.trim() || source.nome;
     const article = `flex min-w-0 flex-col rounded-xl border bg-card p-3 sm:p-4 ${span} ${classesAltura[widget.altura]} ${widget.altura === 'alta' ? 'justify-between' : ''}`;
@@ -170,7 +172,7 @@ function Painel() {
         sobra_financeira: { value: mes.livre, Icon: Wallet, detail: `Variação financeira · ${month}`, color: mes.livre >= 0 ? 'text-primary' : 'text-debit' },
       };
       const metric = metrics[widget.fonte];
-      return <article key={widget.id} className={article} style={{ containerType: 'inline-size' }}>
+      return <article key={widget.id} className={article} style={cardStyle}>
         <div className="flex items-start justify-between gap-2"><h2 className={`min-w-0 break-words font-medium ${style.title}`} style={titleStyle}>{title}</h2><metric.Icon className={`shrink-0 ${style.icon} ${metric.color ?? ''}`} style={iconStyle} /></div>
         <p className={`mt-auto break-words pt-4 font-display font-bold leading-tight ${style.value} ${metric.color ?? ''}`} style={valueStyle}>{moeda(metric.value)}</p>
         <p className={`opacity-75 ${style.detail}`} style={detailStyle}>{metric.detail}</p>
@@ -225,16 +227,24 @@ function Painel() {
       </div>
     </header>
 
-    {customizadorAberto && rascunho && <PainelCustomizer value={preferencias} onChange={next => { setRascunho(next); setStatusSalvar(''); }} saving={salvando} error={erroSalvar} status={statusSalvar}
-      onSave={() => void salvarPreferencias()} onCancel={() => { setCustomizadorAberto(false); setRascunho(null); setErroSalvar(''); setStatusSalvar(''); }} />}
+    <Dialog open={customizadorAberto} onOpenChange={open => {
+      setCustomizadorAberto(open);
+      if (!open) { setRascunho(null); setErroSalvar(''); setStatusSalvar(''); }
+    }}>
+      {customizadorAberto && rascunho && <DialogContent className="block max-h-[92dvh] w-[calc(100vw-1rem)] max-w-6xl overflow-y-auto p-3 sm:p-6">
+        <DialogHeader className="sr-only"><DialogTitle>Personalizar painel</DialogTitle><DialogDescription>Configure dashboards, seções, caixas e cores.</DialogDescription></DialogHeader>
+        <PainelCustomizer value={preferencias} onChange={next => { setRascunho(next); setStatusSalvar(''); }} saving={salvando} error={erroSalvar} status={statusSalvar}
+          onSave={() => void salvarPreferencias()} onCancel={() => { setCustomizadorAberto(false); setRascunho(null); setErroSalvar(''); setStatusSalvar(''); }} />
+      </DialogContent>}
+    </Dialog>
 
     {(totais.semCotacao || erroCotacao) && carteiras.some(wallet => wallet.moeda !== 'BRL' && wallet.no_painel) &&
       <p role="status" className="mb-5 text-sm text-muted-foreground">{totais.semCotacao ? 'Carteiras sem cotação não estão incluídas no consolidado.' : erroCotacao}</p>}
 
     {!activeDashboard.secoes.length && <div className="rounded-xl border border-dashed p-10 text-center"><p className="font-medium">Este dashboard ainda não tem seções.</p><p className="mt-1 text-sm text-muted-foreground">Abra a personalização para criar uma seção e adicionar caixas.</p></div>}
     <div className="space-y-8">
-      {activeDashboard.secoes.map(section => <section key={section.id} aria-label={section.nome} className="rounded-xl border bg-card/40 p-4 sm:p-5">
-        <h2 className="mb-4 font-display text-2xl">{section.nome}</h2>
+      {activeDashboard.secoes.map(section => <section key={section.id} aria-label={section.nome} className="rounded-2xl border bg-card/40 p-4 shadow-sm sm:p-5">
+        <h2 className="mb-4 font-display text-lg font-semibold tracking-tight sm:text-xl">{section.nome}</h2>
         {!section.widgets.length ? <p className="rounded-md bg-muted/40 p-4 text-sm text-muted-foreground">Sem caixas nesta seção. Use Personalizar para adicionar uma.</p> :
           <div className={`grid min-w-0 items-stretch gap-4 ${classesGrade[section.colunas] ?? classesGrade[2]}`}>
             {section.widgets.map(widget => renderWidget(widget, section))}

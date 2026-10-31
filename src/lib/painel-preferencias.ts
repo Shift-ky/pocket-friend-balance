@@ -18,6 +18,7 @@ export type WidgetPainel = {
   largura: LarguraCartaoPainel;
   altura: AlturaCartaoPainel;
   grafico?: TipoGraficoCategorias | TipoGraficoFluxo;
+  cor?: string;
 };
 export type SecaoPainel = {
   id: string;
@@ -55,8 +56,8 @@ export function novoIdPainel(prefixo = "item") {
   return `${prefixo}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function widget(id: string, fonte: FonteWidgetPainel, titulo: string, largura: LarguraCartaoPainel, altura: AlturaCartaoPainel, grafico?: WidgetPainel["grafico"]): WidgetPainel {
-  return { id, fonte, titulo, largura, altura, ...(grafico ? { grafico } : {}) };
+function widget(id: string, fonte: FonteWidgetPainel, titulo: string, largura: LarguraCartaoPainel, altura: AlturaCartaoPainel, grafico?: WidgetPainel["grafico"], cor?: string): WidgetPainel {
+  return { id, fonte, titulo, largura, altura, ...(grafico ? { grafico } : {}), ...(cor ? { cor } : {}) };
 }
 
 function dashboardPadrao(): DashboardPainel {
@@ -64,23 +65,23 @@ function dashboardPadrao(): DashboardPainel {
     id: "principal",
     nome: "Visão geral",
     secoes: [
-      { id: "resumo", nome: "Saldos", colunas: 4, widgets: [
-        widget("saldo-patrimonio", "patrimonio", "Patrimônio consolidado", 1, "media"),
-        widget("saldo-financeiro", "financeiro", "Financeiro / Dinheiro", 1, "media"),
-        widget("saldo-beneficios", "beneficios", "Benefícios", 1, "media"),
-        widget("saldo-poupanca", "poupanca", "Poupança", 1, "media"),
+      { id: "resumo", nome: "Resumo patrimonial", colunas: 4, widgets: [
+        widget("saldo-patrimonio", "patrimonio", "Patrimônio consolidado", 1, "media", undefined, "#4f46e5"),
+        widget("saldo-financeiro", "financeiro", "Financeiro / Dinheiro", 1, "media", undefined, "#0f766e"),
+        widget("saldo-beneficios", "beneficios", "Benefícios", 1, "media", undefined, "#d97706"),
+        widget("saldo-poupanca", "poupanca", "Poupança", 1, "media", undefined, "#0891b2"),
       ] },
-      { id: "mes", nome: "Mês selecionado", colunas: 3, widgets: [
-        widget("mes-entradas", "entradas_mes", "Entradas", 1, "compacta"),
-        widget("mes-saidas", "saidas_pagas_mes", "Saídas pagas", 1, "compacta"),
-        widget("mes-sobra", "previsao_sobra", "Previsão de sobra", 1, "compacta"),
+      { id: "mes", nome: "Movimentação do mês", colunas: 3, widgets: [
+        widget("mes-entradas", "entradas_mes", "Entradas", 1, "compacta", undefined, "#16a34a"),
+        widget("mes-saidas", "saidas_pagas_mes", "Saídas pagas", 1, "compacta", undefined, "#dc2626"),
+        widget("mes-sobra", "previsao_sobra", "Previsão de sobra", 1, "compacta", undefined, "#2563eb"),
       ] },
       { id: "analise", nome: "Análise financeira", colunas: 2, widgets: [
-        widget("grafico-categorias", "gastos_categoria", "Gastos por categoria", 1, "alta", "rosca"),
-        widget("grafico-fluxo", "fluxo_mensal", "Entradas vs. saídas", 1, "alta", "barras"),
+        widget("grafico-categorias", "gastos_categoria", "Gastos por categoria", 1, "alta", "rosca", "#7c3aed"),
+        widget("grafico-fluxo", "fluxo_mensal", "Entradas vs. saídas", 1, "alta", "barras", "#0891b2"),
       ] },
-      { id: "objetivo", nome: "Meta", colunas: 2, widgets: [
-        widget("meta-ativa", "meta_ativa", "Meta ativa", 2, "media"),
+      { id: "objetivo", nome: "Objetivos", colunas: 2, widgets: [
+        widget("meta-ativa", "meta_ativa", "Meta ativa", 2, "media", undefined, "#ca8a04"),
       ] },
     ],
   };
@@ -94,6 +95,7 @@ export const PREFERENCIAS_PADRAO_PAINEL: PreferenciasPainel = {
 const validWidths = [1, 2, 3, 4] as const;
 const isWidth = (value: unknown): value is LarguraCartaoPainel => typeof value === "number" && validWidths.includes(value as LarguraCartaoPainel);
 const fonteValida = (value: unknown): value is FonteWidgetPainel => typeof value === "string" && FONTES_WIDGET.some(source => source.id === value);
+const corValida = (value: unknown): value is string => typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 
 function normalizarWidget(value: unknown, index: number): WidgetPainel | null {
   if (!value || typeof value !== "object") return null;
@@ -113,6 +115,7 @@ function normalizarWidget(value: unknown, index: number): WidgetPainel | null {
     largura: isWidth(raw.largura) ? raw.largura : 1,
     altura,
     ...(grafico ? { grafico } : {}),
+    ...(corValida(raw.cor) ? { cor: raw.cor.toLowerCase() } : {}),
   };
 }
 

@@ -96,7 +96,7 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
 
         {!section.widgets.length && <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Esta seção está vazia. Adicione uma caixa para escolher o que mostrar.</p>}
         <div className="space-y-3">
-          {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_auto] lg:items-end">
+          {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_120px_auto] lg:items-end">
             <label className="text-xs text-muted-foreground">O que esta caixa mostra<select aria-label="Indicador da caixa" value={widget.fonte} onChange={event => {
               const fonte = event.target.value as FonteWidgetPainel;
               const source = FONTES_WIDGET.find(item => item.id === fonte)!;
@@ -105,6 +105,10 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
             <label className="text-xs text-muted-foreground">Título da caixa<input aria-label="Título da caixa" maxLength={60} value={widget.titulo} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, titulo: event.target.value }))} className={`${field} mt-1`} /></label>
             <label className="text-xs text-muted-foreground">Largura<select aria-label="Largura da caixa" value={widget.largura} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, largura: Number(event.target.value) as LarguraCartaoPainel }))} className={`${field} mt-1`}>{Array.from({ length: section.colunas }, (_, i) => i + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? "coluna" : "colunas"}</option>)}</select></label>
             <label className="text-xs text-muted-foreground">Altura mínima<select aria-label="Altura da caixa" value={widget.altura} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, altura: event.target.value as AlturaCartaoPainel }))} className={`${field} mt-1`}>{alturas.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+            <div className="text-xs text-muted-foreground">
+              <label className="block">Cor da caixa<input type="color" aria-label="Cor da caixa" value={widget.cor ?? "#93c5fd"} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, cor: event.target.value }))} className="mt-1 block h-10 w-14 cursor-pointer rounded border bg-background p-1" /></label>
+              <div className="mt-1 flex items-center gap-2"><span>{widget.cor ? widget.cor.toUpperCase() : "Padrão do tema"}</span>{widget.cor && <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => updateWidget(section.id, widget.id, current => ({ ...current, cor: undefined }))}>Limpar</Button>}</div>
+            </div>
             <label className="text-xs text-muted-foreground">Gráfico<select aria-label="Tipo de gráfico" value={widget.grafico ?? fontePadrao(widget.fonte) ?? ""} disabled={widget.fonte !== "gastos_categoria" && widget.fonte !== "fluxo_mensal"} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, grafico: event.target.value as WidgetPainel["grafico"] }))} className={`${field} mt-1`}>
               {widget.fonte === "gastos_categoria" ? <><option value="rosca">Rosca</option><option value="pizza">Pizza</option><option value="barras">Barras</option></> : <><option value="barras">Barras</option><option value="linhas">Linhas</option><option value="area">Área</option></>}
             </select></label>
