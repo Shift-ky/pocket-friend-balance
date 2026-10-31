@@ -1,3 +1,6 @@
+import { useCarteiras } from '@/hooks/use-carteiras';
+import { aceitaAutomacao,contaLegada } from '@/lib/carteiras';
+import { Button } from '@/components/ui/button';
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase, offlineTransaction } from "@/lib/offline-client";
@@ -31,6 +34,9 @@ const input = "rounded-lg border bg-background px-3 py-2 outline-none focus:ring
 
 function Feira() {
   const access = useAccess();
+  const {carteiras,metas}=useCarteiras();
+  const eligible=carteiras.filter(w=>aceitaAutomacao(w,metas,'feira'));
+  const [walletId,setWalletId]=useState('');
   const { grupo } = useGrupo();
   const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
   const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), qtd_comprada: Number(i.qtd_comprada ?? 0), preco: Number(i.preco) }));
@@ -70,6 +76,8 @@ function Feira() {
   const [salvando, setSalvando] = useState(false);
   async function finalizar() {
     if (salvando) return;
+    const selected=eligible.find(w=>w.id===walletId)??eligible.find(w=>w.legado===pagamento);
+    if(pagamento!=='nenhum'&&!selected)return alert('Selecione uma carteira disponível na Feira.');
     if (pagamento !== "nenhum" && !access.financas) return alert("Sem acesso às Finanças, salve sem lançamento financeiro.");
     const comprados = itensComprados(itens);
     if (!comprados.length) return alert("Informe a quantidade comprada de pelo menos um item antes de finalizar.");
@@ -82,7 +90,7 @@ function Feira() {
       await offlineTransaction(async () => {
         let lancamento_id: string | null = null;
         if (pagamento !== "nenhum" && totalComprado > 0) {
-          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: totalComprado, conta: pagamento, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
+          const { data, error } = await supabase.from("lancamentos").insert({ grupo_id: grupo.id, origem_modulo: "feira", tipo: "debito", descricao: "Compra da feira", valor: totalComprado, conta: pagamento, carteira_id:selected?.id??null, pago: true, data: new Date().toISOString().slice(0, 10) }).select("id").single();
           if (error || !data) throw new Error('Não foi possível lançar o pagamento.');
           lancamento_id = data.id;
         }
@@ -95,7 +103,7 @@ function Feira() {
           const { error } = await supabase.from('feira_itens').update({ qtd_comprada: 0, pego: false }).in('id', pendencias.reiniciar);
           if (error) throw error;
         }
-        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total: totalComprado, itens: copia, pagamento, lancamento_id });
+        const { error } = await supabase.from("feira_historico").insert({ grupo_id: grupo.id, total: totalComprado, itens: copia, pagamento, carteira_id:selected?.id??null, lancamento_id });
         if (error) throw error;
       });
       await recarregar(); await recarregarHist();
@@ -212,12 +220,8 @@ function Feira() {
         <div className="mt-6 space-y-3 rounded-xl border bg-card p-4">
           <p className="text-sm text-muted-foreground">Como pagou esta compra?</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {([["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const).filter(([k]) => access.financas || k === "nenhum").map(([k, l]) => (
-              <button key={k} type="button" onClick={() => setPagamento(k)}
-                className={`rounded-lg border py-2 text-sm font-semibold ${pagamento === k ? "bg-foreground text-background" : "text-muted-foreground"}`}>
-                {l}
-              </button>
-            ))}
+            <Button type="button" variant={pagamento==='nenhum'?'default':'outline'} onClick={()=>{setPagamento('nenhum');setWalletId('');}}>Não lançar</Button>
+            {access.financas&&eligible.map(w=><Button key={w.id} type="button" variant={walletId===w.id?'default':'outline'} onClick={()=>{setWalletId(w.id);setPagamento(contaLegada(w));}}>{w.nome}</Button>)}
           </div>
           <p className="text-xs text-muted-foreground">
             {pagamento === "nenhum" ? "Só salva no histórico, sem mexer nas finanças." : "Também lança o total como débito pago nas Finanças."} Somente os itens com quantidade comprada entram no histórico e no estoque.

@@ -1,3 +1,4 @@
+import { WalletsPage } from "@/components/wallets-page";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Fuel, Plus } from "lucide-react";
@@ -7,14 +8,14 @@ import { useGrupo } from "@/lib/grupo";
 
 export const Route = createFileRoute("/moto")({
   head: () => ({ meta: [
-    { title: "MarIA — Moto" },
+    { title: "MarIA — Carteiras · Moto" },
     { name: "description", content: "Registre as despesas de gasolina da sua moto em dinheiro." },
-    { property: "og:title", content: "Moto — Gasolina e abastecimentos" },
+    { property: "og:title", content: "MarIA — Carteiras · Moto" },
     { property: "og:description", content: "Registre abastecimentos pagos em dinheiro." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
-  component: Moto,
+  component: WalletsPage,
 });
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

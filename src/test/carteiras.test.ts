@@ -1,0 +1,17 @@
+import { describe,it,expect } from 'vitest';
+import { aceitaTransferencia,aceitaAutomacao,saldoCarteira,resumoCarteiras,movimentosAnaliticos,termometro,progressoMeta,valorEmReais,type Carteira,type Meta } from '@/lib/carteiras';
+import type { LancamentoPainel } from '@/lib/painel';
+const wallet=(p:Partial<Carteira>={}):Carteira=>({id:'cash',grupo_id:'g',nome:'Dinheiro',tipo:'financeiro',moeda:'BRL',cor:'primary',icone:'wallet',legado:'dinheiro',na_feira:true,nas_fixas:true,no_painel:true,...p});
+const row=(p:Partial<LancamentoPainel>={}):LancamentoPainel=>({id:'r',tipo:'credito',descricao:'x',valor:100,data:'2026-10-31',pago:true,conta:'dinheiro',...p});
+const goal:Meta={id:'m',grupo_id:'g',carteira_id:'reserve',nome:'Meta',valor_alvo:1000,data_limite:null,ativa:true};
+describe('Carteiras e metas',()=>{
+ it('bloqueia Alimentação e Refeição nas transferências',()=>{expect(aceitaTransferencia(wallet({tipo:'beneficio',legado:'alimentacao'}),[])).toBe(false);expect(aceitaTransferencia(wallet({tipo:'beneficio',legado:'refeicao'}),[])).toBe(false);});
+ it('bloqueia USD e EUR em transferência e automação',()=>{for(const moeda of ['USD','EUR'] as const){const w=wallet({moeda});expect(aceitaTransferencia(w,[])).toBe(false);expect(aceitaAutomacao(w,[],'feira')).toBe(false);expect(aceitaAutomacao(w,[],'fixas')).toBe(false);}});
+ it('carteira vinculada a meta aceita somente lançamentos manuais',()=>{const w=wallet({id:'reserve'});expect(aceitaTransferencia(w,[goal])).toBe(false);expect(aceitaAutomacao(w,[goal],'fixas')).toBe(false);expect(aceitaAutomacao(w,[goal],'feira')).toBe(false);});
+ it('saldo inicial zero e pendências não descontam',()=>{expect(saldoCarteira(wallet(),[],[])).toBe(0);expect(saldoCarteira(wallet(),[row(),row({tipo:'debito',valor:30,pago:false})],[])).toBe(100);});
+ it('transfers alteram saldos sem entrar no fluxo externo',()=>{const cash=wallet(),reserve=wallet({id:'reserve',legado:null});const rows=[row(),row({tipo:'debito',carteira_id:'cash',transferencia_id:'t',valor:25}),row({tipo:'credito',carteira_id:'reserve',transferencia_id:'t',valor:25})];expect(saldoCarteira(cash,rows,[])).toBe(75);expect(saldoCarteira(reserve,rows,[])).toBe(25);expect(movimentosAnaliticos([cash,reserve],rows,[],[])).toHaveLength(1);});
+ it('consolidado respeita a flag e separa benefícios',()=>{expect(resumoCarteiras([wallet(),wallet({id:'benefit',legado:'alimentacao',tipo:'beneficio'}),wallet({id:'hidden',legado:null,no_painel:false})],[row(),row({conta:'alimentacao',valor:40}),row({carteira_id:'hidden',valor:90})],[],[])).toMatchObject({financeiro:100,beneficios:40,patrimonio:140});});
+ it('converte USD e EUR com cotação, nunca paridade inventada',()=>{expect(valorEmReais(wallet({moeda:'USD'}),10,[{moeda:'USD',valor_brl:5,data:'2026-10-30'}])).toBe(50);expect(valorEmReais(wallet({moeda:'EUR'}),10,[])).toBeNull();});
+ it('provisão deduz pagas e pendentes do mês, não futuras',()=>{const movs=movimentosAnaliticos([wallet()],[row({valor:1000}),row({tipo:'debito',valor:200}),row({tipo:'debito',valor:300,pago:false}),row({tipo:'debito',valor:500,pago:false,data:'2026-11-01'})],[],[]);expect(termometro(movs,'2026-10').livre).toBe(500);expect(progressoMeta(goal,400,500)).toEqual({guardado:400,percentual:40,faltante:600,aporte:500});});
+ it('provisão nunca negativa nem maior que valor faltante',()=>{expect(progressoMeta(goal,900,500).aporte).toBe(100);expect(progressoMeta(goal,900,-10).aporte).toBe(0);});
+});

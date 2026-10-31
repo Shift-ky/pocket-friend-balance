@@ -1,3 +1,5 @@
+import { useCarteiras } from '@/hooks/use-carteiras';
+import { aceitaAutomacao,contaLegada } from '@/lib/carteiras';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, CalendarDays, Fuel, Pencil, Pause, Play, Plus, Trash2, X } from 'lucide-react';
@@ -27,9 +29,13 @@ function ContasFixas() {
   const { grupo } = useGrupo();
   const access = useAccess();
   const admin = useSouAdmin();
+  const {carteiras,metas}=useCarteiras();
+  const [walletId,setWalletId]=useState('');
+  const eligible=carteiras.filter(w=>aceitaAutomacao(w,metas,'fixas')&&(w.legado!=='gasolina'||access.moto));
   const { linhas, recarregar } = useTabelaAoVivo<ContaFixa>('contas_fixas', grupo.id);
   const [modalidade, setModalidade] = useState<ContaFixa['modalidade']>('credito');
   const [conta, setConta] = useState<ContaFixa['conta']>('dinheiro');
+  const selected=eligible.find(w=>w.id===walletId)??eligible.find(w=>w.legado===(modalidade==='gasolina'?'gasolina':conta));
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [dia, setDia] = useState('1');
@@ -45,12 +51,12 @@ function ContasFixas() {
   useEffect(() => { setInicio(hojeBr()); setDia(String(Number(hojeBr().slice(-2)))); }, []);
   useEffect(() => { if (!sucesso) return; const timer = setTimeout(() => setSucesso(''), 4000); return () => clearTimeout(timer); }, [sucesso]);
   const modo = modalidade === 'gasolina' && !access.moto ? 'credito' : modalidade;
-  const payload = { descricao: descricao.trim(), modalidade: modo, conta: modo === 'gasolina' ? 'dinheiro' as const : conta, valor: Number(valor.replace(',', '.')), dia: Number(dia), inicio, fim: indefinido ? null : fim, ativa: editando?.ativa ?? true };
+  const payload = { carteira_id:selected?.id??null, descricao: descricao.trim(), modalidade: modo, conta: modo === 'gasolina' ? 'dinheiro' as const : conta, valor: Number(valor.replace(',', '.')), dia: Number(dia), inicio, fim: indefinido ? null : fim, ativa: editando?.ativa ?? true };
   function limpar() {
     setEditando(null); setDescricao(''); setValor(''); setConfirmando(false); setErro(''); setIndefinido(true); setFim('');
   }
   function editar(fixa: ContaFixa) {
-    setEditando(fixa); setModalidade(fixa.modalidade); setConta(fixa.conta); setDescricao(fixa.descricao); setValor(String(fixa.valor)); setDia(String(fixa.dia)); setInicio(fixa.inicio); setFim(fixa.fim ?? ''); setIndefinido(fixa.fim === null); setConfirmando(false); setErro('');
+    setWalletId(fixa.carteira_id??'');setEditando(fixa); setModalidade(fixa.modalidade); setConta(fixa.conta); setDescricao(fixa.descricao); setValor(String(fixa.valor)); setDia(String(fixa.dia)); setInicio(fixa.inicio); setFim(fixa.fim ?? ''); setIndefinido(fixa.fim === null); setConfirmando(false); setErro('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   async function salvar(e: React.FormEvent) {
@@ -91,10 +97,7 @@ function ContasFixas() {
     <form onSubmit={salvar} className="space-y-4 border-y py-6">
       <div className="flex items-center justify-between gap-3"><h2 className="font-semibold">{editando ? 'Editar cadastro' : 'Novo cadastro'}</h2>{editando && <Button type="button" variant="ghost" size="icon" title="Cancelar edição" aria-label="Cancelar edição" onClick={limpar}><X /></Button>}</div>
       <div className="grid grid-cols-2 gap-2"><Button type="button" variant={modo !== 'debito' ? 'default' : 'outline'} aria-pressed={modo !== 'debito'} onClick={() => { setModalidade('credito'); setConfirmando(false); }}><ArrowDownLeft />Entrada fixa</Button><Button type="button" variant={modo === 'debito' ? 'default' : 'outline'} aria-pressed={modo === 'debito'} onClick={() => { setModalidade('debito'); setConfirmando(false); }}><ArrowUpRight />Conta fixa</Button></div>
-      <label className="block text-sm text-muted-foreground">{modo === 'debito' ? 'Carteira' : 'Entrada'}<select aria-label={modo === 'debito' ? 'Carteira' : 'Entrada'} className={campo} value={modo === 'gasolina' ? 'gasolina' : conta} onChange={e => { if (e.target.value === 'gasolina') { setModalidade('gasolina'); setConta('dinheiro'); } else { setConta(e.target.value as ContaFixa['conta']); if (modo !== 'debito') setModalidade('credito'); } setConfirmando(false); }}>
-        {Object.entries(carteirasFixas).map(([id, nome]) => <option key={id} value={id}>{modo === 'debito' ? nome : `Entrada de ${nome}`}</option>)}
-        {modo !== 'debito' && access.moto && <option value="gasolina">Gasolina · Aporte da Moto</option>}
-      </select></label>
+      <label className="block text-sm text-muted-foreground">Carteira<select aria-label="Carteira fixa" value={selected?.id??''} className={campo} onChange={e=>{const w=eligible.find(w=>w.id===e.target.value);if(!w)return;setWalletId(w.id);setConta(contaLegada(w));setModalidade(w.legado==='gasolina'?'gasolina':modo==='debito'?'debito':'credito');setConfirmando(false);}}>{eligible.filter(w=>modo!=='debito'||w.legado!=='gasolina').map(w=><option key={w.id} value={w.id}>{w.nome}</option>)}</select></label>
       <label className="block text-sm text-muted-foreground">Descrição<input required maxLength={200} aria-label="Descrição" value={descricao} onChange={e => { setDescricao(e.target.value); setConfirmando(false); }} className={campo} /></label>
       <div className="grid grid-cols-2 gap-3"><label className="min-w-0 text-sm text-muted-foreground">Valor mensal (R$)<input required inputMode="decimal" aria-label="Valor mensal" value={valor} onChange={e => { setValor(e.target.value); setConfirmando(false); }} className={campo} /></label><label className="min-w-0 text-sm text-muted-foreground">Dia do mês<input required type="number" min="1" max="31" step="1" aria-label="Dia do mês" value={dia} onChange={e => { setDia(e.target.value); setConfirmando(false); }} className={campo} /></label></div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label className="min-w-0 text-sm text-muted-foreground">Início<input required type="date" min="2000-01-01" aria-label="Início" value={inicio} onChange={e => { setInicio(e.target.value); setConfirmando(false); }} className={campo} /></label><div className="min-w-0"><label className="flex items-center gap-2 text-sm text-muted-foreground"><input type="checkbox" checked={indefinido} onChange={e => { setIndefinido(e.target.checked); setConfirmando(false); }} className="accent-primary" />Sem data final</label>{!indefinido && <label className="mt-2 block text-sm text-muted-foreground">Fim<input required type="date" min={inicio} aria-label="Fim" value={fim} onChange={e => { setFim(e.target.value); setConfirmando(false); }} className={campo} /></label>}</div></div>

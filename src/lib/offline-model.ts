@@ -2,7 +2,7 @@ export type Row = { id?: unknown; grupo_id?: unknown; created_at?: unknown } & R
 export type Command = { table: string; action: 'insert' | 'update' | 'delete' | 'order'; rows?: Row[]; ids?: string[]; patch?: Row; before?: Row[] };
 export type Operation = { id: string; commands: Command[]; error?: string; blocked?: boolean };
 export type LocalState = { tables: Record<string, Row[]>; queue: Operation[] };
-export const OFFLINE_TABLES = ['lancamentos', 'moto_despesas', 'feira_itens', 'feira_historico', 'estoque', 'estoque_divisoes', 'despesas', 'contas_fixas'] as const;
+export const OFFLINE_TABLES = ['lancamentos', 'moto_despesas', 'feira_itens', 'feira_historico', 'estoque', 'estoque_divisoes', 'despesas', 'contas_fixas', 'carteiras', 'metas'] as const;
 
 export function applyCommand(tables: LocalState['tables'], command: Command) {
   const rows = tables[command.table] ?? [];

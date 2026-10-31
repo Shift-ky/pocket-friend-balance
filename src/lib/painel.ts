@@ -1,4 +1,4 @@
-export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string; origem_modulo?: string; criado_por?: string | null; created_at?: string };
+export type LancamentoPainel = { id: string; tipo: 'credito' | 'debito' | 'aplicacao' | 'resgate'; descricao: string; valor: number; data: string; pago: boolean; conta: 'dinheiro' | 'alimentacao' | 'refeicao'; destino?: string; origem_modulo?: string; criado_por?: string | null; created_at?: string; carteira_id?:string|null; transferencia_id?:string|null; categoria?:string; fonte?:string };
 export const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 type RegistroHistorico = { data?: string | undefined; created_at?: string | undefined };
 export function dataLancamento(item: RegistroHistorico): string {
