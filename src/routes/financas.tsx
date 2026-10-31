@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAccess } from "@/lib/access-context";
 import { CheckCircle2, Clock, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { parcelarLancamento } from "@/lib/parcelamento";
-import { CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
+import { GRUPOS_CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -124,7 +124,7 @@ function Index() {
           </div>
         </fieldset>}
         {!transferencia && (tipo === "debito"
-  ? <label className="block text-sm">Tipo de saída<select aria-label="Tipo de saída" value={categoria} onChange={e=>setCategoria(e.target.value)} className="mt-1 w-full rounded-md border bg-background px-3 py-2">{CATEGORIAS_SAIDA.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
+  ? <label className="block text-sm">Tipo de saída<select aria-label="Tipo de saída" value={categoria} onChange={e=>setCategoria(e.target.value)} className="mt-1 w-full rounded-md border bg-background px-3 py-2">{GRUPOS_CATEGORIAS_SAIDA.map(grupo=><optgroup key={grupo.nome} label={grupo.nome}>{grupo.categorias.map(c=><option key={c} value={c}>{c}</option>)}</optgroup>)}</select></label>
   : <label className="block text-sm">Categoria<input aria-label="Categoria" value={categoria} onChange={e=>setCategoria(e.target.value)} maxLength={100} className="mt-1 w-full rounded-md border bg-background px-3 py-2"/></label>
 )}
         <input aria-label="Descrição do lançamento" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição (ex: Salário, Aluguel)"
