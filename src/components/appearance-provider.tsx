@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ImagePlus, Palette, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGrupo } from '@/lib/grupo';
-import { TEMAS, CORES_CORINGA, coresValidas, visibilidadeValida, textoDoBotao, temaValido, validarImagemFundo, type Tema, type CoresCoringa } from '@/lib/aparencia';
+import { TEMAS, CORES_CORINGA, coresValidas, visibilidadeValida, textoDoBotao, temaValido, validarImagemFundo, gerarPaletaCoringa, type Tema, type CoresCoringa } from '@/lib/aparencia';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -68,12 +68,15 @@ export function AppearanceMenu() {
   const [msg, setMsg] = useState('');
   const atual = data ?? { theme: 'original' as Tema, background_path: null, imagem: null, background_visibility: 10, custom_enabled: false, custom_colors: {} };
   const [cores, setCores] = useState<CoresCoringa>({});
+  const [corBase, setCorBase] = useState('#22e1ff');
+  const [coringaAberto, setCoringaAberto] = useState(false);
   const [visibilidade, setVisibilidade] = useState(10);
   useEffect(() => {
     const defaults = getComputedStyle(document.documentElement);
     const iniciais: CoresCoringa = {};
     for (const { id } of CORES_CORINGA) iniciais[id] = defaults.getPropertyValue(`--coringa-${id}`).trim();
     setCores({ ...iniciais, ...data?.custom_colors });
+    setCorBase(data?.custom_colors?.primary ?? '#22e1ff');
     setVisibilidade(data?.background_visibility ?? 10);
   }, [data]);
 
@@ -117,8 +120,27 @@ export function AppearanceMenu() {
           <span data-theme={t.id} className="flex gap-1"><span className="h-6 flex-1 rounded border bg-background" /><span className="h-6 flex-1 rounded border bg-primary" /></span>{t.nome}
         </Button>)}
       </div>
-      <Button type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={atual.custom_enabled} onClick={() => executar(() => salvar(atual.theme, atual.background_path, { custom_enabled: true, custom_colors: coresValidas(cores) }), 'Paleta Coringa aplicada.')}><Palette />Coringa</Button>
-      {atual.custom_enabled && <section className="space-y-3 border-t pt-4" aria-label="Paleta Coringa"><h3 className="font-semibold">Suas cores</h3><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{CORES_CORINGA.map(c => <label key={c.id} className="flex min-w-0 items-center justify-between gap-2 text-sm"><span>{c.nome}</span><input type="color" aria-label={c.nome} value={cores[c.id]} disabled={salvando} onChange={e => setCores(atual => ({ ...atual, [c.id]: e.target.value }))} className="h-9 w-12 shrink-0 cursor-pointer rounded border bg-card p-1" /></label>)}</div><Button disabled={salvando} onClick={() => executar(() => salvar(atual.theme, atual.background_path, { custom_enabled: true, custom_colors: coresValidas(cores) }), 'Cores salvas.')}><Palette />Aplicar cores</Button></section>}
+      <Button type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={atual.custom_enabled} aria-expanded={coringaAberto} aria-controls="coringa-palette" onClick={() => {
+        if (!coringaAberto) setCores(gerarPaletaCoringa(corBase));
+        setCoringaAberto(value => !value);
+      }}><Palette />Coringa</Button>
+      {coringaAberto && <section id="coringa-palette" className="space-y-3 rounded-lg border bg-muted/30 p-3" aria-label="Gerar paleta Coringa">
+        <div><h3 className="font-semibold">Crie uma paleta com a sua cor</h3><p className="text-xs text-muted-foreground">Escolha uma cor-base; o app harmoniza fundos, textos, botões, entradas, saídas e reservas.</p></div>
+        <label className="flex items-center justify-between gap-3 text-sm">Cor-base<input type="color" aria-label="Cor-base para sua paleta" value={corBase} disabled={salvando} onChange={event => {
+          const cor = event.target.value;
+          setCorBase(cor);
+          setCores(gerarPaletaCoringa(cor));
+        }} className="h-10 w-14 cursor-pointer rounded border bg-card p-1" /></label>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {[{ nome: 'Fundo', cor: cores.background }, { nome: 'Quadros', cor: cores.card }, { nome: 'Sua cor', cor: cores.primary }, { nome: 'Entradas', cor: cores.credit }, { nome: 'Saídas', cor: cores.debit }, { nome: 'Reservas', cor: cores.saved }].map(item => <div key={item.nome} className="min-w-0 text-center"><span className="block h-8 rounded border" style={{ backgroundColor: item.cor }} /><span className="text-[10px] text-muted-foreground">{item.nome}</span></div>)}
+        </div>
+        <Button type="button" disabled={salvando || isPending || isError} onClick={() => executar(() => salvar(atual.theme, atual.background_path, { custom_enabled: true, custom_colors: coresValidas(cores) }), 'Paleta harmonizada aplicada.')}><Palette />Gerar e aplicar paleta</Button>
+      </section>}
+      {atual.custom_enabled && <section className="space-y-3 border-t pt-4" aria-label="Personalizar cores da paleta"><div><h3 className="font-semibold">Ajustar cores individualmente</h3><p className="text-xs text-muted-foreground">Faça ajustes finos depois de aplicar sua paleta.</p></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{CORES_CORINGA.map(c => <label key={c.id} className="flex min-w-0 items-center justify-between gap-2 text-sm"><span>{c.nome}</span><input type="color" aria-label={c.nome} value={cores[c.id] ?? '#22e1ff'} disabled={salvando} onChange={event => {
+        const cor = event.target.value;
+        setCores(atual => ({ ...atual, [c.id]: cor }));
+        if (c.id === 'primary') setCorBase(cor);
+      }} className="h-9 w-12 shrink-0 cursor-pointer rounded border bg-card p-1" /></label>)}</div><Button type="button" disabled={salvando} onClick={() => executar(() => salvar(atual.theme, atual.background_path, { custom_enabled: true, custom_colors: coresValidas(cores) }), 'Cores salvas.')}><Palette />Salvar cores</Button></section>}
       <section className="space-y-3 border-t pt-4">
         <div><h3 className="font-semibold">Imagem de fundo</h3><p className="text-xs text-muted-foreground">Fica suave atrás das informações e os quadros continuam com fundo sólido.</p></div>
         {atual.imagem && <img src={atual.imagem} alt="Sua imagem de fundo atual" className="h-28 w-full rounded-lg object-cover" />}
