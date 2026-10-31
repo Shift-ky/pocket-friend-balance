@@ -127,7 +127,6 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
             </div>
           </div>
         </div>)}
-        </div>
         <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => addWidget(section)}><Plus />Adicionar caixa</Button>
       </section>)}
     </div>
