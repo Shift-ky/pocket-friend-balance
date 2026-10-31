@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FONTES_WIDGET, novoIdPainel, type AlturaCartaoPainel, type DashboardPainel, type FonteWidgetPainel, type LarguraCartaoPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from "@/lib/painel-preferencias";
+import { FONTES_WIDGET, novoIdPainel, PREFERENCIAS_PADRAO_PAINEL, type AlturaCartaoPainel, type DashboardPainel, type FonteWidgetPainel, type LarguraCartaoPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from "@/lib/painel-preferencias";
 
 const field = "w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm";
 const alturas: { value: AlturaCartaoPainel; label: string }[] = [
@@ -118,7 +118,13 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
         <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => addWidget(section)}><Plus />Adicionar caixa</Button>
       </section>)}
     </div>
-    <Button type="button" variant="outline" size="sm" disabled={saving} onClick={addSection}><Plus />Adicionar seção</Button>
+    <div className="flex flex-wrap gap-2">
+      <Button type="button" variant="outline" size="sm" disabled={saving} onClick={addSection}><Plus />Adicionar seção</Button>
+      <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => {
+        const padrao = PREFERENCIAS_PADRAO_PAINEL.dashboards[0];
+        updateDashboard(current => ({ ...padrao, id: current.id, nome: current.nome }));
+      }}>Restaurar padrão desta visão</Button>
+    </div>
     {error && <p role="alert" className="text-sm text-debit">{error}</p>}
     {status && <p role="status" className="text-sm text-primary">{status}</p>}
     <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving} onClick={onSave}>{saving ? "Salvando…" : "Salvar dashboard"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={onCancel}>Fechar sem salvar</Button></div>
