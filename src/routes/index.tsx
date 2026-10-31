@@ -45,14 +45,14 @@ function lerPreferenciasLocais(userId: string): PreferenciasPainel | null {
 const classesGrade: Record<number, string> = {
   1: 'grid-cols-1',
   2: 'grid-cols-1 sm:grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  3: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 };
 const classesLargura: Record<number, string> = {
   1: 'col-span-1',
-  2: 'col-span-1 sm:col-span-2 lg:col-span-2',
-  3: 'col-span-1 sm:col-span-2 lg:col-span-3',
-  4: 'col-span-1 sm:col-span-2 lg:col-span-4',
+  2: 'col-span-1 sm:col-span-2 md:col-span-2 lg:col-span-2',
+  3: 'col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-3',
+  4: 'col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4',
 };
 const classesAltura: Record<AlturaCartaoPainel, string> = {
   compacta: 'min-h-32',
