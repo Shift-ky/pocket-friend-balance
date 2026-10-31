@@ -31,7 +31,7 @@ export async function extractWithOpenAI(instructions: string, text: string, byte
   const key = process.env['OPENAI_API_KEY']?.trim();
   if (!key) throw new ExtractionProviderError('openai', undefined, 'OpenAI não configurada. Confira a chave de servidor.');
 
-  const model = process.env['OPENAI_MODEL']?.trim() || 'gpt-6.1-terra';
+  const model = process.env['OPENAI_MODEL']?.trim() || 'gpt-6-luna';
   if (!/^gpt-[a-zA-Z0-9.-]+$/.test(model)) throw new Error('Modelo OpenAI inválido.');
   if (bytes && (!['application/pdf', 'image/jpeg', 'image/png'].includes(mime ?? '') || bytes.length > 20 * 1024 * 1024)) {
     throw new Error('Arquivo incompatível com a leitura. Confira manualmente.');
@@ -71,7 +71,7 @@ export async function extractWithOpenAI(instructions: string, text: string, byte
           instructions,
           input: [{ role: 'user', content }],
           text: { format: { type: 'json_schema', name: 'financial_document', strict: true, schema: responseSchema } },
-          reasoning: { effort: 'low' },
+          reasoning: { effort: 'none' },
           max_output_tokens: 16384,
           store: false,
         }),
