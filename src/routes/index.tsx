@@ -2,7 +2,7 @@ import { createFileRoute,Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { PainelSortableCard } from '@/components/painel-sortable-card';
 import { normalizarOrdemPainel, ORDEM_PADRAO_PAINEL, moverCartaoPainel, moverCartaoPainelPara, type CartaoPainelId } from '@/lib/ordem-painel';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,7 +65,7 @@ return <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6"><header className="
 </div>
 </div>
 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reordenar}>
-<SortableContext items={ordem} strategy={verticalListSortingStrategy}>
+<SortableContext items={ordem} strategy={rectSortingStrategy}>
 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 {ordem.map((id,position)=>{const c=caixas[id];return <PainelSortableCard key={id} id={id} nome={c.nome} valor={moeda(c.valor)} Icon={c.Icon} destaque={c.destaque} position={position} total={ordem.length} editing={organizando} disabled={salvandoOrdem} onMove={delta=>void salvarOrdem(moverCartaoPainel(ordem,id,delta))}/>;})}
 </div>
