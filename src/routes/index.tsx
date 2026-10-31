@@ -44,20 +44,20 @@ function lerPreferenciasLocais(userId: string): PreferenciasPainel | null {
 
 const classesGrade: Record<number, string> = {
   1: 'grid-cols-1',
-  2: 'grid-cols-1 sm:grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
-  4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+  2: 'grid-cols-1 min-[480px]:grid-cols-2',
+  3: 'grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3',
+  4: 'grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 };
 const classesLargura: Record<number, string> = {
   1: 'col-span-1',
-  2: 'col-span-1 sm:col-span-2 md:col-span-2 lg:col-span-2',
-  3: 'col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-3',
-  4: 'col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4',
+  2: 'col-span-1 min-[480px]:col-span-2 md:col-span-2 lg:col-span-2',
+  3: 'col-span-1 min-[480px]:col-span-2 md:col-span-3 lg:col-span-3',
+  4: 'col-span-1 min-[480px]:col-span-2 md:col-span-3 lg:col-span-4',
 };
 const classesAltura: Record<AlturaCartaoPainel, string> = {
-  compacta: 'min-h-32',
-  media: 'min-h-40',
-  alta: 'min-h-52',
+  compacta: 'min-h-28 sm:min-h-32',
+  media: 'min-h-32 sm:min-h-40',
+  alta: 'min-h-40 sm:min-h-52',
 };
 const escalaConteudo = {
   1: { padding: 'p-3', title: 'text-sm', value: 'text-xl sm:text-2xl', detail: 'mt-1 text-[11px] sm:text-xs', icon: 'h-4 w-4' },
@@ -150,14 +150,14 @@ function Painel() {
     const heightLevel = widget.altura === 'alta' ? 3 : widget.altura === 'media' ? 2 : 1;
     const scale = Math.min(4, Math.max(width, heightLevel)) as 1 | 2 | 3 | 4;
     const style = escalaConteudo[scale];
-    const titleStyle = { fontSize: 'clamp(0.875rem, 4cqi, 1.25rem)' };
-    const valueStyle = { fontSize: 'clamp(1.25rem, 9cqi, 3rem)' };
-    const detailStyle = { fontSize: 'clamp(0.6875rem, 3cqi, 0.875rem)' };
-    const iconStyle = { width: 'clamp(1rem, 4cqi, 1.5rem)', height: 'clamp(1rem, 4cqi, 1.5rem)' };
+    const titleStyle = { fontSize: 'clamp(0.8125rem, 3.5cqi, 1rem)' };
+    const valueStyle = { fontSize: 'clamp(1rem, 7cqi, 1.75rem)' };
+    const detailStyle = { fontSize: 'clamp(0.6875rem, 2.8cqi, 0.8125rem)' };
+    const iconStyle = { width: 'clamp(0.875rem, 3.5cqi, 1.25rem)', height: 'clamp(0.875rem, 3.5cqi, 1.25rem)' };
     const cardStyle = { containerType: 'inline-size' as const, ...(widget.cor ? { backgroundColor: `color-mix(in srgb, ${widget.cor} 11%, transparent)`, borderTopWidth: '3px', borderTopColor: widget.cor } : {}) };
     const span = classesLargura[width];
     const title = widget.titulo.trim() || source.nome;
-    const article = `flex min-w-0 flex-col rounded-xl border bg-card p-3 sm:p-4 ${span} ${classesAltura[widget.altura]} ${widget.altura === 'alta' ? 'justify-between' : ''}`;
+    const article = `flex min-w-0 flex-col rounded-xl border bg-card p-2.5 sm:p-4 ${span} ${classesAltura[widget.altura]} ${widget.altura === 'alta' ? 'justify-between' : ''}`;
 
     if (['patrimonio', 'financeiro', 'beneficios', 'poupanca', 'entradas_mes', 'saidas_pagas_mes', 'contas_pendentes_mes', 'previsao_sobra', 'sobra_financeira'].includes(widget.fonte)) {
       const metrics: Record<string, { value: number; Icon: typeof Layers; detail: string; color?: string }> = {
@@ -174,7 +174,7 @@ function Painel() {
       const metric = metrics[widget.fonte];
       return <article key={widget.id} className={article} style={cardStyle}>
         <div className="flex items-start justify-between gap-2"><h2 className={`min-w-0 break-words font-medium ${style.title}`} style={titleStyle}>{title}</h2><metric.Icon className={`shrink-0 ${style.icon} ${metric.color ?? ''}`} style={iconStyle} /></div>
-        <p className={`mt-auto break-words pt-4 font-display font-bold leading-tight ${style.value} ${metric.color ?? ''}`} style={valueStyle}>{moeda(metric.value)}</p>
+        <p className={`mt-auto break-words pt-2 font-display font-bold leading-tight sm:pt-4 ${style.value} ${metric.color ?? ''}`} style={valueStyle}>{moeda(metric.value)}</p>
         <p className={`opacity-75 ${style.detail}`} style={detailStyle}>{metric.detail}</p>
       </article>;
     }
@@ -210,9 +210,9 @@ function Painel() {
 
   const activeDashboard = dashboard ?? PREFERENCIAS_PADRAO_PAINEL.dashboards[0];
 
-  return <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+  return <main className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div><p className="mb-2 text-xs uppercase text-muted-foreground">MarIA · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
+      <div><p className="mb-1 text-[10px] uppercase text-muted-foreground sm:mb-2 sm:text-xs">MarIA · {grupo.nome}</p><h1 className="font-display text-3xl sm:text-5xl">Meu Painel</h1></div>
       <div className="flex flex-wrap items-center gap-2">
         <label className="sr-only" htmlFor="painel-dashboard-select">Dashboard aberto</label>
         <select id="painel-dashboard-select" value={activeDashboard.id} onChange={event => void salvarPreferencias({ ...preferencias, dashboardAtualId: event.target.value })} className="max-w-52 rounded-md border bg-background px-3 py-2 text-sm">
@@ -242,11 +242,11 @@ function Painel() {
       <p role="status" className="mb-5 text-sm text-muted-foreground">{totais.semCotacao ? 'Carteiras sem cotação não estão incluídas no consolidado.' : erroCotacao}</p>}
 
     {!activeDashboard.secoes.length && <div className="rounded-xl border border-dashed p-10 text-center"><p className="font-medium">Este dashboard ainda não tem seções.</p><p className="mt-1 text-sm text-muted-foreground">Abra a personalização para criar uma seção e adicionar caixas.</p></div>}
-    <div className="space-y-8">
-      {activeDashboard.secoes.map(section => <section key={section.id} aria-label={section.nome} className="rounded-2xl border bg-card/40 p-4 shadow-sm sm:p-5">
-        <h2 className="mb-4 font-display text-lg font-semibold tracking-tight sm:text-xl">{section.nome}</h2>
-        {!section.widgets.length ? <p className="rounded-md bg-muted/40 p-4 text-sm text-muted-foreground">Sem caixas nesta seção. Use Personalizar para adicionar uma.</p> :
-          <div className={`grid min-w-0 items-stretch gap-4 ${classesGrade[section.colunas] ?? classesGrade[2]}`}>
+    <div className="space-y-5 sm:space-y-8">
+      {activeDashboard.secoes.map(section => <section key={section.id} aria-label={section.nome} className="rounded-2xl border bg-card/40 p-3 shadow-sm sm:p-5">
+        <h2 className="mb-3 font-display text-base font-semibold tracking-tight sm:mb-4 sm:text-xl">{section.nome}</h2>
+        {!section.widgets.length ? <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground sm:p-4">Sem caixas nesta seção. Use Personalizar para adicionar uma.</p> :
+          <div className={`grid min-w-0 items-stretch gap-3 sm:gap-4 ${classesGrade[section.colunas] ?? classesGrade[2]}`}>
             {section.widgets.map(widget => renderWidget(widget, section))}
           </div>}
       </section>)}
