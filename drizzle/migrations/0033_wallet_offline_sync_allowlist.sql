@@ -1,51 +1,73 @@
--- Keep the offline sync allowlist aligned with wallet-aware finance entries.
--- Reapply the wallet-related changes from 0028 when an older function definition
--- is present in the target database.
-
-DO $wallet_sync$
-DECLARE
-  definition text;
+-- Restore the wallet-aware offline sync definition after later migrations
+-- replaced its allowlists with an older version.
+CREATE OR REPLACE FUNCTION public.sync_offline_operation(_id uuid, _grupo_id uuid, _commands jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $function$
+DECLARE cmd jsonb; r jsonb; previous jsonb; current_row jsonb; t text; action text; cols text; vals text; assignments text; allowed text[]; rid uuid; affected integer; total integer:=0; key text;
 BEGIN
-  SELECT pg_get_functiondef('public.sync_offline_operation(uuid,uuid,jsonb)'::regprocedure)
-    INTO definition;
-
-  IF definition IS NULL THEN
-    RAISE EXCEPTION 'sync_offline_operation(uuid,uuid,jsonb) was not found';
-  END IF;
-
-  definition := replace(
-    definition,
-    '''despesas'',''contas_fixas'')',
-    '''despesas'',''contas_fixas'',''carteiras'',''metas'')'
-  );
-  definition := replace(
-    definition,
-    '''destino'',''origem_modulo'']',
-    '''destino'',''origem_modulo'',''carteira_id'',''transferencia_id'',''categoria'',''fonte'']'
-  );
-  definition := replace(
-    definition,
-    '''total'',''itens'',''pagamento'',''lancamento_id'']',
-    '''total'',''itens'',''pagamento'',''lancamento_id'',''carteira_id'']'
-  );
-  definition := replace(
-    definition,
-    '''fim'',''ativa'']',
-    '''fim'',''ativa'',''carteira_id'']'
-  );
-  definition := replace(
-    definition,
-    'WHEN ''contas_fixas'' THEN',
-    'WHEN ''carteiras'' THEN ARRAY[''nome'',''tipo'',''moeda'',''cor'',''icone'',''na_feira'',''nas_fixas'',''no_painel''] WHEN ''metas'' THEN ARRAY[''nome'',''carteira_id'',''valor_alvo'',''data_limite'',''ativa''] WHEN ''contas_fixas'' THEN'
-  );
-
-  IF position('''despesas'',''contas_fixas'',''carteiras'',''metas'')' in definition) = 0
-     OR position('''carteira_id'',''transferencia_id'',''categoria'',''fonte'']' in definition) = 0
-     OR position('WHEN ''carteiras'' THEN' in definition) = 0
-     OR position('WHEN ''metas'' THEN' in definition) = 0 THEN
-    RAISE EXCEPTION 'Could not update the offline sync wallet allowlist; inspect sync_offline_operation before retrying';
-  END IF;
-
-  EXECUTE definition;
+ IF auth.uid() IS NULL OR NOT public.e_membro(_grupo_id) THEN RAISE EXCEPTION 'Sem acesso ao grupo'; END IF;
+ IF jsonb_typeof(_commands)<>'array' OR jsonb_array_length(_commands)>500 OR octet_length(_commands::text)>2000000 THEN RAISE EXCEPTION 'Alteração inválida'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended(auth.uid()::text||_id::text,0));
+ SELECT payload INTO previous FROM public.offline_operations WHERE user_id=auth.uid() AND id=_id;
+ IF FOUND THEN
+  IF previous IS DISTINCT FROM jsonb_build_object('group',_grupo_id,'commands',_commands) THEN RAISE EXCEPTION 'Identificador já utilizado'; END IF;
+  RETURN jsonb_build_object('ok',true,'replayed',true);
+ END IF;
+ INSERT INTO public.offline_operations(user_id,id,payload) VALUES(auth.uid(),_id,jsonb_build_object('group',_grupo_id,'commands',_commands));
+ FOR cmd IN SELECT value FROM jsonb_array_elements(_commands) LOOP
+  t:=cmd->>'table'; action:=cmd->>'action';
+  IF t NOT IN ('lancamentos','moto_despesas','feira_itens','feira_historico','estoque','estoque_divisoes','despesas','contas_fixas','carteiras','metas') THEN RAISE EXCEPTION 'Tabela inválida'; END IF;
+  allowed:=CASE t
+   WHEN 'lancamentos' THEN ARRAY['tipo','descricao','valor','data','pago','conta','destino','origem_modulo','carteira_id','transferencia_id','categoria','fonte']
+   WHEN 'moto_despesas' THEN ARRAY['descricao','valor','data','conta']
+   WHEN 'feira_itens' THEN ARRAY['nome','qtd','qtd_comprada','preco','pego','ordem']
+   WHEN 'feira_historico' THEN ARRAY['total','itens','pagamento','lancamento_id','carteira_id']
+   WHEN 'estoque' THEN ARRAY['nome','qtd','padrao','divisao_id','ordem']
+   WHEN 'estoque_divisoes' THEN ARRAY['nome']
+   WHEN 'contas_fixas' THEN ARRAY['descricao','modalidade','conta','valor','dia','inicio','fim','ativa','carteira_id']
+   WHEN 'carteiras' THEN ARRAY['nome','tipo','moeda','cor','icone','na_feira','nas_fixas','no_painel']
+   WHEN 'metas' THEN ARRAY['nome','carteira_id','valor_alvo','data_limite','ativa']
+   ELSE ARRAY['categoria','data','descricao','fornecedor','valor'] END;
+  IF action='order' AND t IN ('estoque','feira_itens') THEN
+   IF t='estoque' THEN
+    PERFORM public.ordenar_estoque(_grupo_id,ARRAY(SELECT value::uuid FROM jsonb_array_elements_text(cmd->'ids')));
+   ELSE
+    PERFORM public.ordenar_feira(_grupo_id,ARRAY(SELECT value::uuid FROM jsonb_array_elements_text(cmd->'ids')));
+   END IF;
+  ELSIF action='insert' THEN
+   FOR r IN SELECT value FROM jsonb_array_elements(cmd->'rows') LOOP
+    IF (r->>'grupo_id')::uuid IS DISTINCT FROM _grupo_id OR EXISTS(SELECT 1 FROM jsonb_object_keys(r) k WHERE NOT(k=ANY(allowed||ARRAY['id','grupo_id','created_at']))) THEN RAISE EXCEPTION 'Campos inválidos'; END IF;
+    SELECT string_agg(format('%I',k),','),string_agg(format('x.%I',k),',') INTO cols,vals FROM jsonb_object_keys(r) k;
+    EXECUTE format('INSERT INTO public.%I (%s) SELECT %s FROM jsonb_populate_record(NULL::public.%I,$1) x',t,cols,vals,t) USING r;
+    total:=total+1;
+   END LOOP;
+  ELSIF action IN ('update','delete') THEN
+   IF action='update' THEN
+    IF EXISTS(SELECT 1 FROM jsonb_object_keys(cmd->'patch') k WHERE NOT(k=ANY(allowed))) THEN RAISE EXCEPTION 'Campos inválidos'; END IF;
+    SELECT string_agg(format('%I=x.%I',k,k),',') INTO assignments FROM jsonb_object_keys(cmd->'patch') k;
+    IF assignments IS NULL THEN RAISE EXCEPTION 'Alteração vazia'; END IF;
+   END IF;
+   FOR rid IN SELECT value::uuid FROM jsonb_array_elements_text(cmd->'ids') LOOP
+    EXECUTE format('SELECT to_jsonb(x) FROM public.%I x WHERE id=$1 AND grupo_id=$2 FOR UPDATE',t) INTO current_row USING rid,_grupo_id;
+    IF current_row IS NULL THEN RAISE EXCEPTION 'Registro removido ou acesso alterado. Revise a alteração pendente.'; END IF;
+    SELECT value INTO r FROM jsonb_array_elements(COALESCE(cmd->'before','[]'::jsonb)) WHERE value->>'id'=rid::text;
+    IF r IS NULL THEN RAISE EXCEPTION 'Versão anterior ausente'; END IF;
+    FOR key IN SELECT jsonb_object_keys(CASE WHEN action='update' THEN cmd->'patch' ELSE r-'id'-'grupo_id'-'created_at' END) LOOP
+     IF current_row->key IS DISTINCT FROM r->key THEN RAISE EXCEPTION 'Este registro mudou em outro aparelho. Revise a alteração pendente.'; END IF;
+    END LOOP;
+    IF action='update' THEN
+     EXECUTE format('UPDATE public.%I d SET %s FROM jsonb_populate_record(NULL::public.%I,$1) x WHERE d.id=$2 AND d.grupo_id=$3',t,assignments,t) USING cmd->'patch',rid,_grupo_id;
+    ELSE
+     EXECUTE format('DELETE FROM public.%I WHERE id=$1 AND grupo_id=$2',t) USING rid,_grupo_id;
+    END IF;
+    GET DIAGNOSTICS affected=ROW_COUNT;
+    IF affected<>1 THEN RAISE EXCEPTION 'Sem permissão para alterar este registro'; END IF;
+    total:=total+affected;
+   END LOOP;
+  ELSE RAISE EXCEPTION 'Ação inválida'; END IF;
+ END LOOP;
+ RETURN jsonb_build_object('ok',true,'count',total);
 END
-$wallet_sync$;
+$function$;
