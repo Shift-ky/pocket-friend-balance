@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ORDEM_PADRAO_BLOCOS, PREFERENCIAS_PADRAO_PAINEL, type CartaoPainelId, type PainelBlocoId, type PreferenciasPainel } from "@/lib/painel-preferencias";
+import { ORDEM_PADRAO_BLOCOS, PREFERENCIAS_PADRAO_PAINEL, type PreferenciasPainel } from "@/lib/painel-preferencias";
 
 const nomesBlocos: Record<PainelBlocoId, string> = {
   saldos: "Caixas de saldo",
