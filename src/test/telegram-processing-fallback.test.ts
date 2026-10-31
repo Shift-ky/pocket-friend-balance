@@ -15,7 +15,7 @@ let pathSaveError: boolean;
 let extractionSaveMissing: boolean;
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
-  vi.clearAllMocks(); vi.stubEnv('GEMINI_API_KEY', 'not-a-real-key');
+  vi.clearAllMocks(); vi.stubEnv('OPENAI_API_KEY', 'not-a-real-key');
   rows = [row('one')]; writes = []; filters = []; pathSaveError = false; extractionSaveMissing = false;
   mocks.upload.mockResolvedValue({ error: null });
   mocks.rpc.mockResolvedValue({ data: true }); mocks.extract.mockResolvedValue(extracted); mocks.send.mockResolvedValue({});
@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
-describe('processamento agendado com Gemini', () => {
+describe('processamento agendado com OpenAI', () => {
   it('processa a fila sem consultar pausas legadas do provedor Lovable', async () => {
     expect(await processReviews()).toEqual({ paused: false });
     expect(mocks.extract).toHaveBeenCalledWith('fictício', undefined, undefined);
@@ -94,13 +94,13 @@ describe('processamento agendado com Gemini', () => {
     expect(writes.some(write => write.value['extraction_status'] === 'erro')).toBe(false);
     expect(console.info).toHaveBeenCalledWith('telegram_extraction', expect.objectContaining({ reviewId: 'one', stage: 'notification_failed' }));
   });
-  it('registra timeout Gemini como diagnóstico estável sem expor a mensagem do provedor', async () => {
-    mocks.extract.mockRejectedValue(new ExtractionProviderError('gemini', undefined, 'O Gemini ultrapassou o limite de 25 segundos.', 'timeout'));
+  it('registra timeout OpenAI como diagnóstico estável sem expor a mensagem do provedor', async () => {
+    mocks.extract.mockRejectedValue(new ExtractionProviderError('openai', undefined, 'A OpenAI ultrapassou o limite de 60 segundos.', 'timeout'));
     await processReviews();
     expect(console.info).toHaveBeenCalledWith('telegram_extraction', expect.objectContaining({
-      reviewId: 'one', stage: 'failed', errorKind: 'gemini_timeout', statusCode: undefined,
+      reviewId: 'one', stage: 'failed', errorKind: 'openai_timeout', statusCode: undefined,
     }));
-    expect(writes).toContainEqual({ table: 'telegram_reviews', value: { extraction_status: 'erro', error: 'O Gemini ultrapassou o limite de 25 segundos.' } });
+    expect(writes).toContainEqual({ table: 'telegram_reviews', value: { extraction_status: 'erro', error: 'A OpenAI ultrapassou o limite de 60 segundos.' } });
   });
 });
 

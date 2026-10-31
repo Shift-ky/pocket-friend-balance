@@ -53,7 +53,7 @@ export async function processReviews(ids?: string[]) {
     } catch (e) {
       progress('failed', {
         errorKind: e instanceof ExtractionProviderError
-          ? e.reason === 'timeout' ? 'gemini_timeout' : `provider_${e.provider}`
+          ? e.reason === 'timeout' ? `${e.provider}_timeout` : `provider_${e.provider}`
           : 'processing',
         statusCode: extractionHttpStatus(e),
       });

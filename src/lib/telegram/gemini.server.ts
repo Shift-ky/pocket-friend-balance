@@ -59,9 +59,9 @@ export async function extractWithGemini(instructions: string, text: string, byte
     };
     const deadline = new Promise<never>((_resolve, reject) => {
       timer = setTimeout(() => {
-        reject(new ExtractionProviderError('gemini', undefined, 'O Gemini ultrapassou o limite de 25 segundos. O arquivo continua disponível para conferência manual.', 'timeout'));
+        reject(new ExtractionProviderError('gemini', undefined, 'O Gemini ultrapassou o limite de 60 segundos. O arquivo continua disponível para conferência manual.', 'timeout'));
         controller.abort();
-      }, 25_000);
+      }, 60_000);
     });
     payload = await Promise.race([request(), deadline]);
   } catch (error) {
