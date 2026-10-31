@@ -11,7 +11,7 @@ import { useCarteiras } from '@/hooks/use-carteiras';
 import { useAccess } from '@/lib/access-context';
 import { moeda, resumoCarteiras, movimentosAnaliticos, termometro, progressoMeta, saldoCarteira, valorEmReais } from '@/lib/carteiras';
 import { fluxoMensal, type LancamentoPainel } from '@/lib/painel';
-import { normalizarPreferenciasPainel, PREFERENCIAS_PADRAO_PAINEL, FONTES_WIDGET, type AlturaCartaoPainel, type DashboardPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from '@/lib/painel-preferencias';
+import { normalizarPreferenciasPainel, PREFERENCIAS_PADRAO_PAINEL, FONTES_WIDGET, type AlturaCartaoPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from '@/lib/painel-preferencias';
 import type { DespesaMoto } from '@/lib/moto';
 import { ArrowDownLeft, ArrowUpRight, BarChart3, CalendarClock, Landmark, Layers, PiggyBank, Settings2, Target, TrendingUp, Wallet } from 'lucide-react';
 
@@ -141,11 +141,6 @@ function Painel() {
     } finally {
       setSalvando(false);
     }
-  }
-
-  function dashboardAtualizado(updater: (current: DashboardPainel) => DashboardPainel) {
-    const next = { ...preferencias, dashboards: preferencias.dashboards.map(item => item.id === dashboard.id ? updater(item) : item) };
-    setRascunho(next);
   }
 
   function renderWidget(widget: WidgetPainel, section: SecaoPainel): ReactNode {
