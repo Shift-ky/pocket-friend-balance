@@ -7,8 +7,7 @@ import { supabase } from "@/lib/offline-client";
 import { useGrupo } from "@/lib/grupo";
 import { Button } from "@/components/ui/button";
 import { useAccess } from "@/lib/access-context";
-import { CheckCircle2, Clock, Fuel, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
-import { movimentacaoGasolina } from "@/lib/moto";
+import { CheckCircle2, Clock, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { parcelarLancamento } from "@/lib/parcelamento";
 
 export const Route = createFileRoute("/financas")({
@@ -52,8 +51,6 @@ function Index() {
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [conta, setConta] = useState<Conta>("dinheiro");
   const wallet=carteiras.find(w=>w.id===walletId)??carteiras.find(w=>w.legado===conta);
-  const [destinarGasolina, setGasolina] = useState(false);
-  const gasolina = !transferencia && access.moto && destinarGasolina;
   const [parcelas, setParcelas] = useState("1");
   const [pago, setPago] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -67,7 +64,7 @@ function Index() {
   }, [sucesso]);
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
-    if (!access.financas || (gasolina && !access.moto)) return setErro("Você não tem acesso a este lançamento.");
+    if (!access.financas) return setErro("Você não tem acesso a este lançamento.");
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !Number.isFinite(v) || v <= 0) return;
     if (salvando) return;
@@ -76,12 +73,12 @@ function Index() {
     setSalvando(true); setErro(""); setSucesso("");
     const dest=carteiras.find(w=>w.id===destinoId);
     if(transferencia && (!wallet||!dest||wallet.id===dest.id||!aceitaTransferencia(wallet,metas)||!aceitaTransferencia(dest,metas))){setSalvando(false);return setErro('Escolha duas carteiras elegíveis diferentes.');}
-    const c = gasolina ? "dinheiro" : wallet ? contaLegada(wallet) : conta;
-    const pagamento = gasolina ? true : tipo === "debito" ? pago : tipo === "credito";
+    const c = wallet ? contaLegada(wallet) : conta;
+    const pagamento = tipo === "debito" ? pago : tipo === "credito";
     let registros: import("@/integrations/supabase/types").TablesInsert<"lancamentos">[];
     try {
       if(transferencia && wallet && dest){const tid=crypto.randomUUID();registros=[{grupo_id:grupo.id,tipo:'debito' as const,descricao:descricao.trim(),valor:v,data,conta:contaLegada(wallet),pago:true,carteira_id:wallet.id,transferencia_id:tid,categoria:'Transferência interna'},{grupo_id:grupo.id,tipo:'credito' as const,descricao:descricao.trim(),valor:v,data,conta:contaLegada(dest),pago:true,carteira_id:dest.id,transferencia_id:tid,categoria:'Transferência interna'}];}
-      else registros = parcelarLancamento({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: pagamento, carteira_id:gasolina?null:wallet?.id??null,categoria, ...(gasolina ? movimentacaoGasolina(v) : {}) }, gasolina||wallet?.moeda!=='BRL'?1:Number(parcelas));
+      else registros = parcelarLancamento({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: pagamento, carteira_id:wallet?.id??null,categoria }, wallet?.moeda!=='BRL'?1:Number(parcelas));
     } catch (error) {
       setSalvando(false);
       setErro(error instanceof Error ? error.message : "Verifique as parcelas.");
@@ -109,31 +106,16 @@ function Index() {
       {formAberto && <form onSubmit={adicionar} className="mb-8 space-y-4 border-y py-6">
         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 sm:grid-cols-4">
           {(Object.keys(INFO) as Tipo[]).map((t) => (
-            <Button key={t} variant="ghost" aria-pressed={!gasolina && tipo === t} type="button" onClick={() => { setTipo(t); setGasolina(false);setTransferencia(false); }}
-              className={`rounded-md py-2 text-sm font-semibold transition ${!gasolina && tipo === t ? INFO[t].ativo : "text-muted-foreground"}`}>
+            <Button key={t} variant="ghost" aria-pressed={tipo === t} type="button" onClick={() => { setTipo(t);setTransferencia(false); }}
+              className={`rounded-md py-2 text-sm font-semibold transition ${tipo === t ? INFO[t].ativo : "text-muted-foreground"}`}>
               {INFO[t].sinal} {INFO[t].label}
             </Button>
           ))}
         </div>
-        <Button type="button" variant={transferencia?'default':'outline'} className="w-full" aria-pressed={transferencia} onClick={()=>{setTransferencia(true);setGasolina(false);setConfirmando(false);setWalletId(elegiveis[0]?.id??'');setDestinoId(elegiveis[1]?.id??'');}}><ArrowRightLeft/>Transferência</Button>
-        {(transferencia || !gasolina) && <label className="block text-sm">{transferencia?'Carteira de origem':'Carteira'}<select required aria-label={transferencia?'Carteira de origem':'Carteira do lançamento'} value={wallet?.id??''} onChange={e=>{setWalletId(e.target.value);const w=carteiras.find(w=>w.id===e.target.value);if(w)setConta(contaLegada(w));setConfirmando(false);}} className="mt-1 w-full min-w-0 rounded-md border bg-background px-3 py-2">{(transferencia?elegiveis:carteiras.filter(w=>w.legado!=='gasolina')).map(w=><option key={w.id} value={w.id}>{w.nome} · {w.moeda}</option>)}</select></label>}
+        <Button type="button" variant={transferencia?'default':'outline'} className="w-full" aria-pressed={transferencia} onClick={()=>{setTransferencia(true);setConfirmando(false);setWalletId(elegiveis[0]?.id??'');setDestinoId(elegiveis[1]?.id??'');}}><ArrowRightLeft/>Transferência</Button>
+        <label className="block text-sm">{transferencia?'Carteira de origem':'Carteira'}<select required aria-label={transferencia?'Carteira de origem':'Carteira do lançamento'} value={wallet?.id??''} onChange={e=>{setWalletId(e.target.value);const w=carteiras.find(w=>w.id===e.target.value);if(w)setConta(contaLegada(w));setConfirmando(false);}} className="mt-1 w-full min-w-0 rounded-md border bg-background px-3 py-2">{(transferencia?elegiveis:carteiras.filter(w=>w.legado!=='gasolina')).map(w=><option key={w.id} value={w.id}>{w.nome} · {w.moeda}</option>)}</select></label>
         {transferencia&&<label className="block text-sm">Carteira de destino<select required aria-label="Carteira de destino" value={destinoId} onChange={e=>{setDestinoId(e.target.value);setConfirmando(false);}} className="mt-1 w-full rounded-md border bg-background px-3 py-2"><option value="">Selecionar</option>{elegiveis.filter(w=>w.id!==wallet?.id).map(w=><option key={w.id} value={w.id}>{w.nome}</option>)}</select></label>}
-        {access.moto && !transferencia && <Button type="button" variant={gasolina ? "default" : "outline"} className="w-full" aria-pressed={gasolina} onClick={() => { setTransferencia(false);setWalletId('');setGasolina(true); setTipo("debito"); setConta("dinheiro"); }}><Fuel />Destinar para gasolina</Button>}
-        {gasolina && <p className="text-sm text-muted-foreground">Dinheiro → Gasolina da moto</p>}
-        {false && !gasolina && (tipo === "credito" || tipo === "debito") && (
-          <div>
-            <p className="mb-2 text-sm text-muted-foreground">{tipo === "debito" ? "Pagou com:" : "Entrou em:"}</p>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.keys(CONTAS) as Conta[]).map((c) => (
-                <Button key={c} variant="ghost" aria-pressed={conta === c} type="button" onClick={() => setConta(c)}
-                  className={`rounded-lg border py-2 text-sm font-semibold ${conta === c ? "bg-foreground text-background" : "text-muted-foreground"}`}>
-                  {CONTAS[c]}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-        {!transferencia && !gasolina && tipo === "debito" && <fieldset>
+        {!transferencia && tipo === "debito" && <fieldset>
           <legend className="mb-2 text-sm text-muted-foreground">Situação da conta</legend>
           <div className="grid grid-cols-2 gap-2">
             <Button type="button" variant={pago ? "outline" : "default"} aria-pressed={!pago} onClick={() => setPago(false)}><Clock className="h-4 w-4" />Pendente</Button>
@@ -144,19 +126,19 @@ function Index() {
         <input aria-label="Descrição do lançamento" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição (ex: Salário, Aluguel)"
           className="w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         <div className="grid grid-cols-2 gap-3">
-          <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" aria-label="Valor do lançamento" placeholder={`Valor (${transferencia||gasolina?'BRL':wallet?.moeda??'BRL'})`}
+          <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" aria-label="Valor do lançamento" placeholder={`Valor (${transferencia?'BRL':wallet?.moeda??'BRL'})`}
             className="min-w-0 w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
           <input type="date" value={data} onChange={(e) => setData(e.target.value)}
             className="min-w-0 w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         </div>
-        {!transferencia && !gasolina && tipo === "debito" && conta === "dinheiro" && <label className="block text-sm text-muted-foreground">Quantidade de parcelas
+        {!transferencia && tipo === "debito" && conta === "dinheiro" && <label className="block text-sm text-muted-foreground">Quantidade de parcelas
           <input aria-label="Quantidade de parcelas" type="number" min="1" step="1" required value={parcelas} onChange={e => setParcelas(e.target.value)} className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-ring" />
         </label>}
         {confirmando && (
           <div className="space-y-2 rounded-lg border-2 border-primary bg-card p-3">
             <p className="text-sm font-semibold">Confirmar lançamento?</p>
             <p className="text-sm text-muted-foreground">
-              {transferencia?"Transferência":INFO[gasolina ? "debito" : tipo].label} de R$ {valor.replace(".", ",")} — {descricao.trim()}{gasolina ? " (Gasolina da moto)" : ""}
+              {transferencia?"Transferência":INFO[tipo].label} de {wallet?.moeda??"BRL"} {valor.replace(".", ",")} — {descricao.trim()}
             </p>
             <div className="flex gap-2">
               <Button type="submit" disabled={salvando} className="flex-1">{salvando ? "Salvando…" : "Confirmar"}</Button>
@@ -164,7 +146,7 @@ function Index() {
             </div>
           </div>
         )}
-        {!confirmando && <Button type="submit" disabled={salvando} className="w-full">{salvando ? "Salvando…" : gasolina ? "Adicionar dinheiro para gasolina" : "Adicionar"}</Button>}
+        {!confirmando && <Button type="submit" disabled={salvando} className="w-full">{salvando ? "Salvando…" : "Adicionar"}</Button>}
         {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
       </form>}
       <FinanceHistory/>
