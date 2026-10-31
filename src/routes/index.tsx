@@ -243,8 +243,8 @@ function Painel() {
 
     {!activeDashboard.secoes.length && <div className="rounded-xl border border-dashed p-10 text-center"><p className="font-medium">Este dashboard ainda não tem seções.</p><p className="mt-1 text-sm text-muted-foreground">Abra a personalização para criar uma seção e adicionar caixas.</p></div>}
     <div className="space-y-8">
-      {activeDashboard.secoes.map(section => <section key={section.id} aria-label={section.nome} className="rounded-xl border bg-card/40 p-4 sm:p-5">
-        <h2 className="mb-4 font-display text-2xl">{section.nome}</h2>
+      {activeDashboard.secoes.map(section => <section key={section.id} aria-label={section.nome} className="rounded-2xl border bg-card/40 p-4 shadow-sm sm:p-5">
+        <h2 className="mb-4 font-display text-lg font-semibold tracking-tight sm:text-xl">{section.nome}</h2>
         {!section.widgets.length ? <p className="rounded-md bg-muted/40 p-4 text-sm text-muted-foreground">Sem caixas nesta seção. Use Personalizar para adicionar uma.</p> :
           <div className={`grid min-w-0 items-stretch gap-4 ${classesGrade[section.colunas] ?? classesGrade[2]}`}>
             {section.widgets.map(widget => renderWidget(widget, section))}
