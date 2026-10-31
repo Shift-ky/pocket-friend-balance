@@ -44,20 +44,20 @@ function lerPreferenciasLocais(userId: string): PreferenciasPainel | null {
 
 const classesGrade: Record<number, string> = {
   1: 'grid-cols-1',
-  2: 'grid-cols-1 min-[480px]:grid-cols-2',
-  3: 'grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3',
-  4: 'grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+  2: 'grid-cols-2',
+  3: 'grid-cols-2 md:grid-cols-3',
+  4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 };
 const classesLargura: Record<number, string> = {
   1: 'col-span-1',
-  2: 'col-span-1 min-[480px]:col-span-2 md:col-span-2 lg:col-span-2',
-  3: 'col-span-1 min-[480px]:col-span-2 md:col-span-3 lg:col-span-3',
-  4: 'col-span-1 min-[480px]:col-span-2 md:col-span-3 lg:col-span-4',
+  2: 'col-span-2 md:col-span-2 lg:col-span-2',
+  3: 'col-span-2 md:col-span-3 lg:col-span-3',
+  4: 'col-span-2 md:col-span-3 lg:col-span-4',
 };
 const classesAltura: Record<AlturaCartaoPainel, string> = {
-  compacta: 'min-h-28 sm:min-h-32',
-  media: 'min-h-32 sm:min-h-40',
-  alta: 'min-h-40 sm:min-h-52',
+  compacta: 'min-h-24 sm:min-h-32',
+  media: 'min-h-28 sm:min-h-40',
+  alta: 'min-h-36 sm:min-h-52',
 };
 const escalaConteudo = {
   1: { padding: 'p-3', title: 'text-sm', value: 'text-xl sm:text-2xl', detail: 'mt-1 text-[11px] sm:text-xs', icon: 'h-4 w-4' },
