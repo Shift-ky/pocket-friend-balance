@@ -14,9 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      carteiras: {
+        Row: {
+          cor: string
+          created_at: string
+          grupo_id: string
+          icone: string
+          id: string
+          legado: string | null
+          moeda: string
+          na_feira: boolean
+          nas_fixas: boolean
+          no_painel: boolean
+          nome: string
+          tipo: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          grupo_id: string
+          icone?: string
+          id?: string
+          legado?: string | null
+          moeda?: string
+          na_feira?: boolean
+          nas_fixas?: boolean
+          no_painel?: boolean
+          nome: string
+          tipo?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          grupo_id?: string
+          icone?: string
+          id?: string
+          legado?: string | null
+          moeda?: string
+          na_feira?: boolean
+          nas_fixas?: boolean
+          no_painel?: boolean
+          nome?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carteiras_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contas_fixas: {
         Row: {
           ativa: boolean
+          carteira_id: string | null
           conta: string
           created_at: string
           criado_por: string
@@ -31,6 +85,7 @@ export type Database = {
         }
         Insert: {
           ativa?: boolean
+          carteira_id?: string | null
           conta?: string
           created_at?: string
           criado_por?: string
@@ -45,6 +100,7 @@ export type Database = {
         }
         Update: {
           ativa?: boolean
+          carteira_id?: string | null
           conta?: string
           created_at?: string
           criado_por?: string
@@ -58,6 +114,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "contas_fixas_grupo_id_carteira_id_fkey"
+            columns: ["grupo_id", "carteira_id"]
+            isOneToOne: false
+            referencedRelation: "carteiras"
+            referencedColumns: ["grupo_id", "id"]
+          },
           {
             foreignKeyName: "contas_fixas_grupo_id_fkey"
             columns: ["grupo_id"]
@@ -95,6 +158,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cotacoes: {
+        Row: {
+          consultado_em: string
+          data: string
+          moeda: string
+          valor_brl: number
+        }
+        Insert: {
+          consultado_em?: string
+          data: string
+          moeda: string
+          valor_brl: number
+        }
+        Update: {
+          consultado_em?: string
+          data?: string
+          moeda?: string
+          valor_brl?: number
+        }
+        Relationships: []
       }
       despesas: {
         Row: {
@@ -216,6 +300,7 @@ export type Database = {
       }
       feira_historico: {
         Row: {
+          carteira_id: string | null
           created_at: string
           data_compra: string | null
           grupo_id: string
@@ -227,6 +312,7 @@ export type Database = {
           total: number
         }
         Insert: {
+          carteira_id?: string | null
           created_at?: string
           data_compra?: string | null
           grupo_id: string
@@ -238,6 +324,7 @@ export type Database = {
           total?: number
         }
         Update: {
+          carteira_id?: string | null
           created_at?: string
           data_compra?: string | null
           grupo_id?: string
@@ -249,6 +336,13 @@ export type Database = {
           total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "feira_historico_grupo_id_carteira_id_fkey"
+            columns: ["grupo_id", "carteira_id"]
+            isOneToOne: false
+            referencedRelation: "carteiras"
+            referencedColumns: ["grupo_id", "id"]
+          },
           {
             foreignKeyName: "feira_historico_grupo_id_fkey"
             columns: ["grupo_id"]
@@ -351,50 +445,117 @@ export type Database = {
       }
       lancamentos: {
         Row: {
+          carteira_id: string | null
+          categoria: string
           conta: string
           created_at: string
           criado_por: string | null
           data: string
           descricao: string
           destino: string
+          fonte: string
           grupo_id: string
           id: string
           origem_modulo: string
           pago: boolean
           tipo: string
+          transferencia_id: string | null
           valor: number
         }
         Insert: {
+          carteira_id?: string | null
+          categoria?: string
           conta?: string
           created_at?: string
           criado_por?: string | null
           data?: string
           descricao: string
           destino?: string
+          fonte?: string
           grupo_id: string
           id?: string
           origem_modulo?: string
           pago?: boolean
           tipo: string
+          transferencia_id?: string | null
           valor: number
         }
         Update: {
+          carteira_id?: string | null
+          categoria?: string
           conta?: string
           created_at?: string
           criado_por?: string | null
           data?: string
           descricao?: string
           destino?: string
+          fonte?: string
           grupo_id?: string
           id?: string
           origem_modulo?: string
           pago?: boolean
           tipo?: string
+          transferencia_id?: string | null
           valor?: number
         }
         Relationships: [
           {
+            foreignKeyName: "lancamentos_grupo_id_carteira_id_fkey"
+            columns: ["grupo_id", "carteira_id"]
+            isOneToOne: false
+            referencedRelation: "carteiras"
+            referencedColumns: ["grupo_id", "id"]
+          },
+          {
             foreignKeyName: "lancamentos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metas: {
+        Row: {
+          ativa: boolean
+          carteira_id: string
+          created_at: string
+          data_limite: string | null
+          grupo_id: string
+          id: string
+          nome: string
+          valor_alvo: number
+        }
+        Insert: {
+          ativa?: boolean
+          carteira_id: string
+          created_at?: string
+          data_limite?: string | null
+          grupo_id: string
+          id?: string
+          nome: string
+          valor_alvo: number
+        }
+        Update: {
+          ativa?: boolean
+          carteira_id?: string
+          created_at?: string
+          data_limite?: string | null
+          grupo_id?: string
+          id?: string
+          nome?: string
+          valor_alvo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_grupo_id_carteira_id_fkey"
+            columns: ["grupo_id", "carteira_id"]
+            isOneToOne: false
+            referencedRelation: "carteiras"
+            referencedColumns: ["grupo_id", "id"]
+          },
+          {
+            foreignKeyName: "metas_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "grupos"
