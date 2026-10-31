@@ -60,6 +60,43 @@
 [data-theme="dark"] { --background: oklch(0.19 0.018 250); --foreground: oklch(0.95 0.008 250); --card: oklch(0.24 0.02 250); --primary: oklch(0.78 0.12 175); --primary-foreground: oklch(0.18 0.02 250); --muted: oklch(0.29 0.02 250); --muted-foreground: oklch(0.75 0.02 250); --border: oklch(0.36 0.025 250); --input: oklch(0.36 0.025 250); --ring: oklch(0.72 0.12 175); --credit: oklch(0.76 0.14 155); --credit-soft: oklch(0.31 0.05 155); --debit: oklch(0.75 0.15 30); --debit-soft: oklch(0.32 0.06 30); --saved: oklch(0.76 0.11 240); --saved-soft: oklch(0.31 0.05 240); }
 [data-theme="rose"] { --background: oklch(0.965 0.018 20); --foreground: oklch(0.24 0.035 15); --card: oklch(0.995 0.006 20); --primary: oklch(0.43 0.13 15); --primary-foreground: oklch(0.98 0.01 20); --muted: oklch(0.93 0.025 20); --muted-foreground: oklch(0.5 0.035 15); --border: oklch(0.88 0.03 20); --input: oklch(0.88 0.03 20); --ring: oklch(0.58 0.13 15); }
 
+
+[data-theme="elegante"] {
+  --background: oklch(0.975 0.018 82); --foreground: oklch(0.23 0.025 55); --card: oklch(0.995 0.009 82);
+  --primary: oklch(0.52 0.11 68); --primary-foreground: oklch(0.985 0.01 82); --muted: oklch(0.935 0.022 78);
+  --muted-foreground: oklch(0.48 0.035 58); --border: oklch(0.87 0.03 75); --input: var(--border); --ring: var(--primary);
+  --credit: oklch(0.48 0.11 150); --debit: oklch(0.55 0.15 28); --saved: oklch(0.49 0.1 230);
+  --credit-soft: color-mix(in srgb, var(--credit) 12%, var(--card)); --debit-soft: color-mix(in srgb, var(--debit) 12%, var(--card)); --saved-soft: color-mix(in srgb, var(--saved) 12%, var(--card));
+}
+[data-theme="lavanda"] {
+  --background: oklch(0.975 0.018 300); --foreground: oklch(0.24 0.035 292); --card: oklch(0.997 0.008 300);
+  --primary: oklch(0.52 0.17 290); --primary-foreground: oklch(0.99 0.01 300); --muted: oklch(0.935 0.03 300);
+  --muted-foreground: oklch(0.5 0.045 292); --border: oklch(0.87 0.04 300); --input: var(--border); --ring: var(--primary);
+  --credit: oklch(0.5 0.13 155); --debit: oklch(0.57 0.16 20); --saved: oklch(0.52 0.14 250);
+  --credit-soft: color-mix(in srgb, var(--credit) 12%, var(--card)); --debit-soft: color-mix(in srgb, var(--debit) 12%, var(--card)); --saved-soft: color-mix(in srgb, var(--saved) 12%, var(--card));
+}
+[data-theme="sage"] {
+  --background: oklch(0.97 0.02 145); --foreground: oklch(0.23 0.035 150); --card: oklch(0.995 0.008 145);
+  --primary: oklch(0.46 0.11 150); --primary-foreground: oklch(0.985 0.01 145); --muted: oklch(0.93 0.028 145);
+  --muted-foreground: oklch(0.48 0.04 150); --border: oklch(0.86 0.04 145); --input: var(--border); --ring: var(--primary);
+  --credit: oklch(0.48 0.12 165); --debit: oklch(0.55 0.15 32); --saved: oklch(0.48 0.1 220);
+  --credit-soft: color-mix(in srgb, var(--credit) 12%, var(--card)); --debit-soft: color-mix(in srgb, var(--debit) 12%, var(--card)); --saved-soft: color-mix(in srgb, var(--saved) 12%, var(--card));
+}
+[data-theme="praia"] {
+  --background: oklch(0.975 0.018 205); --foreground: oklch(0.23 0.035 220); --card: oklch(0.997 0.008 205);
+  --primary: oklch(0.5 0.12 210); --primary-foreground: oklch(0.99 0.01 205); --muted: oklch(0.935 0.028 205);
+  --muted-foreground: oklch(0.49 0.04 220); --border: oklch(0.87 0.04 205); --input: var(--border); --ring: var(--primary);
+  --credit: oklch(0.51 0.13 155); --debit: oklch(0.58 0.16 35); --saved: oklch(0.5 0.14 250);
+  --credit-soft: color-mix(in srgb, var(--credit) 12%, var(--card)); --debit-soft: color-mix(in srgb, var(--debit) 12%, var(--card)); --saved-soft: color-mix(in srgb, var(--saved) 12%, var(--card));
+}
+[data-theme="alegre"] {
+  --background: oklch(0.98 0.025 75); --foreground: oklch(0.24 0.04 30); --card: oklch(0.998 0.01 75);
+  --primary: oklch(0.56 0.18 28); --primary-foreground: oklch(0.99 0.01 75); --muted: oklch(0.94 0.035 75);
+  --muted-foreground: oklch(0.5 0.045 35); --border: oklch(0.88 0.04 70); --input: var(--border); --ring: var(--primary);
+  --credit: oklch(0.5 0.14 150); --debit: oklch(0.56 0.17 20); --saved: oklch(0.51 0.15 275);
+  --credit-soft: color-mix(in srgb, var(--credit) 12%, var(--card)); --debit-soft: color-mix(in srgb, var(--debit) 12%, var(--card)); --saved-soft: color-mix(in srgb, var(--saved) 12%, var(--card));
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   body {
