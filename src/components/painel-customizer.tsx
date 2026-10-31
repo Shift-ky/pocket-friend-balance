@@ -1,42 +1,26 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ORDEM_PADRAO_BLOCOS, PREFERENCIAS_PADRAO_PAINEL, type AlturaCartaoPainel, type LarguraCartaoPainel, type PainelBlocoId, type PreferenciasPainel } from "@/lib/painel-preferencias";
-import type { CartaoPainelId } from "@/lib/ordem-painel";
+import { FONTES_WIDGET, novoIdPainel, type AlturaCartaoPainel, type DashboardPainel, type FonteWidgetPainel, type LarguraCartaoPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from "@/lib/painel-preferencias";
 
-const nomesBlocos: Record<PainelBlocoId, string> = {
-  saldos: "Caixas de saldo",
-  termometro: "Indicadores do mês",
-  meta: "Meta ativa",
-  categorias: "Gastos por categoria",
-  fluxo: "Entradas e saídas por mês",
-};
-const nomesCaixas: Record<CartaoPainelId, string> = {
-  patrimonio: "Patrimônio consolidado",
-  financeiro: "Financeiro / Dinheiro",
-  beneficios: "Benefícios",
-  poupanca: "Poupança",
-};
-const blocos = ORDEM_PADRAO_BLOCOS;
-const larguras: { valor: LarguraCartaoPainel; rotulo: string }[] = [
-  { valor: 1, rotulo: "1 coluna · 25%" },
-  { valor: 2, rotulo: "2 colunas · 50%" },
-  { valor: 3, rotulo: "3 colunas · 75%" },
-  { valor: 4, rotulo: "4 colunas · largura total" },
-];
-const alturas: { valor: AlturaCartaoPainel; rotulo: string }[] = [
-  { valor: "compacta", rotulo: "Baixa" },
-  { valor: "media", rotulo: "Média" },
-  { valor: "alta", rotulo: "Alta" },
+const field = "w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm";
+const alturas: { value: AlturaCartaoPainel; label: string }[] = [
+  { value: "compacta", label: "Baixa" },
+  { value: "media", label: "Média" },
+  { value: "alta", label: "Alta" },
 ];
 
-function moverBloco(ordem: PainelBlocoId[], id: PainelBlocoId, delta: -1 | 1) {
-  const from = ordem.indexOf(id);
-  const to = Math.max(0, Math.min(ordem.length - 1, from + delta));
-  if (from < 0 || from === to) return ordem;
-  const next = [...ordem];
-  next.splice(from, 1);
-  next.splice(to, 0, id);
+function move<T>(items: T[], index: number, delta: -1 | 1) {
+  const destination = Math.max(0, Math.min(items.length - 1, index + delta));
+  if (destination === index) return items;
+  const next = [...items];
+  [next[index], next[destination]] = [next[destination], next[index]];
   return next;
+}
+
+function fontePadrao(fonte: FonteWidgetPainel): WidgetPainel["grafico"] {
+  if (fonte === "gastos_categoria") return "rosca";
+  if (fonte === "fluxo_mensal") return "barras";
+  return undefined;
 }
 
 export function PainelCustomizer({ value, onChange, saving, error, status, onSave, onCancel }: {
@@ -48,24 +32,95 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
   onSave: () => void;
   onCancel: () => void;
 }) {
+  const dashboard = value.dashboards.find(item => item.id === value.dashboardAtualId) ?? value.dashboards[0];
+  if (!dashboard) return null;
+
+  function updateDashboard(updater: (current: DashboardPainel) => DashboardPainel) {
+    onChange({ ...value, dashboards: value.dashboards.map(item => item.id === dashboard.id ? updater(item) : item) });
+  }
+  function updateSection(sectionId: string, updater: (section: SecaoPainel) => SecaoPainel) {
+    updateDashboard(current => ({ ...current, secoes: current.secoes.map(section => section.id === sectionId ? updater(section) : section) }));
+  }
+  function updateWidget(sectionId: string, widgetId: string, updater: (widget: WidgetPainel) => WidgetPainel) {
+    updateSection(sectionId, section => ({ ...section, widgets: section.widgets.map(widget => widget.id === widgetId ? updater(widget) : widget) }));
+  }
+  function addDashboard() {
+    const id = novoIdPainel("dashboard");
+    const sectionId = novoIdPainel("secao");
+    onChange({
+      ...value,
+      dashboardAtualId: id,
+      dashboards: [...value.dashboards, { id, nome: `Dashboard ${value.dashboards.length + 1}`, secoes: [{ id: sectionId, nome: "Resumo", colunas: 2, widgets: [] }] }],
+    });
+  }
+  function addSection() {
+    const index = dashboard.secoes.length + 1;
+    updateDashboard(current => ({ ...current, secoes: [...current.secoes, { id: novoIdPainel("secao"), nome: `Seção ${index}`, colunas: 2, widgets: [] }] }));
+  }
+  function addWidget(section: SecaoPainel) {
+    const fonte: FonteWidgetPainel = "financeiro";
+    const name = FONTES_WIDGET.find(item => item.id === fonte)?.nome ?? "Saldo financeiro";
+    updateSection(section.id, current => ({ ...current, widgets: [...current.widgets, { id: novoIdPainel("caixa"), fonte, titulo: name, largura: 1, altura: "media" }] }));
+  }
+  function deleteDashboard() {
+    if (value.dashboards.length <= 1) return;
+    const dashboards = value.dashboards.filter(item => item.id !== dashboard.id);
+    onChange({ ...value, dashboards, dashboardAtualId: dashboards[0].id });
+  }
+
   return <section className="mb-8 space-y-6 rounded-xl border bg-card p-4 sm:p-6" aria-labelledby="painel-custom-title">
-    <div><h2 id="painel-custom-title" className="font-display text-2xl">Personalizar painel</h2><p className="mt-1 text-sm text-muted-foreground">O padrão inicial mostra saldos, indicadores, meta e gráficos. Ajuste os blocos quando quiser e use “Restaurar padrão” para voltar a essa disposição.</p></div>
-    <fieldset className="space-y-3"><legend className="mb-2 text-sm font-semibold">Blocos do painel</legend>
-      {blocos.map(id => <label key={id} className="flex items-center gap-3 text-sm"><input type="checkbox" checked={value.blocosVisiveis[id]} onChange={e => onChange({ ...value, blocosVisiveis: { ...value.blocosVisiveis, [id]: e.target.checked } })} />{nomesBlocos[id]}</label>)}
-    </fieldset>
-    <div><h3 className="mb-2 text-sm font-semibold">Ordem dos blocos</h3><ol className="space-y-2">{value.ordemBlocos.map((id, i) => <li key={id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"><span>{i + 1}. {nomesBlocos[id]}</span><span className="flex gap-1"><Button type="button" variant="outline" size="icon" aria-label={`Mover ${nomesBlocos[id]} para cima`} disabled={saving || i === 0} onClick={() => onChange({ ...value, ordemBlocos: moverBloco(value.ordemBlocos, id, -1) })}><ChevronUp /></Button><Button type="button" variant="outline" size="icon" aria-label={`Mover ${nomesBlocos[id]} para baixo`} disabled={saving || i === value.ordemBlocos.length - 1} onClick={() => onChange({ ...value, ordemBlocos: moverBloco(value.ordemBlocos, id, 1) })}><ChevronDown /></Button></span></li>)}</ol></div>
-    <fieldset className="space-y-3"><legend className="mb-2 text-sm font-semibold">Caixas de saldo</legend>{Object.keys(nomesCaixas).map(id => {const key=id as CartaoPainelId;return <div key={id} className="grid gap-3 rounded-md border p-3 sm:grid-cols-[1.2fr_1fr_1fr] sm:items-center">
-      <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={value.caixasVisiveis[key]} onChange={e=>onChange({...value,caixasVisiveis:{...value.caixasVisiveis,[key]:e.target.checked}})}/>{nomesCaixas[key]}</label>
-      <label className="text-xs text-muted-foreground">Largura<select aria-label={`Largura da caixa ${nomesCaixas[key]}`} value={value.largurasCaixas[key]} onChange={e=>onChange({...value,largurasCaixas:{...value.largurasCaixas,[key]:Number(e.target.value) as LarguraCartaoPainel}})} className="mt-1 w-full rounded-md border bg-background px-3 py-2">{larguras.map(op=><option key={op.valor} value={op.valor}>{op.rotulo}</option>)}</select></label>
-      <label className="text-xs text-muted-foreground">Altura mínima<select aria-label={`Altura mínima da caixa ${nomesCaixas[key]}`} value={value.alturasCaixas[key]} onChange={e=>onChange({...value,alturasCaixas:{...value.alturasCaixas,[key]:e.target.value as AlturaCartaoPainel}})} className="mt-1 w-full rounded-md border bg-background px-3 py-2">{alturas.map(op=><option key={op.valor} value={op.valor}>{op.rotulo}</option>)}</select></label>
-    </div>;})}<p className="text-xs text-muted-foreground">A largura se ajusta ao espaço disponível no celular e no computador. A altura escolhida é mínima e cresce quando o conteúdo precisar.</p></fieldset>
-    <div className="grid gap-4 sm:grid-cols-2">
-      <label className="text-sm">Colunas para gráficos<select value={value.colunasGraficos} onChange={e=>onChange({...value,colunasGraficos:Number(e.target.value) as 1|2})} className="mt-1 w-full rounded-md border bg-background px-3 py-2"><option value={1}>Uma coluna</option><option value={2}>Duas colunas em telas grandes</option></select></label>
-      <label className="text-sm">Gráfico de categorias<select value={value.graficoCategorias} onChange={e=>onChange({...value,graficoCategorias:e.target.value as PreferenciasPainel["graficoCategorias"]})} className="mt-1 w-full rounded-md border bg-background px-3 py-2"><option value="rosca">Rosca</option><option value="pizza">Pizza</option><option value="barras">Barras</option></select></label>
-      <label className="text-sm">Gráfico de entradas e saídas<select value={value.graficoFluxo} onChange={e=>onChange({...value,graficoFluxo:e.target.value as PreferenciasPainel["graficoFluxo"]})} className="mt-1 w-full rounded-md border bg-background px-3 py-2"><option value="barras">Barras</option><option value="linhas">Linhas</option><option value="area">Área</option></select></label>
+    <header className="flex flex-wrap items-end justify-between gap-3">
+      <div><h2 id="painel-custom-title" className="font-display text-2xl">Montar dashboard</h2><p className="mt-1 text-sm text-muted-foreground">Crie dashboards, seções e caixas com os indicadores e gráficos do aplicativo.</p></div>
+      <Button type="button" variant="outline" size="sm" disabled={saving} onClick={addDashboard}><Plus />Novo dashboard</Button>
+    </header>
+
+    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+      <label className="text-sm">Nome deste dashboard<input aria-label="Nome do dashboard" maxLength={60} value={dashboard.nome} onChange={event => updateDashboard(current => ({ ...current, nome: event.target.value }))} className={`${field} mt-1`} /></label>
+      <Button type="button" variant="ghost" size="sm" disabled={saving || value.dashboards.length <= 1} onClick={deleteDashboard}><Trash2 />Excluir dashboard</Button>
     </div>
+
+    <div className="space-y-4">
+      {dashboard.secoes.map((section, sectionIndex) => <section key={section.id} className="space-y-4 rounded-lg border p-3 sm:p-4" aria-label={section.nome}>
+        <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+          <label className="text-sm">Nome da seção<input aria-label="Nome da seção" maxLength={60} value={section.nome} onChange={event => updateSection(section.id, current => ({ ...current, nome: event.target.value }))} className={`${field} mt-1`} /></label>
+          <label className="text-sm">Colunas no computador<select aria-label="Colunas da seção" value={section.colunas} onChange={event => {
+            const colunas = Number(event.target.value) as LarguraCartaoPainel;
+            updateSection(section.id, current => ({ ...current, colunas, widgets: current.widgets.map(widget => ({ ...widget, largura: Math.min(widget.largura, colunas) as LarguraCartaoPainel })) }));
+          }} className={`${field} mt-1`}>{[1, 2, 3, 4].map(value => <option key={value} value={value}>{value} {value === 1 ? "coluna" : "colunas"}</option>)}</select></label>
+          <div className="flex gap-1">
+            <Button type="button" variant="ghost" size="icon" aria-label="Mover seção para cima" disabled={saving || sectionIndex === 0} onClick={() => updateDashboard(current => ({ ...current, secoes: move(current.secoes, sectionIndex, -1) }))}><ChevronUp /></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="Mover seção para baixo" disabled={saving || sectionIndex === dashboard.secoes.length - 1} onClick={() => updateDashboard(current => ({ ...current, secoes: move(current.secoes, sectionIndex, 1) }))}><ChevronDown /></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="Excluir seção" disabled={saving} onClick={() => updateDashboard(current => ({ ...current, secoes: current.secoes.filter(item => item.id !== section.id) }))}><Trash2 /></Button>
+          </div>
+        </div>
+
+        {!section.widgets.length && <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Esta seção está vazia. Adicione uma caixa para escolher o que mostrar.</p>}
+        <div className="space-y-3">
+          {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_auto] lg:items-end">
+            <label className="text-xs text-muted-foreground">O que esta caixa mostra<select aria-label="Indicador da caixa" value={widget.fonte} onChange={event => {
+              const fonte = event.target.value as FonteWidgetPainel;
+              const source = FONTES_WIDGET.find(item => item.id === fonte)!;
+              updateWidget(section.id, widget.id, current => ({ ...current, fonte, titulo: source.nome, grafico: fontePadrao(fonte) }));
+            }} className={`${field} mt-1`}>{["Saldos", "Finanças", "Metas", "Gráficos"].map(group => <optgroup key={group} label={group}>{FONTES_WIDGET.filter(source => source.grupo === group).map(source => <option key={source.id} value={source.id}>{source.nome}</option>)}</optgroup>)}</select><span className="mt-1 block">{FONTES_WIDGET.find(source => source.id === widget.fonte)?.descricao}</span></label>
+            <label className="text-xs text-muted-foreground">Título da caixa<input aria-label="Título da caixa" maxLength={60} value={widget.titulo} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, titulo: event.target.value }))} className={`${field} mt-1`} /></label>
+            <label className="text-xs text-muted-foreground">Largura<select aria-label="Largura da caixa" value={widget.largura} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, largura: Number(event.target.value) as LarguraCartaoPainel }))} className={`${field} mt-1`}>{Array.from({ length: section.colunas }, (_, i) => i + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? "coluna" : "colunas"}</option>)}</select></label>
+            <label className="text-xs text-muted-foreground">Altura mínima<select aria-label="Altura da caixa" value={widget.altura} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, altura: event.target.value as AlturaCartaoPainel }))} className={`${field} mt-1`}>{alturas.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+            <label className="text-xs text-muted-foreground">Gráfico<select aria-label="Tipo de gráfico" value={widget.grafico ?? fontePadrao(widget.fonte) ?? ""} disabled={widget.fonte !== "gastos_categoria" && widget.fonte !== "fluxo_mensal"} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, grafico: event.target.value as WidgetPainel["grafico"] }))} className={`${field} mt-1`}>
+              {widget.fonte === "gastos_categoria" ? <><option value="rosca">Rosca</option><option value="pizza">Pizza</option><option value="barras">Barras</option></> : <><option value="barras">Barras</option><option value="linhas">Linhas</option><option value="area">Área</option></>}
+            </select></label>
+            <div className="flex gap-1">
+              <Button type="button" variant="ghost" size="icon" aria-label="Mover caixa para cima" disabled={saving || widgetIndex === 0} onClick={() => updateSection(section.id, current => ({ ...current, widgets: move(current.widgets, widgetIndex, -1) }))}><ChevronUp /></Button>
+              <Button type="button" variant="ghost" size="icon" aria-label="Mover caixa para baixo" disabled={saving || widgetIndex === section.widgets.length - 1} onClick={() => updateSection(section.id, current => ({ ...current, widgets: move(current.widgets, widgetIndex, 1) }))}><ChevronDown /></Button>
+              <Button type="button" variant="ghost" size="icon" aria-label="Excluir caixa" disabled={saving} onClick={() => updateSection(section.id, current => ({ ...current, widgets: current.widgets.filter(item => item.id !== widget.id) }))}><Trash2 /></Button>
+            </div>
+          </div>)}
+        </div>
+        <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => addWidget(section)}><Plus />Adicionar caixa</Button>
+      </section>)}
+    </div>
+    <Button type="button" variant="outline" size="sm" disabled={saving} onClick={addSection}><Plus />Adicionar seção</Button>
     {error && <p role="alert" className="text-sm text-debit">{error}</p>}
     {status && <p role="status" className="text-sm text-primary">{status}</p>}
-    <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving} onClick={onSave}>{saving?"Salvando…":"Salvar personalização"}</Button><Button type="button" variant="outline" disabled={saving} onClick={onCancel}>Cancelar</Button><Button type="button" variant="ghost" disabled={saving} onClick={()=>onChange(PREFERENCIAS_PADRAO_PAINEL)}>Restaurar padrão</Button></div>
+    <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving} onClick={onSave}>{saving ? "Salvando…" : "Salvar dashboard"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={onCancel}>Fechar sem salvar</Button></div>
   </section>;
 }
