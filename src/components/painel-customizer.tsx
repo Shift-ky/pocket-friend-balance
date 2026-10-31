@@ -49,7 +49,7 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
   onCancel: () => void;
 }) {
   return <section className="mb-8 space-y-6 rounded-xl border bg-card p-4 sm:p-6" aria-labelledby="painel-custom-title">
-    <div><h2 id="painel-custom-title" className="font-display text-2xl">Personalizar painel</h2><p className="mt-1 text-sm text-muted-foreground">Escolha o que aparece, a ordem, o espaço de cada caixa e os gráficos.</p></div>
+    <div><h2 id="painel-custom-title" className="font-display text-2xl">Personalizar painel</h2><p className="mt-1 text-sm text-muted-foreground">O padrão inicial mostra saldos, indicadores, meta e gráficos. Ajuste os blocos quando quiser e use “Restaurar padrão” para voltar a essa disposição.</p></div>
     <fieldset className="space-y-3"><legend className="mb-2 text-sm font-semibold">Blocos do painel</legend>
       {blocos.map(id => <label key={id} className="flex items-center gap-3 text-sm"><input type="checkbox" checked={value.blocosVisiveis[id]} onChange={e => onChange({ ...value, blocosVisiveis: { ...value.blocosVisiveis, [id]: e.target.checked } })} />{nomesBlocos[id]}</label>)}
     </fieldset>
