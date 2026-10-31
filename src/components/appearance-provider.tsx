@@ -117,7 +117,7 @@ export function AppearanceMenu() {
       <DialogHeader><DialogTitle className="font-display text-2xl">Sua aparência</DialogTitle><DialogDescription>Essa escolha vale somente para sua conta.</DialogDescription></DialogHeader>
       <div className="grid grid-cols-2 gap-3">
         {TEMAS.map(t => <Button key={t.id} type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={!atual.custom_enabled && atual.theme === t.id} onClick={() => executar(() => salvar(t.id, atual.background_path, { custom_enabled: false }), 'Tema salvo.')} className={`h-auto flex-col items-stretch p-3 text-left ${!atual.custom_enabled && atual.theme === t.id ? 'ring-2 ring-ring' : ''}`}>
-          <span data-theme={t.id} className="flex gap-1"><span className="h-6 flex-1 rounded border bg-background" /><span className="h-6 flex-1 rounded border bg-primary" /></span>{t.nome}
+          <span data-theme={t.id} className="flex gap-1"><span className="h-6 flex-1 rounded border bg-background" /><span className="h-6 flex-1 rounded border bg-primary" /></span><span className="font-medium">{t.nome}</span><span className="text-xs text-muted-foreground">{t.descricao}</span>
         </Button>)}
       </div>
       <Button type="button" variant="outline" disabled={salvando || isPending || isError} aria-pressed={atual.custom_enabled} aria-expanded={coringaAberto} aria-controls="coringa-palette" onClick={() => {
