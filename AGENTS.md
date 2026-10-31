@@ -33,7 +33,7 @@
 - Telegram is online-only with expiring one-use account binding and current group/finance checks. Private documents enter a user-owned queue; only the atomic authenticated approval RPC creates debits. Scheduled extraction persists AI denial pauses and never automatically replays failed reads.
 - Telegram receipts use atomic owner approval for paid history, mapped/explicit-new stock and one debit; the purchase trigger alone adds stock and history supplies prices. Group-scoped De/Para links suggest mappings. Legacy imports remain isolated from full receipt approval.
 - Telegram quick actions are service-role-only RPCs validating bound sender/chat and current modules; future boletos are cash pendencies, Moto creates only a Moto expense, and product receipts cannot bypass app review. Row locks prevent double approval.
-- Mobile navigation keeps pointer-drag state separate from menu clicks and clamps the orb to the viewport; dragging must not navigate or open the menu.
+- Mobile orb dragging is viewport-clamped and separate from clicks; never navigate or open menus while dragging.
 - Dashboard histories share a pure monthly filter and newest-first creation timestamp ordering with Brazilian calendar dates and legacy date fallback; this filter stays independent of balances, analytical periods and pending due-date ordering.
 
 - Wallets are additive group-owned records with nullable references on legacy entries; compatibility account keys and original permissions remain intact, and balances resolve legacy nulls without duplicating Moto funding.
