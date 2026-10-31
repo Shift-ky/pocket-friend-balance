@@ -60,7 +60,7 @@ export function FluxoChart({ dados, tipo = "barras" }: { dados: Fluxo; tipo?: "b
 
 export function CategoriasChart({ dados, tipo = "rosca" }: { dados: { nome: string; valor: number }[]; tipo?: "pizza" | "rosca" | "barras" }) {
   if (!dados.length) return <p className="py-20 text-center text-sm text-muted-foreground">Nenhuma saída paga neste mês.</p>;
-  const cores = ["var(--primary)", "var(--credit)", "var(--debit)", "var(--saved)", "var(--muted-foreground)"];
+  const cores = ["#2563eb", "#10b981", "#f97316", "#8b5cf6", "#ef4444", "#06b6d4", "#eab308", "#ec4899", "#14b8a6", "#64748b", "#84cc16", "#a855f7"];
   return tipo === "barras" ? <div className="h-72 w-full">
     <ResponsiveContainer><BarChart data={dados} layout="vertical" margin={{ top: 4, right: 12, left: 8, bottom: 4 }}>
       <CartesianGrid horizontal={false} stroke="var(--border)" />
@@ -69,7 +69,7 @@ export function CategoriasChart({ dados, tipo = "rosca" }: { dados: { nome: stri
       <Tooltip {...dica} formatter={(v: number) => [brl(v), "Saídas"]} />
       <Bar dataKey="valor" name="Saídas" radius={[0, 6, 6, 0]}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Bar>
     </BarChart></ResponsiveContainer>
-  </div> : <><div className="h-64 w-full"><ResponsiveContainer><PieChart><Pie data={dados} dataKey="valor" nameKey="nome" innerRadius={tipo === "rosca" ? 65 : 0} outerRadius={100} paddingAngle={3}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Pie><Tooltip contentStyle={dica.contentStyle} formatter={(v: number) => [brl(v)]} /></PieChart></ResponsiveContainer></div><div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">{dados.map(c => <span key={c.nome}>{c.nome} · {brl(c.valor)}</span>)}</div></>;
+  </div> : <><div className="h-64 w-full"><ResponsiveContainer><PieChart><Pie data={dados} dataKey="valor" nameKey="nome" innerRadius={tipo === "rosca" ? 65 : 0} outerRadius={100} paddingAngle={3}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Pie><Tooltip contentStyle={dica.contentStyle} formatter={(v: number) => [brl(v)]} /></PieChart></ResponsiveContainer></div><div role="list" aria-label="Legenda de gastos por categoria" className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">{dados.map((c, i) => <span key={c.nome} role="listitem" className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: cores[i % cores.length] }} /><span>{c.nome} · {brl(c.valor)}</span></span>)}</div></>;
 }
 
 export function CarteirasChart({ dados }: { dados: Carteira }) {
