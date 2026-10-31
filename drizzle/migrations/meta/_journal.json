@@ -239,6 +239,13 @@
       "when": 1793445000000,
       "tag": "0033_wallet_offline_sync_allowlist",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793445000001,
+      "tag": "0034_restore_wallet_offline_sync",
+      "breakpoints": true
     }
   ]
 }
