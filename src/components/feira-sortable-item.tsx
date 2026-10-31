@@ -17,7 +17,7 @@ export function FeiraSortableItem({ id, nome, position, total, disabled, onMove,
         aria-label={`Arrastar ${nome} para reorganizar`} title={`Arrastar ${nome}`} {...attributes} {...listeners}>
         <GripVertical />
       </Button>
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1 flex flex-wrap items-center gap-2 sm:gap-3">{children}</div>
       <div className="flex shrink-0 flex-col">
         <Button type="button" variant="ghost" size="icon" disabled={disabled || position === 0}
           onClick={() => onMove(-1)} aria-label={`Mover ${nome} para cima`} title="Mover para cima" className="h-7 w-7">
