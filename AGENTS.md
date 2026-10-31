@@ -11,12 +11,12 @@
 
 - Gasoline funding uses paid cash financial entries with a dedicated destination; Moto expenses live separately, so funding reduces available cash once and only actual expenses count as outflows on the panel.
 - The index dashboard is analytical only; Finanças owns entry forms, pending accounts and monthly histories, while Carteiras manages balances and preserves the legacy Moto expense ledger.
-- Grocery insertion paths share the finalized-purchase price selector; historical unit prices are derived from group-scoped purchase history to avoid duplicating price storage.
+- Grocery insertions share the finalized-purchase price selector; group purchase history supplies unit prices without duplicate storage.
 - Installments use a shared pure helper and bulk insert preserving cents, monthly dates and selected payment status; gasoline remains a single paid entry.
-- Account administration and delegation use authenticated server functions that revalidate the owner's immutable identity and verified email before listing accounts or privileged writes; the navigation uses the same owner-access check, while user_roles admin checks remain separate for financial permissions to prevent delegated privilege escalation.
+- Account administration uses authenticated server functions revalidating owner identity and verified email; navigation shares that check. Financial user_roles checks stay separate to prevent delegated privilege escalation.
 - Module access is stored separately from roles, enforced by restrictive RLS and shared presentation filtering; owner-only server functions update permissions, and user-scoped polling plus realtime removes revoked views without deleting shared records.
-- Purchase-to-stock and stock-to-shopping synchronization run through database triggers so automatic consistency does not depend on the acting user's visibility of the destination module; page code must not duplicate those side effects.
-- Stock name corrections propagate atomically to group-matched current shopping items through a separate rename trigger, preserving quantities, prices, checked state and historical purchases; conflicting names are rejected rather than merged.
+- Database triggers own purchase-to-stock and stock-to-shopping synchronization, independent of destination visibility; never duplicate these side effects in page code.
+- A separate rename trigger atomically updates group-matched shopping names, preserving quantities, prices, checked state and history; reject conflicts rather than merge.
 - Stock drag ordering uses a nullable position column and an atomic security-invoker RPC scoped to the group under existing RLS; quantity synchronization remains independent of ordering.
 - Stale dynamic-import failures recover through one session-throttled document reload; other errors retain the normal boundary and repeated asset failures must not loop.
 - Personal appearance uses owner-only RLS, private user-folder storage, signed images, bounded opacity and validated semantic colors; dashboard surfaces stay solid and financial logic remains unchanged.
@@ -25,7 +25,7 @@
 - Signed-out login styling is scoped to its own semantic tokens and bundled photography; preserve the existing authentication handlers and keep personal appearance isolated to signed-in accounts.
 - Welcome runs only after explicit password sign-in; its isolated timer preserves auth and group loading.
 - Offline group CRUD goes through a separate IndexedDB journal partitioned by authenticated user and group; the generated client stays intact, and a security-invoker RPC atomically validates current RLS, checks changed-field conflicts and records idempotent operation receipts.
-- The offline sync RPC keeps a per-table whitelist of writable columns; whenever a new column is added to an offline-synced table (lancamentos, moto_despesas, feira_itens, feira_historico, estoque, estoque_divisoes, despesas), the whitelist must be updated in the same migration or queued changes fail with "Campos inválidos".
+- Every new writable column on any offline-synced table must enter the sync RPC whitelist in the same migration; otherwise queued writes fail with "Campos inválidos".
 - Grocery finalization journals finance, removal of fully purchased rows only for paid purchases, reset of retained purchased rows, and purchase history atomically; unbought rows survive and stock triggers remain authoritative for deficit quantities.
 - Offline shell caching uses generateSW with NetworkFirst navigations and a single preview-safe registrar; auth, account administration and image uploads remain online-only, and cached access is presentation-only, never server authorization.
 - The offline fallback is TanStack's prerendered public SPA shell; group gates must remain effect-driven so cached navigation HTML contains no private data, and PWA output targets the deployed client-assets directory.
