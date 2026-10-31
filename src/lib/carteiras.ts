@@ -1,12 +1,12 @@
 import type { LancamentoPainel } from './painel';
 import type { DespesaMoto } from './moto';
-export type Carteira = { id:string; grupo_id:string; nome:string; tipo:'financeiro'|'beneficio'; moeda:'BRL'|'USD'|'EUR'; cor:'primary'|'credit'|'debit'|'saved'; icone:string; legado:string|null; na_feira:boolean; nas_fixas:boolean; no_painel:boolean; created_at?:string };
+export type Carteira = { id:string; grupo_id:string; nome:string; tipo:'financeiro'|'beneficio'|'poupanca'; moeda:'BRL'|'USD'|'EUR'; cor:'primary'|'credit'|'debit'|'saved'; icone:string; legado:string|null; na_feira:boolean; nas_fixas:boolean; no_painel:boolean; created_at?:string };
 export type Meta = { id:string; grupo_id:string; carteira_id:string; nome:string; valor_alvo:number; data_limite:string|null; ativa:boolean; created_at?:string };
 export type Cotacao = { moeda:string; valor_brl:number; data:string; consultado_em?:string };
 export const moeda = (n:number, currency='BRL') => n.toLocaleString('pt-BR',{style:'currency',currency});
 export const contaLegada = (w:Carteira):'dinheiro'|'alimentacao'|'refeicao' => w.legado==='alimentacao' ? 'alimentacao' : w.legado==='refeicao' ? 'refeicao' : 'dinheiro';
 export function carteiraDaLinha(l:LancamentoPainel, wallets:Carteira[]) { return wallets.find(w=>l.carteira_id ? w.id===l.carteira_id : w.legado===(l.conta??'dinheiro')); }
-export function aceitaTransferencia(w:Carteira, metas:Meta[]) { return w.tipo==='financeiro' && w.moeda==='BRL' && !metas.some(m=>m.carteira_id===w.id); }
+export function aceitaTransferencia(w:Carteira, metas:Meta[]) { return (w.tipo==='financeiro'||w.tipo==='poupanca') && w.moeda==='BRL' && !metas.some(m=>m.carteira_id===w.id); }
 export function aceitaAutomacao(w:Carteira, metas:Meta[], local:'feira'|'fixas') { return w.moeda==='BRL' && !metas.some(m=>m.carteira_id===w.id) && (local==='feira' ? w.na_feira && w.legado!=='gasolina' : w.nas_fixas); }
 export function saldoCarteira(w:Carteira, linhas:LancamentoPainel[], moto:DespesaMoto[]) {
   let total=0;
@@ -21,15 +21,15 @@ export function saldoCarteira(w:Carteira, linhas:LancamentoPainel[], moto:Despes
 }
 export function valorEmReais(w:Carteira, valor:number, taxas:Cotacao[]) { if(w.moeda==='BRL') return valor; const taxa=taxas.find(t=>t.moeda===w.moeda); return taxa ? valor*Number(taxa.valor_brl) : null; }
 export function resumoCarteiras(wallets:Carteira[], linhas:LancamentoPainel[], moto:DespesaMoto[], taxas:Cotacao[]) {
-  let financeiro=0,beneficios=0; let semCotacao=false;
+  let financeiro=0,beneficios=0,poupanca=0; let semCotacao=false;
   for(const w of wallets.filter(w=>w.no_painel)) {
     let saldo=saldoCarteira(w,linhas,moto);
     // Legacy applications remain part of patrimony without duplicating available cash.
     if(w.legado==='dinheiro') saldo+=linhas.filter(l=>(!l.carteira_id||l.carteira_id===w.id)&&['aplicacao','resgate'].includes(l.tipo)).reduce((s,l)=>s+(l.tipo==='aplicacao'?1:-1)*Number(l.valor),0);
     const convertido=valorEmReais(w,saldo,taxas); if(convertido===null) {semCotacao=true;continue;}
-    if(w.tipo==='beneficio') beneficios+=convertido; else financeiro+=convertido;
+    if(w.tipo==='beneficio') beneficios+=convertido; else if(w.tipo==='poupanca') poupanca+=convertido; else financeiro+=convertido;
   }
-  return {financeiro,beneficios,patrimonio:financeiro+beneficios,semCotacao};
+  return {financeiro,beneficios,poupanca,patrimonio:financeiro+beneficios+poupanca,semCotacao};
 }
 export function movimentosAnaliticos(wallets:Carteira[], linhas:LancamentoPainel[], moto:DespesaMoto[], taxas:Cotacao[]) {
   const result=linhas.filter(l=>!l.transferencia_id && l.destino!=='gasolina' && ['credito','debito'].includes(l.tipo)).flatMap(l=>{
