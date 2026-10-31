@@ -8,6 +8,7 @@ import { PainelCustomizer } from '@/components/painel-customizer';
 import { normalizarOrdemPainel, ORDEM_PADRAO_PAINEL, moverCartaoPainel, moverCartaoPainelPara, type CartaoPainelId } from '@/lib/ordem-painel';
 import { normalizarPreferenciasPainel, PREFERENCIAS_PADRAO_PAINEL, ORDEM_PADRAO_BLOCOS, type PainelBlocoId, type PreferenciasPainel } from '@/lib/painel-preferencias';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { Wallet, Layers, Target, ArrowDownLeft, ArrowUpRight, PiggyBank, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoriasChart, FluxoChart } from '@/components/painel-analitico';
@@ -127,7 +128,7 @@ function Painel() {
     try {
       const { error } = await supabase.from('user_appearance').upsert({
         user_id: session.user.id,
-        dashboard_preferences: rascunhoPreferencias as never,
+        dashboard_preferences: rascunhoPreferencias as unknown as Json,
       });
       if (error) throw error;
       queryClient.setQueryData(preferencesKey, rascunhoPreferencias);
