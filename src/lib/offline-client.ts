@@ -148,7 +148,7 @@ async function execute(table: string, calls: Call[]) {
       let cmd: Command;
       if (mutation.method === 'insert') {
         const input = Array.isArray(mutation.args[0]) ? mutation.args[0] : [mutation.args[0]];
-        const defaults: Record<string, Row> = { lancamentos: { pago: false, conta: 'dinheiro', destino: 'geral', origem_modulo: 'financas', categoria:'Outros',fonte:'manual',transferencia_id:null }, feira_itens: { qtd: 1, preco: 0, pego: false }, feira_historico: { pagamento: 'nenhum', lancamento_id: null }, estoque: { qtd: 0, padrao: 1, divisao_id: null, ordem: null }, contas_fixas: { conta: 'dinheiro', fim: null, ativa: true },carteiras:{tipo:'financeiro',moeda:'BRL',cor:'primary',icone:'wallet',na_feira:false,nas_fixas:false,no_painel:true},metas:{data_limite:null,ativa:true} };
+        const defaults: Record<string, Row> = { lancamentos: { pago: false, conta: 'dinheiro', destino: 'geral', origem_modulo: 'financas', categoria:'Outros',fonte:'manual',transferencia_id:null }, feira_itens: { qtd: 1, preco: 0, pego: false, ordem: null }, feira_historico: { pagamento: 'nenhum', lancamento_id: null }, estoque: { qtd: 0, padrao: 1, divisao_id: null, ordem: null }, contas_fixas: { conta: 'dinheiro', fim: null, ativa: true },carteiras:{tipo:'financeiro',moeda:'BRL',cor:'primary',icone:'wallet',na_feira:false,nas_fixas:false,no_painel:true},metas:{data_limite:null,ativa:true} };
         rows = input.map(value => ({ ...defaults[table], ...value as Row, id: (value as Row).id ?? crypto.randomUUID(), created_at: (value as Row).created_at ?? new Date().toISOString() }));
         if (rows.some(r => r.grupo_id !== s.group)) throw new Error('Grupo inválido.');
         cmd = { table, action: 'insert', rows };
@@ -193,8 +193,11 @@ function builder(table: string, calls: Call[] = []): unknown {
 export const supabase: typeof remote = new Proxy(remote, { get(target, prop) {
   if (prop === 'from') return (table: string) => scope && OFFLINE_TABLES.includes(table as typeof OFFLINE_TABLES[number]) ? builder(table) : target.from(table as typeof OFFLINE_TABLES[number]);
   if (prop === 'rpc') return (name: string, args: Record<string, unknown>) => {
-    if (scope && name === 'ordenar_estoque') return enqueue([{ table: 'estoque', action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null })).catch(() => ({ data: null, error: { message: 'Não foi possível guardar a ordem.' } }));
-    return target.rpc(name as 'ordenar_estoque', args as never);
+    if (scope && (name === 'ordenar_estoque' || name === 'ordenar_feira')) {
+      const table = name === 'ordenar_estoque' ? 'estoque' : 'feira_itens';
+      return enqueue([{ table, action: 'order', ids: args['_ids'] as string[] }]).then(() => ({ data: null, error: null })).catch(() => ({ data: null, error: { message: 'Não foi possível guardar a ordem.' } }));
+    }
+    return target.rpc(name as 'ordenar_estoque' | 'ordenar_feira', args as never);
   };
   const value = Reflect.get(target, prop); return typeof value === 'function' ? value.bind(target) : value;
 } });
