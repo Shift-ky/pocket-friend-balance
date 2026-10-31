@@ -142,7 +142,6 @@ function Painel() {
 
   const gridGraficos = preferencias.colunasGraficos === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1';
   const colunasGrandes = preferencias.colunasGraficos === 2 ? 'lg:col-span-2' : '';
-  const blocosVisiveis = ORDEM_PADRAO_BLOCOS.filter(id => preferencias.blocosVisiveis[id]);
   const blocoConteudo: Record<PainelBlocoId, ReactNode> = {
     saldos: <section aria-label="Patrimônio e saldos" className={colunasGrandes}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -221,7 +220,7 @@ function Painel() {
     {(totals.semCotacao || erroCotacao) && carteiras.some(w => w.moeda !== 'BRL' && w.no_painel) &&
       <p role="status" className="mb-5 text-sm text-muted-foreground">{totals.semCotacao ? 'Carteiras sem cotação não estão incluídas no consolidado.' : erroCotacao}</p>}
     <div className={`grid min-w-0 gap-8 ${gridGraficos}`}>
-      {preferencias.ordemBlocos.filter(id => blocosVisiveis.includes(id)).map(id => <div key={id} className="min-w-0">{blocoConteudo[id]}</div>)}
+      {preferencias.ordemBlocos.filter(id => preferencias.blocosVisiveis[id] && (id !== 'meta' || access.financas)).map(id => <div key={id} className="min-w-0">{blocoConteudo[id]}</div>)}
     </div>
   </main>;
 }
