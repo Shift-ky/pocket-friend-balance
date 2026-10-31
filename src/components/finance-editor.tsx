@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/offline-client";
 import { Button } from "@/components/ui/button";
-import { CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
+import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
 type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null; categoria?:string };
@@ -35,7 +35,7 @@ export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: ()
       <input value={descricao} onChange={(e) => setDescricao(e.target.value)} className={`w-full ${campo}`} />
       {item.tipo === "debito" && <label className="block text-sm">Tipo de saída<select aria-label="Tipo de saída" value={categoria} onChange={e => setCategoria(e.target.value)} className={`mt-1 ${campo}`}>
         {!CATEGORIAS_SAIDA.includes(categoria as typeof CATEGORIAS_SAIDA[number]) && categoria && <option value={categoria}>{categoria} (atual)</option>}
-        {CATEGORIAS_SAIDA.map(c => <option key={c} value={c}>{c}</option>)}
+        {GRUPOS_CATEGORIAS_SAIDA.map(grupo => <optgroup key={grupo.nome} label={grupo.nome}>{grupo.categorias.map(c => <option key={c} value={c}>{c}</option>)}</optgroup>)}
       </select></label>}
       <div className="grid grid-cols-2 gap-3">
         <input value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className={campo} />
