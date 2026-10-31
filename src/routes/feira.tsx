@@ -3,6 +3,10 @@ import { aceitaAutomacao,contaLegada } from '@/lib/carteiras';
 import { Button } from '@/components/ui/button';
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { FeiraSortableItem } from '@/components/feira-sortable-item';
+import { ordenarItensFeira, moverItemFeira } from '@/lib/ordem-feira';
 import { supabase, offlineTransaction } from "@/lib/offline-client";
 import { useGrupo, useTabelaAoVivo } from "@/lib/grupo";
 import { useSouAdmin } from "@/lib/use-admin";
@@ -24,7 +28,7 @@ export const Route = createFileRoute("/feira")({
   component: Feira,
 });
 
-type Item = { id: string; nome: string; qtd: number; qtd_comprada: number; preco: number; pego: boolean };
+type Item = { id: string; nome: string; qtd: number; qtd_comprada: number; preco: number; pego: boolean; ordem: number | null; created_at: string };
 type Compra = { id: string; total: number; created_at: string; data_compra?: string | null; local?: string; pagamento?: string; lancamento_id?: string | null; itens: { nome: string; qtd: number; preco: number; nome_cupom?:string }[] };
 type Pagamento = "nenhum" | "dinheiro" | "alimentacao" | "refeicao";
 const PAGAMENTOS = [["nenhum", "Não lançar"], ["dinheiro", "Dinheiro"], ["alimentacao", "Alimentação"], ["refeicao", "Refeição"]] as const;
@@ -39,13 +43,45 @@ function Feira() {
   const [walletId,setWalletId]=useState('');
   const { grupo } = useGrupo();
   const { linhas, recarregar } = useTabelaAoVivo<Item>("feira_itens", grupo.id);
-  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), qtd_comprada: Number(i.qtd_comprada ?? 0), preco: Number(i.preco) }));
+  const itens = linhas.map((i) => ({ ...i, qtd: Number(i.qtd), qtd_comprada: Number(i.qtd_comprada ?? 0), preco: Number(i.preco), ordem: i.ordem == null ? null : Number(i.ordem) }));
+  const [ordemLocal, setOrdemLocal] = useState<string[] | null>(null);
+  const [salvandoOrdem, setSalvandoOrdem] = useState(false);
+  const [erroOrdem, setErroOrdem] = useState('');
+  const ordenados = ordenarItensFeira(itens);
+  const itensOrdenados = ordemLocal ? [...ordenados].sort((a, b) => {
+    const pa = ordemLocal.indexOf(a.id), pb = ordemLocal.indexOf(b.id);
+    return (pa < 0 ? Number.MAX_SAFE_INTEGER : pa) - (pb < 0 ? Number.MAX_SAFE_INTEGER : pb)
+      || (a.created_at ?? '').localeCompare(b.created_at ?? '') || a.id.localeCompare(b.id);
+  }) : ordenados;
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const [nome, setNome] = useState("");
   const [qtd, setQtd] = useState("1");
   const [preco, setPreco] = useState("");
 
   const total = valorPrevisto(itens);
   const noCarrinho = valorCarrinho(itens);
+
+  async function salvarOrdem(ids: string[]) {
+    if (salvandoOrdem) return;
+    setOrdemLocal(ids); setSalvandoOrdem(true); setErroOrdem('');
+    try {
+      const { error } = await supabase.rpc('ordenar_feira', { _grupo_id: grupo.id, _ids: ids });
+      if (error) throw error;
+      await recarregar();
+    } catch {
+      setErroOrdem('Não foi possível salvar a ordem dos itens. Tente novamente.');
+      await recarregar();
+    } finally { setOrdemLocal(null); setSalvandoOrdem(false); }
+  }
+
+  async function reordenar({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id || salvandoOrdem) return;
+    const ids = itensOrdenados.map(i => i.id);
+    const origem = ids.indexOf(String(active.id)), destino = ids.indexOf(String(over.id));
+    if (origem < 0 || destino < 0 || origem === destino) return;
+    ids.splice(origem, 1); ids.splice(destino, 0, String(active.id));
+    await salvarOrdem(ids);
+  }
 
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
@@ -190,10 +226,14 @@ function Feira() {
         </button>
       )}
 
+      {itens.length > 0 && <p className="mb-2 text-xs text-muted-foreground">Arraste para organizar ou use as setas ao lado de cada item.{salvandoOrdem ? ' Salvando ordem…' : ''}</p>}
+      {erroOrdem && <p role="alert" className="mb-2 text-sm text-debit">{erroOrdem}</p>}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reordenar}>
+      <SortableContext items={itensOrdenados.map(i => i.id)} strategy={verticalListSortingStrategy}>
       <ul className="space-y-2">
-        {itens.length === 0 && <li className="py-10 text-center text-muted-foreground">Sua lista está vazia.</li>}
-        {itens.map((i) => (
-          <li key={i.id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 sm:gap-3">
+        {itensOrdenados.length === 0 && <li className="py-10 text-center text-muted-foreground">Sua lista está vazia.</li>}
+        {itensOrdenados.map((i, position) => (
+          <FeiraSortableItem key={i.id} id={i.id} nome={i.nome} position={position} total={itensOrdenados.length} disabled={salvandoOrdem} onMove={delta => void salvarOrdem(moverItemFeira(itensOrdenados.map(item => item.id), i.id, delta))}>
             <input type="checkbox" checked={i.pego} onChange={() => atualizar(i.id, alternarPego(i))} className="h-5 w-5 shrink-0 accent-credit" />
             <p className={`min-w-0 flex-1 break-words font-semibold ${i.pego ? "line-through opacity-50" : ""}`}>{i.nome}</p>
             <button onClick={() => excluir([i.id])} aria-label="Excluir" className="shrink-0 text-muted-foreground hover:text-debit sm:order-last">✕</button>
@@ -212,9 +252,11 @@ function Feira() {
               </label>
               <span className="w-24 text-right font-semibold">{brl(i.qtd_comprada * i.preco)}</span>
             </div>
-          </li>
+          </FeiraSortableItem>
         ))}
       </ul>
+      </SortableContext>
+      </DndContext>
 
       {itens.length > 0 && (
         <div className="mt-6 space-y-3 rounded-xl border bg-card p-4">

@@ -218,6 +218,13 @@
       "when": 1793407699241,
       "tag": "0030_wallet_type_savings",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793441228718,
+      "tag": "0031_feira_manual_order",
+      "breakpoints": true
     }
   ]
 }
