@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, ChevronUp, GripVertical, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CartaoPainelId } from '@/lib/ordem-painel';
-import type { TamanhoCartaoPainel } from '@/lib/painel-preferencias';
+import type { AlturaCartaoPainel, LarguraCartaoPainel } from '@/lib/painel-preferencias';
 
 export function PainelSortableCard({ id, nome, valor, Icon, destaque, width, height, position, total, editing, disabled, onMove }: {
   id: CartaoPainelId; nome: string; valor: string; Icon: LucideIcon; destaque: boolean; width: LarguraCartaoPainel; height: AlturaCartaoPainel;
