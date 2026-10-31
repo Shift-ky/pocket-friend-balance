@@ -7,7 +7,7 @@ import { processReviews } from '@/lib/telegram/process.server';
 import { ExtractionProviderError } from '@/lib/telegram/extraction-policy.server';
 
 const extracted = { valor: 12, data: '2026-10-30', descricao: 'Teste fictício', documento: 'comprovante', produtos: [] };
-const row = (id: string) => ({ id, user_id: 'test-user', grupo_id: 'test-group', chat_id: 123, source_text: 'fictício', file_id: null });
+const row = (id: string): {id:string;user_id:string;grupo_id:string;chat_id:number;source_text:string;file_id:string|null;mime_type?:string;file_name?:string} => ({ id, user_id: 'test-user', grupo_id: 'test-group', chat_id: 123, source_text: 'fictício', file_id: null });
 let rows: ReturnType<typeof row>[];
 let writes: { table: string; value: Record<string, unknown> }[];
 let filters: unknown[][];

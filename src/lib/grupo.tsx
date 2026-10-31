@@ -208,9 +208,9 @@ export function GrupoGate({ children }: { children: ReactNode }) {
   );
 }
 
-export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas" | "feira_historico" | "estoque" | "estoque_divisoes" | "moto_despesas" | "contas_fixas", grupoId: string) {
+export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "despesas" | "feira_historico" | "estoque" | "estoque_divisoes" | "moto_despesas" | "contas_fixas" | "carteiras" | "metas", grupoId: string) {
   const access = useAccess();
-  const allowed = tabela === "lancamentos" ? access.financas || access.moto : access[moduleForTable(tabela)];
+  const allowed = tabela === "lancamentos" || tabela === 'carteiras' ? access.financas || access.moto : access[moduleForTable(tabela)];
   const [linhas, setLinhas] = useState<T[]>([]);
   const recarregar = useCallback(async () => {
     if (!allowed) { setLinhas([]); return; }
@@ -228,5 +228,5 @@ export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "desp
     return () => { window.removeEventListener('offline-data', recarregar); supabase.removeChannel(canal); };
   }, [tabela, grupoId, recarregar]);
 
-  return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string; origem_modulo?: string })[], access) : tabela === 'contas_fixas' ? linhas.filter(l => access.moto || (l as T & { modalidade?: string }).modalidade !== 'gasolina') : linhas, recarregar };
+  return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string; origem_modulo?: string })[], access) : tabela === 'carteiras' ? linhas.filter(l=>(l as T & {legado?:string}).legado==='gasolina'?access.moto:access.financas) : tabela === 'contas_fixas' ? linhas.filter(l => access.moto || (l as T & { modalidade?: string }).modalidade !== 'gasolina') : linhas, recarregar };
 }

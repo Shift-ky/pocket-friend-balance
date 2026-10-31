@@ -41,7 +41,7 @@ export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:
     }));
   },[stockOptions,searches]);
   const reading=row.extraction_status==='aguardando'||row.extraction_status==='processando';
-  const qualityWarnings=receiptQualityWarnings({valor:number(valor),data,produtos:items.map(item=>({qtd:number(item.qtd),preco:number(item.preco)}))});
+  const qualityWarnings=receiptQualityWarnings({valor:number(valor),data:date,produtos:items.map(item=>({qtd:number(item.qtd),preco:number(item.preco)}))});
   function change(id:number,patch:Partial<(typeof items)[number]>) {setConfirm(null);setItems(current=>current.map(p=>p.id===id?{...p,...patch}:p));}
   async function submit(action:'salvar'|'aprovar'|'descartar') {
     setBusy(true);setError('');setNotice('');
