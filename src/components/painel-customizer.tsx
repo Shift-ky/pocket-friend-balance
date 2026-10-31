@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { FONTES_WIDGET, novoIdPainel, PREFERENCIAS_PADRAO_PAINEL, type AlturaCartaoPainel, type DashboardPainel, type FonteWidgetPainel, type LarguraCartaoPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from "@/lib/painel-preferencias";
 
 const field = "w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm";
+const classesGradePrevia: Record<number, string> = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" };
+const classesLarguraPrevia: Record<number, string> = { 1: "col-span-1", 2: "col-span-2", 3: "col-span-3", 4: "col-span-4" };
 const alturas: { value: AlturaCartaoPainel; label: string }[] = [
   { value: "compacta", label: "Baixa" },
   { value: "media", label: "Média" },
@@ -96,14 +98,14 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
 
         {!section.widgets.length && <p className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">Esta seção está vazia. Adicione uma caixa para escolher o que mostrar.</p>}
         <div className="space-y-3">
-          {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_120px_auto] lg:items-end">
+          {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="space-y-2"><div className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_120px_auto] lg:items-end">
             <label className="text-xs text-muted-foreground">O que esta caixa mostra<select aria-label="Indicador da caixa" value={widget.fonte} onChange={event => {
               const fonte = event.target.value as FonteWidgetPainel;
               const source = FONTES_WIDGET.find(item => item.id === fonte)!;
               updateWidget(section.id, widget.id, current => ({ ...current, fonte, titulo: source.nome, grafico: fontePadrao(fonte) }));
             }} className={`${field} mt-1`}>{["Saldos", "Finanças", "Metas", "Gráficos"].map(group => <optgroup key={group} label={group}>{FONTES_WIDGET.filter(source => source.grupo === group).map(source => <option key={source.id} value={source.id}>{source.nome}</option>)}</optgroup>)}</select><span className="mt-1 block">{FONTES_WIDGET.find(source => source.id === widget.fonte)?.descricao}</span></label>
             <label className="text-xs text-muted-foreground">Título da caixa<input aria-label="Título da caixa" maxLength={60} value={widget.titulo} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, titulo: event.target.value }))} className={`${field} mt-1`} /></label>
-            <label className="text-xs text-muted-foreground">Largura<select aria-label="Largura da caixa" value={widget.largura} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, largura: Number(event.target.value) as LarguraCartaoPainel }))} className={`${field} mt-1`}>{Array.from({ length: section.colunas }, (_, i) => i + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? "coluna" : "colunas"}</option>)}</select></label>
+            <label className="text-xs text-muted-foreground">Largura no computador<select aria-label="Largura da caixa" value={Math.min(widget.largura, section.colunas)} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, largura: Number(event.target.value) as LarguraCartaoPainel }))} className={`${field} mt-1`}>{Array.from({ length: section.colunas }, (_, i) => i + 1).map(value => <option key={value} value={value}>{value} de {section.colunas} {section.colunas === 1 ? "coluna" : "colunas"}</option>)}</select><span className="mt-1 block">Em telas menores, a caixa se ajusta à largura disponível.</span></label>
             <label className="text-xs text-muted-foreground">Altura mínima<select aria-label="Altura da caixa" value={widget.altura} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, altura: event.target.value as AlturaCartaoPainel }))} className={`${field} mt-1`}>{alturas.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
             <div className="text-xs text-muted-foreground">
               <label className="block">Cor da caixa<input type="color" aria-label="Cor da caixa" value={widget.cor ?? "#93c5fd"} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, cor: event.target.value }))} className="mt-1 block h-10 w-14 cursor-pointer rounded border bg-background p-1" /></label>
@@ -117,8 +119,14 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
               <Button type="button" variant="ghost" size="icon" aria-label="Mover caixa para baixo" disabled={saving || widgetIndex === section.widgets.length - 1} onClick={() => updateSection(section.id, current => ({ ...current, widgets: move(current.widgets, widgetIndex, 1) }))}><ChevronDown /></Button>
               <Button type="button" variant="ghost" size="icon" aria-label="Excluir caixa" disabled={saving} onClick={() => updateSection(section.id, current => ({ ...current, widgets: current.widgets.filter(item => item.id !== widget.id) }))}><Trash2 /></Button>
             </div>
-          </div>)}
-        </div>
+          </div>
+          <div className="rounded-md border border-dashed p-3" aria-label="Prévia da largura da caixa">
+            <div className="flex flex-wrap justify-between gap-1 text-xs text-muted-foreground"><span>Prévia da largura da caixa</span><span>{Math.min(widget.largura, section.colunas)} de {section.colunas} colunas</span></div>
+            <div className={`mt-2 grid gap-2 ${classesGradePrevia[section.colunas] ?? classesGradePrevia[2]}`}>
+              <div className={`h-8 rounded-md border-2 border-primary/70 bg-primary/10 transition-all ${classesLarguraPrevia[Math.min(widget.largura, section.colunas)] ?? classesLarguraPrevia[1]}`} />
+            </div>
+          </div>
+        </div>)}
         <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => addWidget(section)}><Plus />Adicionar caixa</Button>
       </section>)}
     </div>
