@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAccess } from "@/lib/access-context";
 import { CheckCircle2, Clock, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { parcelarLancamento } from "@/lib/parcelamento";
+import { CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
 
 export const Route = createFileRoute("/financas")({
   head: () => ({
@@ -106,7 +107,7 @@ function Index() {
       {formAberto && <form onSubmit={adicionar} className="mb-8 space-y-4 border-y py-6">
         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 sm:grid-cols-4">
           {(Object.keys(INFO) as Tipo[]).map((t) => (
-            <Button key={t} variant="ghost" aria-pressed={tipo === t} type="button" onClick={() => { setTipo(t);setTransferencia(false); }}
+            <Button key={t} variant="ghost" aria-pressed={tipo === t} type="button" onClick={() => { setTipo(t);if(t==="debito")setCategoria("Outros");setTransferencia(false); }}
               className={`rounded-md py-2 text-sm font-semibold transition ${tipo === t ? INFO[t].ativo : "text-muted-foreground"}`}>
               {INFO[t].sinal} {INFO[t].label}
             </Button>
@@ -122,7 +123,10 @@ function Index() {
             <Button type="button" variant={pago ? "default" : "outline"} aria-pressed={pago} onClick={() => setPago(true)}><CheckCircle2 className="h-4 w-4" />Já pago</Button>
           </div>
         </fieldset>}
-        {!transferencia&&<label className="block text-sm">Categoria<input aria-label="Categoria" value={categoria} onChange={e=>setCategoria(e.target.value)} maxLength={100} className="mt-1 w-full rounded-md border bg-background px-3 py-2"/></label>}
+        {!transferencia && (tipo === "debito"
+  ? <label className="block text-sm">Tipo de saída<select aria-label="Tipo de saída" value={categoria} onChange={e=>setCategoria(e.target.value)} className="mt-1 w-full rounded-md border bg-background px-3 py-2">{CATEGORIAS_SAIDA.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
+  : <label className="block text-sm">Categoria<input aria-label="Categoria" value={categoria} onChange={e=>setCategoria(e.target.value)} maxLength={100} className="mt-1 w-full rounded-md border bg-background px-3 py-2"/></label>
+)}
         <input aria-label="Descrição do lançamento" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição (ex: Salário, Aluguel)"
           className="w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" />
         <div className="grid grid-cols-2 gap-3">
