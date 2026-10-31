@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowDownLeft, ArrowUpRight, CalendarClock, Layers } from "lucide-react";
 import { brl } from "@/lib/painel";
 
@@ -28,20 +28,48 @@ export function KpiCards({ k }: { k: Kpis }) {
   </section>;
 }
 
-export function FluxoChart({ dados }: { dados: Fluxo }) {
+export function FluxoChart({ dados, tipo = "barras" }: { dados: Fluxo; tipo?: "barras" | "linhas" | "area" }) {
   if (!dados.length) return <p className="py-10 text-center text-sm text-muted-foreground">Sem movimentações neste período.</p>;
   return <div className="h-56 w-full">
     <ResponsiveContainer>
-      <BarChart data={dados} maxBarSize={48} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+      {tipo === "barras" ? <BarChart data={dados} maxBarSize={48} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--border)" />
         <XAxis dataKey="mes" tickFormatter={mesCurto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
         <Tooltip {...dica} labelFormatter={l => mesCurto(String(l))} formatter={(v: number, n) => [brl(v), n === "entradas" ? "Entradas" : "Saídas pagas"]} />
         <Bar dataKey="entradas" fill="var(--credit)" radius={[6, 6, 0, 0]} />
         <Bar dataKey="saidas" fill="var(--debit)" radius={[6, 6, 0, 0]} />
-      </BarChart>
+      </BarChart> : tipo === "linhas" ? <LineChart data={dados} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+        <CartesianGrid vertical={false} stroke="var(--border)" />
+        <XAxis dataKey="mes" tickFormatter={mesCurto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+        <YAxis tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+        <Tooltip {...dica} labelFormatter={l => mesCurto(String(l))} formatter={(v: number, n) => [brl(v), n === "entradas" ? "Entradas" : "Saídas pagas"]} />
+        <Line dataKey="entradas" name="Entradas" stroke="var(--credit)" strokeWidth={3} dot={{ r: 3 }} />
+        <Line dataKey="saidas" name="Saídas pagas" stroke="var(--debit)" strokeWidth={3} dot={{ r: 3 }} />
+      </LineChart> : <AreaChart data={dados} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+        <CartesianGrid vertical={false} stroke="var(--border)" />
+        <XAxis dataKey="mes" tickFormatter={mesCurto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+        <YAxis tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+        <Tooltip {...dica} labelFormatter={l => mesCurto(String(l))} formatter={(v: number, n) => [brl(v), n === "entradas" ? "Entradas" : "Saídas pagas"]} />
+        <Area dataKey="entradas" name="Entradas" stroke="var(--credit)" fill="var(--credit)" fillOpacity={0.18} strokeWidth={2} />
+        <Area dataKey="saidas" name="Saídas pagas" stroke="var(--debit)" fill="var(--debit)" fillOpacity={0.18} strokeWidth={2} />
+      </AreaChart>}
     </ResponsiveContainer>
   </div>;
+}
+
+export function CategoriasChart({ dados, tipo = "rosca" }: { dados: { nome: string; valor: number }[]; tipo?: "pizza" | "rosca" | "barras" }) {
+  if (!dados.length) return <p className="py-20 text-center text-sm text-muted-foreground">Nenhuma saída paga neste mês.</p>;
+  const cores = ["var(--primary)", "var(--credit)", "var(--debit)", "var(--saved)", "var(--muted-foreground)"];
+  return tipo === "barras" ? <div className="h-72 w-full">
+    <ResponsiveContainer><BarChart data={dados} layout="vertical" margin={{ top: 4, right: 12, left: 8, bottom: 4 }}>
+      <CartesianGrid horizontal={false} stroke="var(--border)" />
+      <XAxis type="number" tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+      <YAxis type="category" dataKey="nome" width={112} tick={{ fill: "var(--foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+      <Tooltip {...dica} formatter={(v: number) => [brl(v), "Saídas"]} />
+      <Bar dataKey="valor" name="Saídas" radius={[0, 6, 6, 0]}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Bar>
+    </BarChart></ResponsiveContainer>
+  </div> : <><div className="h-64 w-full"><ResponsiveContainer><PieChart><Pie data={dados} dataKey="valor" nameKey="nome" innerRadius={tipo === "rosca" ? 65 : 0} outerRadius={100} paddingAngle={3}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Pie><Tooltip contentStyle={dica.contentStyle} formatter={(v: number) => [brl(v)]} /></PieChart></ResponsiveContainer></div><div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">{dados.map(c => <span key={c.nome}>{c.nome} · {brl(c.valor)}</span>)}</div></>;
 }
 
 export function CarteirasChart({ dados }: { dados: Carteira }) {
