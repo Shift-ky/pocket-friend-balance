@@ -3,7 +3,7 @@ import { supabase } from "@/lib/offline-client";
 import { Button } from "@/components/ui/button";
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
-type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string };
+type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null };
 const CONTAS: Record<Conta, string> = { dinheiro: "Dinheiro", alimentacao: "Alimentação", refeicao: "Refeição" };
 
 const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: string; texto: string }> = {
@@ -18,7 +18,7 @@ export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: ()
   const [valor, setValor] = useState(String(item.valor).replace(".", ","));
   const [data, setData] = useState(item.data);
   const [conta, setConta] = useState<Conta>(item.conta ?? "dinheiro");
-  const comConta = item.destino !== "gasolina" && (item.tipo === "credito" || item.tipo === "debito");
+  const comConta = !item.carteira_id && item.destino !== "gasolina" && (item.tipo === "credito" || item.tipo === "debito");
   async function salvar() {
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return alert("Preencha descrição e valor.");

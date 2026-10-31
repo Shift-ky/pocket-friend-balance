@@ -222,7 +222,7 @@ export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "desp
     recarregar();
     window.addEventListener('offline-data', recarregar);
     const canal = supabase
-      .channel(`${tabela}-${grupoId}`)
+      .channel(`${tabela}-${grupoId}-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: tabela, filter: `grupo_id=eq.${grupoId}` }, () => recarregar())
       .subscribe();
     return () => { window.removeEventListener('offline-data', recarregar); supabase.removeChannel(canal); };
