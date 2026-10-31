@@ -166,7 +166,20 @@ function migrarFormatoAntigo(raw: Record<string, unknown>): DashboardPainel {
     categorias: visible.categorias === false ? null : { id: "categorias", nome: "Análise por categoria", colunas: 2, widgets: [widget("grafico-categorias", "gastos_categoria", "Gastos por categoria", 1, "alta", raw.graficoCategorias === "pizza" || raw.graficoCategorias === "barras" ? raw.graficoCategorias : "rosca")] },
     fluxo: visible.fluxo === false ? null : { id: "fluxo", nome: "Fluxo mensal", colunas: 2, widgets: [widget("grafico-fluxo", "fluxo_mensal", "Entradas vs. saídas", 1, "alta", raw.graficoFluxo === "linhas" || raw.graficoFluxo === "area" ? raw.graficoFluxo : "barras")] },
   };
-  return { id: "principal", nome: "Visão geral", secoes: order.flatMap(id => mapping[id] ? [mapping[id]!] : []) };
+  const secoes: SecaoPainel[] = [];
+  let analiseAdicionada = false;
+  for (const id of order) {
+    if (id === "categorias" || id === "fluxo") {
+      if (analiseAdicionada) continue;
+      analiseAdicionada = true;
+      const widgets = [mapping.categorias?.widgets[0], mapping.fluxo?.widgets[0]].filter((item): item is WidgetPainel => item !== undefined);
+      if (widgets.length) secoes.push({ id: "analise", nome: "Análise financeira", colunas: 2, widgets });
+      continue;
+    }
+    const section = mapping[id];
+    if (section) secoes.push(section);
+  }
+  return { id: "principal", nome: "Visão geral", secoes };
 }
 
 export function normalizarPreferenciasPainel(value: unknown): PreferenciasPainel {
