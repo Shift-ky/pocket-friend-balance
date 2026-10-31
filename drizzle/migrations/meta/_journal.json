@@ -225,6 +225,13 @@
       "when": 1793441228718,
       "tag": "0031_feira_manual_order",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793442532734,
+      "tag": "0032_painel_manual_order",
+      "breakpoints": true
     }
   ]
 }
