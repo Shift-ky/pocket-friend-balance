@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
@@ -143,7 +143,7 @@ function Painel() {
   const gridGraficos = preferencias.colunasGraficos === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1';
   const colunasGrandes = preferencias.colunasGraficos === 2 ? 'lg:col-span-2' : '';
   const blocosVisiveis = ORDEM_PADRAO_BLOCOS.filter(id => preferencias.blocosVisiveis[id]);
-  const blocoConteudo: Record<PainelBlocoId, React.ReactNode> = {
+  const blocoConteudo: Record<PainelBlocoId, ReactNode> = {
     saldos: <section aria-label="Patrimônio e saldos" className={colunasGrandes}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         {organizando ? <p className="text-xs text-muted-foreground">Arraste as caixas ou use as setas para escolher a ordem.{salvandoOrdem ? ' Salvando…' : ''}</p> : <span />}
