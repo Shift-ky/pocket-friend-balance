@@ -21,9 +21,9 @@
 - Stale dynamic-import failures recover through one session-throttled document reload; other errors retain the normal boundary and repeated asset failures must not loop.
 - Personal appearance uses owner-only RLS, private user-folder storage, signed images, bounded opacity and validated semantic colors; dashboard surfaces stay solid and financial logic remains unchanged.
 - Stock divisions are group-owned and use the stock module's access rules; a composite foreign key forbids cross-group assignments and deletion retains products, while sorting within divisions preserves the complete shared order.
-- Stock registration uses the shared insertion helper; existing divisions change only when explicitly selected.
+- Stock registration shares one insertion helper; change existing divisions only on explicit selection.
 - Signed-out login styling is scoped to its own semantic tokens and bundled photography; preserve the existing authentication handlers and keep personal appearance isolated to signed-in accounts.
-- Welcome runs only after explicit password sign-in; its isolated timer preserves auth and group loading.
+- Welcome follows explicit password sign-in only; its timer must not affect auth or group loading.
 - Offline group CRUD goes through a separate IndexedDB journal partitioned by authenticated user and group; the generated client stays intact, and a security-invoker RPC atomically validates current RLS, checks changed-field conflicts and records idempotent operation receipts.
 - Every new writable column on any offline-synced table must enter the sync RPC whitelist in the same migration; otherwise queued writes fail with "Campos inválidos".
 - Grocery finalization journals finance, removal of fully purchased rows only for paid purchases, reset of retained purchased rows, and purchase history atomically; unbought rows survive and stock triggers remain authoritative for deficit quantities.
