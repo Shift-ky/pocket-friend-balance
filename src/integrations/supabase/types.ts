@@ -857,6 +857,7 @@ export type Database = {
       user_appearance: {
         Row: {
           dashboard_order: string[]
+          dashboard_preferences: Json
           background_path: string | null
           background_visibility: number
           custom_colors: Json
@@ -866,6 +867,7 @@ export type Database = {
         }
         Insert: {
           dashboard_order?: string[]
+          dashboard_preferences?: Json
           background_path?: string | null
           background_visibility?: number
           custom_colors?: Json
