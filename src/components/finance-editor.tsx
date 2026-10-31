@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
-type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null; categoria?:string };
+type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null; categoria?:string; fonte?:string; origem_modulo?:string };
 const CONTAS: Record<Conta, string> = { dinheiro: "Dinheiro", alimentacao: "Alimentação", refeicao: "Refeição" };
 
 const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: string; texto: string }> = {
@@ -24,7 +24,27 @@ export function EditarLinha({ item, onFechar }: { item: Lancamento; onFechar: ()
   async function salvar() {
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || !v || v <= 0) return alert("Preencha descrição e valor.");
-    const { error } = await supabase.from("lancamentos").update({ descricao: descricao.trim(), valor: v, data, conta: comConta ? conta : "dinheiro", ...(item.tipo === "debito" ? { categoria } : {}) }).eq("id", item.id);
+    const changes = { descricao: descricao.trim(), valor: v, data, conta: comConta ? conta : "dinheiro", ...(item.tipo === "debito" ? { categoria } : {}) };
+    let error: { message: string } | null = null;
+    if (item.fonte === "telegram" || item.origem_modulo === "telegram") {
+      // Approved Telegram entries are linked to their review row and must be
+      // edited through the same atomic RPC used by the Conferência screen.
+      const { data: review, error: reviewError } = await supabase
+        .from("telegram_reviews").select("id").eq("lancamento_id", item.id).eq("status", "aprovado").maybeSingle();
+      if (reviewError) error = reviewError;
+      else if (review) {
+        const result = await supabase.rpc("telegram_edit_approved_launch", {
+          _id: review.id, _valor: v, _data: data, _descricao: descricao.trim(), _conta: comConta ? conta : "dinheiro", _categoria: categoria,
+        });
+        error = result.error;
+      } else {
+        const result = await supabase.from("lancamentos").update(changes).eq("id", item.id);
+        error = result.error;
+      }
+    } else {
+      const result = await supabase.from("lancamentos").update(changes).eq("id", item.id);
+      error = result.error;
+    }
     if (error) return alert("Não foi possível salvar.");
     onFechar();
   }
