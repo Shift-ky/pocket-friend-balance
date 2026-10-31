@@ -9,7 +9,7 @@ import { normalizarOrdemPainel, ORDEM_PADRAO_PAINEL, moverCartaoPainel, moverCar
 import { normalizarPreferenciasPainel, PREFERENCIAS_PADRAO_PAINEL, ORDEM_PADRAO_BLOCOS, type PainelBlocoId, type PreferenciasPainel } from '@/lib/painel-preferencias';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
-import { Wallet, Layers, Target, ArrowDownLeft, ArrowUpRight, PiggyBank, Landmark } from 'lucide-react';
+import { Wallet, Layers, Target, ArrowDownLeft, ArrowUpRight, PiggyBank, Landmark, Settings2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoriasChart, FluxoChart } from '@/components/painel-analitico';
 import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
@@ -181,8 +181,8 @@ function Painel() {
         {organizando ? <p className="text-xs text-muted-foreground">Arraste as caixas ou use as setas para escolher a ordem.{salvandoOrdem ? ' Salvando…' : ''}</p> : <span />}
         <div className="flex items-center gap-3">
           {erroOrdem && <p role="alert" className="text-sm text-debit">{erroOrdem}</p>}
-          <Button type="button" variant={organizando ? 'default' : 'outline'} disabled={salvandoOrdem || !ordemVisivel.length} aria-pressed={organizando} onClick={() => setOrganizando(v => !v)}>
-            {organizando ? 'Concluir organização' : 'Organizar caixas'}
+          <Button type="button" variant={organizando ? 'secondary' : 'ghost'} size="sm" disabled={salvandoOrdem || !ordemVisivel.length} aria-pressed={organizando} aria-label={organizando ? 'Concluir organização das caixas' : 'Organizar caixas'} title={organizando ? 'Concluir organização' : 'Organizar caixas'} onClick={() => setOrganizando(v => !v)}>
+            <GripVertical className="h-4 w-4" />{organizando ? 'Concluir' : 'Organizar'}
           </Button>
         </div>
       </div>
@@ -241,10 +241,10 @@ function Painel() {
     <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div><p className="mb-2 text-xs uppercase text-muted-foreground">MarIA · {grupo.nome}</p><h1 className="font-display text-4xl sm:text-5xl">Meu Painel</h1></div>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={() => {
+        <Button type="button" variant="ghost" size="icon" aria-label={customizadorAberto ? 'Fechar personalização do painel' : 'Personalizar painel'} title={customizadorAberto ? 'Fechar personalização' : 'Personalizar painel'} aria-pressed={customizadorAberto} onClick={() => {
           if (!customizadorAberto) setRascunhoPreferencias(preferenciasSalvas);
           setCustomizadorAberto(v => !v);
-        }}>{customizadorAberto ? 'Fechar personalização' : 'Personalizar painel'}</Button>
+        }}><Settings2 className="h-4 w-4" /><span className="sr-only">{customizadorAberto ? 'Fechar personalização' : 'Personalizar painel'}</span></Button>
         {access.financas && <Button asChild variant="outline"><Link to="/financas"><Wallet />Finanças</Link></Button>}
       </div>
     </header>
