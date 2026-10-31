@@ -55,13 +55,13 @@ function hslParaHex(hue: number, saturation: number, lightness: number) {
 
 export function gerarPaletaCoringa(corBase: string): CoresCoringa {
   const base = /^#[0-9a-f]{6}$/i.test(corBase) ? corBase.toLowerCase() : '#22e1ff';
-  const { hue } = matizDaCor(base);
+  const { hue, saturation } = matizDaCor(base);
   const deslocar = (graus: number) => (hue + graus + 360) % 360;
   return {
     background: hslParaHex(hue, 0.16, 0.975),
     card: hslParaHex(hue, 0.1, 0.997),
     foreground: hslParaHex(deslocar(220), 0.2, 0.14),
-    primary: base,
+    primary: hslParaHex(hue, Math.max(0.55, Math.min(saturation, 0.82)), 0.47),
     muted: hslParaHex(hue, 0.17, 0.935),
     'muted-foreground': hslParaHex(deslocar(220), 0.1, 0.42),
     border: hslParaHex(hue, 0.2, 0.84),
@@ -85,7 +85,7 @@ export function visibilidadeValida(valor: unknown): number {
 export function textoDoBotao(cor: string): string {
   const canais = [1, 3, 5].map(i => parseInt(cor.slice(i, i + 2), 16) / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
   const luminancia = (canais[0] ?? 0) * 0.2126 + (canais[1] ?? 0) * 0.7152 + (canais[2] ?? 0) * 0.0722;
-  return luminancia > 0.179 ? 'var(--coringa-foreground)' : 'var(--coringa-card)';
+  return luminancia > 0.179 ? '#182235' : '#ffffff';
 }
 export const TAMANHO_MAXIMO_IMAGEM = 5 * 1024 * 1024;
 const TIPOS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
