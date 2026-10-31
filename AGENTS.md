@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Gasoline funding uses paid cash financial entries with a dedicated destination; Moto expenses live separately, so funding reduces available cash once and only actual expenses count as outflows on the panel.
-- The index dashboard owns financial summaries and finance/Moto history management; finance and Moto routes contain entry forms only, keeping existing payment and permission rules unchanged.
+- The index dashboard is analytical only; Finanças owns entry forms, pending accounts and monthly histories, while Carteiras manages balances and preserves the legacy Moto expense ledger.
 - Grocery insertion paths share the finalized-purchase price selector; historical unit prices are derived from group-scoped purchase history to avoid duplicating price storage.
 - Installments use a shared pure helper and bulk insert preserving cents, monthly dates and selected payment status; gasoline remains a single paid entry.
 - Account administration and delegation use authenticated server functions that revalidate the owner's immutable identity and verified email before listing accounts or privileged writes; the navigation uses the same owner-access check, while user_roles admin checks remain separate for financial permissions to prevent delegated privilege escalation.
@@ -35,3 +35,8 @@
 - Telegram quick actions are service-role-only RPCs validating bound sender/chat and current modules; future boletos are cash pendencies, Moto creates only a Moto expense, and product receipts cannot bypass app review. Row locks prevent double approval.
 - Mobile navigation keeps pointer-drag state separate from menu clicks and clamps the orb to the viewport; dragging must not navigate or open the menu.
 - Dashboard histories share a pure monthly filter and newest-first creation timestamp ordering with Brazilian calendar dates and legacy date fallback; this filter stays independent of balances, analytical periods and pending due-date ordering.
+
+- Wallets are additive group-owned records with nullable references on legacy entries; compatibility account keys and original permissions remain intact, and balances resolve legacy nulls without duplicating Moto funding.
+- Internal transfers are paired journaled debits/credits validated by deferred database reconciliation; benefit, international and goal-linked wallets cannot transfer, and analytics exclude internal flows.
+- Goals reference financial wallets and calculate suggested contributions from projected monthly financial surplus; automatic sources reject international and goal-linked wallets.
+- Daily exchange rates use authenticated server functions, a shared durable cache and a public Frankfurter feed; unavailable rates are explicit and excluded rather than treated as parity.

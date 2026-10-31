@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Bike, Boxes, CalendarClock, Home, LayoutGrid, Shield, ShoppingBasket, Wallet, X, Inbox } from "lucide-react";
+import { Bike, Boxes, CalendarClock, Home, LayoutGrid, Shield, ShoppingBasket, Wallet, X, Inbox, Target } from "lucide-react";
 import { possoAcessarAdmin } from "@/lib/admin.functions";
 import { useGrupo } from "@/lib/grupo";
 import { useAccess } from "@/lib/access-context";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useOrbDrag } from "@/hooks/use-orb-drag";
 
-type Item = { to: "/" | "/financas" | "/contas-fixas" | "/feira" | "/estoque" | "/moto" | "/admin" | "/conferencia"; label: string; icon: typeof Home };
+type Item = { to: "/" | "/financas" | "/contas-fixas" | "/feira" | "/estoque" | "/moto" | "/admin" | "/conferencia" | "/carteiras" | "/metas"; label: string; icon: typeof Home };
 
 function useItens(): Item[] {
   const access = useAccess();
@@ -21,7 +21,8 @@ function useItens(): Item[] {
   if (access.financas) itens.push({ to: "/financas", label: "Finanças", icon: Wallet }, { to: "/contas-fixas", label: "Contas fixas", icon: CalendarClock }, { to: "/conferencia", label: "Conferência", icon: Inbox });
   if (access.feira) itens.push({ to: "/feira", label: "Feira", icon: ShoppingBasket });
   if (access.estoque) itens.push({ to: "/estoque", label: "Estoque", icon: Boxes });
-  if (access.moto) itens.push({ to: "/moto", label: "Moto", icon: Bike });
+  if (access.financas || access.moto) itens.push({ to: "/carteiras", label: "Carteiras", icon: Wallet });
+  if (access.financas) itens.push({ to: "/metas", label: "Metas", icon: Target });
   if (admin) itens.push({ to: "/admin", label: "Admin", icon: Shield });
   return itens;
 }
@@ -29,8 +30,8 @@ function useItens(): Item[] {
 export function DesktopPillNav() {
   const itens = useItens();
   return (
-    <div className="mx-auto hidden max-w-3xl justify-center px-5 py-2 md:flex">
-      <div className="flex items-center gap-0.5 rounded-full border bg-muted/60 p-1 shadow-sm">
+    <div className="mx-auto hidden max-w-6xl justify-center px-5 py-2 md:flex">
+      <div className="flex flex-wrap justify-center items-center gap-0.5 rounded-full border bg-muted/60 p-1 shadow-sm">
         {itens.map(({ to, label, icon: Icon }) => (
           <Link key={to} to={to} activeOptions={{ exact: to === "/" }}
             className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
