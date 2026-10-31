@@ -15,9 +15,9 @@ BEGIN
   END IF;
   IF _valor IS NULL OR _valor <= 0 OR _valor > 9999999999.99
      OR _data IS NULL OR _data < DATE '2000-01-01' OR _data > DATE '2100-12-31'
-     OR length(btrim(_descricao)) NOT BETWEEN 1 AND 200
-     OR _conta NOT IN ('dinheiro', 'alimentacao', 'refeicao')
-     OR length(_categoria) > 100 THEN
+     OR _descricao IS NULL OR length(btrim(_descricao)) NOT BETWEEN 1 AND 200
+     OR _conta IS NULL OR _conta NOT IN ('dinheiro', 'alimentacao', 'refeicao')
+     OR _categoria IS NULL OR length(_categoria) > 100 THEN
     RAISE EXCEPTION 'Revise descrição, valor, data, carteira e categoria';
   END IF;
   UPDATE public.lancamentos
