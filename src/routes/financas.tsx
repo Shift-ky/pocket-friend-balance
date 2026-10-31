@@ -69,14 +69,14 @@ function Index() {
     e.preventDefault();
     if (!access.financas || (gasolina && !access.moto)) return setErro("Você não tem acesso a este lançamento.");
     const v = parseFloat(valor.replace(",", "."));
-    if (!descricao.trim() || !v || v <= 0) return;
+    if (!descricao.trim() || !Number.isFinite(v) || v <= 0) return;
     if (salvando) return;
     if (!confirmando) { setErro(""); setSucesso(""); setConfirmando(true); return; }
     setConfirmando(false);
     setSalvando(true); setErro(""); setSucesso("");
     const dest=carteiras.find(w=>w.id===destinoId);
     if(transferencia && (!wallet||!dest||wallet.id===dest.id||!aceitaTransferencia(wallet,metas)||!aceitaTransferencia(dest,metas))){setSalvando(false);return setErro('Escolha duas carteiras elegíveis diferentes.');}
-    const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
+    const c = gasolina ? "dinheiro" : wallet ? contaLegada(wallet) : conta;
     const pagamento = gasolina ? true : tipo === "debito" ? pago : tipo === "credito";
     let registros: import("@/integrations/supabase/types").TablesInsert<"lancamentos">[];
     try {

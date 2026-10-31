@@ -1,8 +1,9 @@
 # Roadmap
-- [ ] Reorganizar Finanças: formulário recolhido, pendências abertas e histórico mensal; Painel exclusivamente analítico.
-- [ ] Migrar Moto para Carteiras sem perder históricos; cadastro, flags, moedas e transferências conciliadas com travas.
-- [ ] Integrar carteiras elegíveis à Feira e Contas Fixas, preservando offline e regras existentes.
-- [ ] Criar Metas e provisão mensal, saldos separados e gráficos analíticos; validar fluxos autenticados e testes.
+- [x] Reorganizar Finanças: formulário recolhido, pendências abertas e histórico mensal; Painel exclusivamente analítico.
+- [x] Migrar Moto para Carteiras sem perder históricos; cadastro, flags, moedas e transferências conciliadas com travas.
+- [x] Integrar carteiras elegíveis à Feira e Contas Fixas, preservando offline e regras existentes.
+- [x] Criar Metas e provisão mensal, saldos separados e gráficos analíticos; transferência real de R$ 0,01 e exclusão do par conferidas, 58 testes das regras aprovados e gráficos/celular sem erros.
+- [ ] Verificar cadastro/edição de carteira e meta e cotação na interface; testes de cálculo e cotação diária implementados, ainda falta conferência completa destes cadastros.
 - [x] Webhook sem erros de entrega; segredo correto retorna 200 e ausência de segredo 401 na prévia e publicação; /start responde para conta vinculada e oferece vinculação para conta sem vínculo. Carteiras e Salvar Pendência implementados com validação atômica; teste real do clique depende de vincular novamente e publicar.
 - [x] Cupons completos com preços, estoque associado, novo produto opcional e memória De/Para; compra paga, estoque e débito aprovados atomicamente. Conferidos débito 32,50, novo produto 0,75 e item sem estoque; segunda compra somou 2 ao produto existente, sugestão automática apareceu no próximo cupom.
 - [x] Trinta testes aprovados; extração inteligente de duas unidades e 0,75 kg a R$ 10,00, compra/estoque relidos na interface, repetição simultânea sem duplicação, chamada de aprovação rápida negada ao navegador, celular sem corte; dados temporários removidos.
