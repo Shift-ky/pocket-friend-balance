@@ -1,5 +1,5 @@
 export type ContaFixa = {
-  id: string; grupo_id: string; descricao: string; modalidade: 'credito' | 'debito' | 'gasolina';
+  id: string; grupo_id: string; carteira_id?:string|null; descricao: string; modalidade: 'credito' | 'debito' | 'gasolina';
   conta: 'dinheiro' | 'alimentacao' | 'refeicao'; valor: number; dia: number; inicio: string; fim: string | null; ativa: boolean;
 };
 export const carteirasFixas = { dinheiro: 'Dinheiro', alimentacao: 'Alimentação', refeicao: 'Refeição' } as const;

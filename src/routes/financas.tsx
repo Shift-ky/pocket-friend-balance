@@ -78,7 +78,7 @@ function Index() {
     if(transferencia && (!wallet||!dest||wallet.id===dest.id||!aceitaTransferencia(wallet,metas)||!aceitaTransferencia(dest,metas))){setSalvando(false);return setErro('Escolha duas carteiras elegíveis diferentes.');}
     const c = gasolina ? "dinheiro" : tipo === "credito" || tipo === "debito" ? conta : "dinheiro";
     const pagamento = gasolina ? true : tipo === "debito" ? pago : tipo === "credito";
-    let registros;
+    let registros: import("@/integrations/supabase/types").TablesInsert<"lancamentos">[];
     try {
       if(transferencia && wallet && dest){const tid=crypto.randomUUID();registros=[{grupo_id:grupo.id,tipo:'debito' as const,descricao:descricao.trim(),valor:v,data,conta:contaLegada(wallet),pago:true,carteira_id:wallet.id,transferencia_id:tid,categoria:'Transferência interna'},{grupo_id:grupo.id,tipo:'credito' as const,descricao:descricao.trim(),valor:v,data,conta:contaLegada(dest),pago:true,carteira_id:dest.id,transferencia_id:tid,categoria:'Transferência interna'}];}
       else registros = parcelarLancamento({ grupo_id: grupo.id, tipo, descricao: descricao.trim(), valor: v, data, conta: c, pago: pagamento, carteira_id:gasolina?null:wallet?.id??null,categoria, ...(gasolina ? movimentacaoGasolina(v) : {}) }, gasolina||wallet?.moeda!=='BRL'?1:Number(parcelas));
