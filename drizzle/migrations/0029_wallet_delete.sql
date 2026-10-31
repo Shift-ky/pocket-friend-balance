@@ -1,0 +1,11 @@
+GRANT DELETE ON TABLE public.carteiras TO authenticated;
+
+CREATE POLICY wallet_delete
+ON public.carteiras
+FOR DELETE
+TO authenticated
+USING (
+  public.e_membro(grupo_id)
+  AND public.module_access('financas')
+  AND legado IS NULL
+);
