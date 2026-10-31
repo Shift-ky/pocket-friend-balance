@@ -232,6 +232,13 @@
       "when": 1793442532734,
       "tag": "0032_painel_manual_order",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793445000000,
+      "tag": "0033_wallet_offline_sync_allowlist",
+      "breakpoints": true
     }
   ]
 }
