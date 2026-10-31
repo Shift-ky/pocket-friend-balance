@@ -10,6 +10,7 @@ import { CategoriasChart, CarteirasChart, FluxoChart } from '@/components/painel
 import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
 import { useCarteiras } from '@/hooks/use-carteiras';
 import { useAccess } from '@/lib/access-context';
+import { ExportPocket } from '@/components/export-pocket';
 import { moeda, resumoCarteiras, movimentosAnaliticos, termometro, progressoMeta, saldoCarteira, valorEmReais } from '@/lib/carteiras';
 import { fluxoMensal, type LancamentoPainel } from '@/lib/painel';
 import { normalizarPreferenciasPainel, PREFERENCIAS_PADRAO_PAINEL, FONTES_WIDGET, type AlturaCartaoPainel, type PreferenciasPainel, type SecaoPainel, type WidgetPainel } from '@/lib/painel-preferencias';
@@ -226,6 +227,13 @@ function Painel() {
         {access.financas && <Button asChild variant="outline"><Link to="/financas"><Wallet />Finanças</Link></Button>}
       </div>
     </header>
+
+    <section className="mb-6 rounded-xl border bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="font-semibold">Levar seus dados ao MAR IA</h2><p className="text-sm text-muted-foreground">Crie uma cópia dos dados deste grupo para importar no outro aplicativo. O Pocket Friends permanece intacto.</p></div>
+        <ExportPocket />
+      </div>
+    </section>
 
     <Dialog open={customizadorAberto} onOpenChange={open => {
       setCustomizadorAberto(open);
