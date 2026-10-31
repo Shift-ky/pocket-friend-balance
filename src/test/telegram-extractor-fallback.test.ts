@@ -25,7 +25,7 @@ it('envia o documento à OpenAI e normaliza os campos extraídos', async () => {
   const options = request.mock.calls[0]![1] as RequestInit;
   const body = JSON.parse(String(options.body));
   expect(body.store).toBe(false);
-  expect(body.model).toBe('gpt-6.1-terra');
+  expect(body.model).toBe('gpt-6-luna');
   expect(body.input[0].content[0].type).toBe('input_file');
   expect(body.text.format.strict).toBe(true);
   expect(result.valor).toBe(12.35);
