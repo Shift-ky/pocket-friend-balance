@@ -149,9 +149,13 @@ function Painel() {
     const heightLevel = widget.altura === 'alta' ? 3 : widget.altura === 'media' ? 2 : 1;
     const scale = Math.min(4, Math.max(width, heightLevel)) as 1 | 2 | 3 | 4;
     const style = escalaConteudo[scale];
+    const titleStyle = { fontSize: 'clamp(0.875rem, 4cqi, 1.25rem)' };
+    const valueStyle = { fontSize: 'clamp(1.25rem, 9cqi, 3rem)' };
+    const detailStyle = { fontSize: 'clamp(0.6875rem, 3cqi, 0.875rem)' };
+    const iconStyle = { width: 'clamp(1rem, 4cqi, 1.5rem)', height: 'clamp(1rem, 4cqi, 1.5rem)' };
     const span = classesLargura[width];
     const title = widget.titulo.trim() || source.nome;
-    const article = `flex min-w-0 flex-col rounded-xl border bg-card ${style.padding} ${span} ${classesAltura[widget.altura]} ${widget.altura === 'alta' ? 'justify-between' : ''}`;
+    const article = `flex min-w-0 flex-col rounded-xl border bg-card p-3 sm:p-4 ${span} ${classesAltura[widget.altura]} ${widget.altura === 'alta' ? 'justify-between' : ''}`;
 
     if (['patrimonio', 'financeiro', 'beneficios', 'poupanca', 'entradas_mes', 'saidas_pagas_mes', 'contas_pendentes_mes', 'previsao_sobra', 'sobra_financeira'].includes(widget.fonte)) {
       const metrics: Record<string, { value: number; Icon: typeof Layers; detail: string; color?: string }> = {
@@ -166,38 +170,38 @@ function Painel() {
         sobra_financeira: { value: mes.livre, Icon: Wallet, detail: `Variação financeira · ${month}`, color: mes.livre >= 0 ? 'text-primary' : 'text-debit' },
       };
       const metric = metrics[widget.fonte];
-      return <article key={widget.id} className={article}>
-        <div className="flex items-start justify-between gap-2"><h2 className={`min-w-0 break-words font-medium ${style.title}`}>{title}</h2><metric.Icon className={`shrink-0 ${style.icon} ${metric.color ?? ''}`} /></div>
-        <p className={`mt-auto break-words pt-4 font-display font-bold leading-tight ${style.value} ${metric.color ?? ''}`}>{moeda(metric.value)}</p>
-        <p className={`opacity-75 ${style.detail}`}>{metric.detail}</p>
+      return <article key={widget.id} className={article} style={{ containerType: 'inline-size' }}>
+        <div className="flex items-start justify-between gap-2"><h2 className={`min-w-0 break-words font-medium ${style.title}`} style={titleStyle}>{title}</h2><metric.Icon className={`shrink-0 ${style.icon} ${metric.color ?? ''}`} style={iconStyle} /></div>
+        <p className={`mt-auto break-words pt-4 font-display font-bold leading-tight ${style.value} ${metric.color ?? ''}`} style={valueStyle}>{moeda(metric.value)}</p>
+        <p className={`opacity-75 ${style.detail}`} style={detailStyle}>{metric.detail}</p>
       </article>;
     }
 
-    if (widget.fonte === 'meta_ativa') return <article key={widget.id} className={`${article} justify-start`}>
-      <div className="flex items-start justify-between gap-2"><h2 className={`font-medium ${style.title}`}>{title}</h2><Target className={`shrink-0 ${style.icon} text-primary`} /></div>
+    if (widget.fonte === 'meta_ativa') return <article key={widget.id} className={`${article} justify-start`} style={{ containerType: 'inline-size' }}>
+      <div className="flex items-start justify-between gap-2"><h2 className={`font-medium ${style.title}`} style={titleStyle}>{title}</h2><Target className={`shrink-0 ${style.icon} text-primary`} style={iconStyle} /></div>
       {goal && goalWallet && goalProgress ? <>
-        <p className={`mt-5 break-words font-display font-semibold ${style.title}`}>{goal.nome}</p>
-        <p className={`mt-1 break-words text-muted-foreground ${style.detail}`}>{goalWallet.nome} · Alvo de {moeda(Number(goal.valor_alvo), goalWallet.moeda)}</p>
+        <p className={`mt-5 break-words font-display font-semibold ${style.title}`} style={titleStyle}>{goal.nome}</p>
+        <p className={`mt-1 break-words text-muted-foreground ${style.detail}`} style={detailStyle}>{goalWallet.nome} · Alvo de {moeda(Number(goal.valor_alvo), goalWallet.moeda)}</p>
         <progress aria-label="Progresso da meta ativa" value={goalProgress.percentual} max={100} className="mt-4 h-3 w-full accent-primary" />
-        <div className={`mt-2 flex flex-wrap justify-between gap-2 ${style.detail}`}><span>{moeda(goalProgress.guardado, goalWallet.moeda)} guardado</span><strong className="text-primary">{goalProgress.percentual.toFixed(0)}%</strong></div>
-        <p className={`mt-auto pt-3 text-credit ${style.detail}`}>Aporte sugerido: {moeda(goalProgress.aporte, goalWallet.moeda)}</p>
+        <div className={`mt-2 flex flex-wrap justify-between gap-2 ${style.detail}`} style={detailStyle}><span>{moeda(goalProgress.guardado, goalWallet.moeda)} guardado</span><strong className="text-primary">{goalProgress.percentual.toFixed(0)}%</strong></div>
+        <p className={`mt-auto pt-3 text-credit ${style.detail}`} style={detailStyle}>Aporte sugerido: {moeda(goalProgress.aporte, goalWallet.moeda)}</p>
       </> : <p className="mt-5 text-sm text-muted-foreground">{access.financas ? 'Nenhuma meta ativa nas carteiras visíveis.' : 'Sem acesso ao módulo Finanças.'}</p>}
       {access.financas && <Button asChild variant="link" size="sm" className="mt-2 w-fit px-0"><Link to="/metas">Ver metas →</Link></Button>}
     </article>;
 
-    if (widget.fonte === 'gastos_categoria') return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`}>
-      <h2 className={`mb-3 font-medium ${style.title}`}>{title}</h2>
+    if (widget.fonte === 'gastos_categoria') return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`} style={{ containerType: 'inline-size' }}>
+      <h2 className={`mb-3 font-medium ${style.title}`} style={titleStyle}>{title}</h2>
       {access.financas ? <CategoriasChart dados={categorias} tipo={widget.grafico === 'pizza' || widget.grafico === 'barras' ? widget.grafico : 'rosca'} /> : <p className="py-8 text-sm text-muted-foreground">Sem acesso ao módulo Finanças.</p>}
     </article>;
 
-    if (widget.fonte === 'fluxo_mensal') return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`}>
-      <h2 className={`mb-3 font-medium ${style.title}`}>{title}</h2>
+    if (widget.fonte === 'fluxo_mensal') return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`} style={{ containerType: 'inline-size' }}>
+      <h2 className={`mb-3 font-medium ${style.title}`} style={titleStyle}>{title}</h2>
       {access.financas ? <FluxoChart dados={dadosFluxo} tipo={widget.grafico === 'linhas' || widget.grafico === 'area' ? widget.grafico : 'barras'} /> : <p className="py-8 text-sm text-muted-foreground">Sem acesso ao módulo Finanças.</p>}
       <div className="mt-2 flex justify-center gap-5 text-xs"><span className="text-credit">Entradas</span><span className="text-debit">Saídas pagas</span></div>
     </article>;
 
-    return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`}>
-      <h2 className={`mb-3 font-medium ${style.title}`}>{title}</h2>
+    return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`} style={{ containerType: 'inline-size' }}>
+      <h2 className={`mb-3 font-medium ${style.title}`} style={titleStyle}>{title}</h2>
       {access.financas ? <CarteirasChart dados={saldosCarteiras} /> : <p className="py-8 text-sm text-muted-foreground">Sem acesso ao módulo Finanças.</p>}
     </article>;
   }
