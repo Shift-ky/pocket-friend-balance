@@ -1,13 +1,13 @@
 export const TEMAS = [
-  { id: 'original', nome: 'Original' },
-  { id: 'light', nome: 'Claro' },
-  { id: 'dark', nome: 'Noturno' },
-  { id: 'rose', nome: 'Rosé' },
-  { id: 'elegante', nome: 'Elegante' },
-  { id: 'lavanda', nome: 'Lavanda' },
-  { id: 'sage', nome: 'Sálvia' },
-  { id: 'praia', nome: 'Praia' },
-  { id: 'alegre', nome: 'Alegre' },
+  { id: 'original', nome: 'Original', descricao: 'Clássico e marcante' },
+  { id: 'light', nome: 'Claro', descricao: 'Leve e minimalista' },
+  { id: 'dark', nome: 'Noturno', descricao: 'Escuro e confortável' },
+  { id: 'rose', nome: 'Rosé', descricao: 'Delicado e acolhedor' },
+  { id: 'elegante', nome: 'Elegante', descricao: 'Neutros com toque dourado' },
+  { id: 'lavanda', nome: 'Lavanda', descricao: 'Suave e criativo' },
+  { id: 'sage', nome: 'Sálvia', descricao: 'Natural e sereno' },
+  { id: 'praia', nome: 'Praia', descricao: 'Fresco e descontraído' },
+  { id: 'alegre', nome: 'Alegre', descricao: 'Colorido e vibrante' },
 ] as const;
 export type Tema = (typeof TEMAS)[number]['id'];
 export const CORES_CORINGA = [
