@@ -15,7 +15,10 @@ export function applyCommand(tables: LocalState['tables'], command: Command) {
   } else if (command.action === 'delete') {
     tables[command.table] = rows.filter(r => !ids.has(String(r.id)));
   } else {
-    tables[command.table] = rows.map(r => ({ ...r, ordem: (command.ids ?? []).indexOf(String(r.id)) + 1 }));
+    tables[command.table] = rows.map(r => {
+      const position = (command.ids ?? []).indexOf(String(r.id));
+      return position < 0 ? r : { ...r, ordem: position + 1 };
+    });
   }
 }
 
