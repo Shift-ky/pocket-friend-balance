@@ -39,4 +39,5 @@
 - Wallets are additive group-owned records with nullable references on legacy entries; compatibility account keys and original permissions remain intact, and balances resolve legacy nulls without duplicating Moto funding.
 - Internal transfers are paired journaled debits/credits validated by deferred database reconciliation; benefit, international and goal-linked wallets cannot transfer, and analytics exclude internal flows.
 - Goals reference financial wallets and calculate suggested contributions from projected monthly financial surplus; automatic sources reject international and goal-linked wallets.
-- Daily exchange rates use authenticated server functions, a shared durable cache and a public Frankfurter feed; unavailable rates are explicit and excluded rather than treated as parity.
+- Rates use authenticated functions, daily caching and Frankfurter; missing rates are excluded.
+- History edits preserve wallet keys; Telegram edits use its existing RPC; Moto stays in its ledger.
