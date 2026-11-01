@@ -17,8 +17,8 @@ export type WidgetPainel = {
   titulo: string;
   largura: LarguraCartaoPainel;
   altura: AlturaCartaoPainel;
-  grafico?: TipoGraficoCategorias | TipoGraficoFluxo;
-  cor?: string;
+  grafico?: TipoGraficoCategorias | TipoGraficoFluxo | undefined;
+  cor?: string | undefined;
 };
 export type SecaoPainel = {
   id: string;
@@ -100,55 +100,56 @@ const corValida = (value: unknown): value is string => typeof value === "string"
 function normalizarWidget(value: unknown, index: number): WidgetPainel | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;
-  if (!fonteValida(raw.fonte)) return null;
-  const fonte = raw.fonte;
-  const source = FONTES_WIDGET.find(item => item.id === fonte)!;
-  const titulo = typeof raw.titulo === "string" ? raw.titulo.slice(0, 60) : source.nome;
-  const altura = raw.altura === "media" || raw.altura === "alta" ? raw.altura : "compacta";
+  if (!fonteValida(raw['fonte'])) return null;
+  const fonte = raw['fonte'];
+  const source = FONTES_WIDGET.find(item => item.id === fonte);
+  if (!source) return null;
+  const titulo = typeof raw['titulo'] === "string" ? raw['titulo'].slice(0, 60) : source.nome;
+  const altura = raw['altura'] === "media" || raw['altura'] === "alta" ? raw['altura'] : "compacta";
   let grafico: WidgetPainel["grafico"];
-  if (fonte === "gastos_categoria") grafico = raw.grafico === "pizza" || raw.grafico === "barras" ? raw.grafico : "rosca";
-  if (fonte === "fluxo_mensal") grafico = raw.grafico === "linhas" || raw.grafico === "area" ? raw.grafico : "barras";
+  if (fonte === "gastos_categoria") grafico = raw['grafico'] === "pizza" || raw['grafico'] === "barras" ? raw['grafico'] : "rosca";
+  if (fonte === "fluxo_mensal") grafico = raw['grafico'] === "linhas" || raw['grafico'] === "area" ? raw['grafico'] : "barras";
   return {
-    id: typeof raw.id === "string" && raw.id ? raw.id.slice(0, 80) : `widget-${index}`,
+    id: typeof raw['id'] === "string" && raw['id'] ? raw['id'].slice(0, 80) : `widget-${index}`,
     fonte,
     titulo,
-    largura: isWidth(raw.largura) ? raw.largura : 1,
+    largura: isWidth(raw['largura']) ? raw['largura'] : 1,
     altura,
     ...(grafico ? { grafico } : {}),
-    ...(corValida(raw.cor) ? { cor: raw.cor.toLowerCase() } : {}),
+    ...(corValida(raw['cor']) ? { cor: raw['cor'].toLowerCase() } : {}),
   };
 }
 
 function normalizarDashboard(value: unknown, index: number): DashboardPainel | null {
   if (!value || typeof value !== "object") return null;
   const raw = value as Record<string, unknown>;
-  const sections = Array.isArray(raw.secoes) ? raw.secoes : [];
+  const sections = Array.isArray(raw['secoes']) ? raw['secoes'] : [];
   const secoes = sections.flatMap((section, sectionIndex) => {
     if (!section || typeof section !== "object") return [];
     const sectionRaw = section as Record<string, unknown>;
-    const widgets = Array.isArray(sectionRaw.widgets) ? sectionRaw.widgets : [];
+    const widgets = Array.isArray(sectionRaw['widgets']) ? sectionRaw['widgets'] : [];
     return [{
-      id: typeof sectionRaw.id === "string" && sectionRaw.id ? sectionRaw.id.slice(0, 80) : `secao-${index}-${sectionIndex}`,
-      nome: (typeof sectionRaw.nome === "string" && sectionRaw.nome.trim() ? sectionRaw.nome : `Seção ${sectionIndex + 1}`).slice(0, 60),
-      colunas: isWidth(sectionRaw.colunas) ? sectionRaw.colunas : 2,
+      id: typeof sectionRaw['id'] === "string" && sectionRaw['id'] ? sectionRaw['id'].slice(0, 80) : `secao-${index}-${sectionIndex}`,
+      nome: (typeof sectionRaw['nome'] === "string" && sectionRaw['nome'].trim() ? sectionRaw['nome'] : `Seção ${sectionIndex + 1}`).slice(0, 60),
+      colunas: isWidth(sectionRaw['colunas']) ? sectionRaw['colunas'] : 2,
       widgets: widgets.map((item, itemIndex) => normalizarWidget(item, itemIndex)).filter((item): item is WidgetPainel => item !== null),
     }];
   });
   return {
-    id: typeof raw.id === "string" && raw.id ? raw.id.slice(0, 80) : `dashboard-${index}`,
-    nome: (typeof raw.nome === "string" && raw.nome.trim() ? raw.nome : `Dashboard ${index + 1}`).slice(0, 60),
+    id: typeof raw['id'] === "string" && raw['id'] ? raw['id'].slice(0, 80) : `dashboard-${index}`,
+    nome: (typeof raw['nome'] === "string" && raw['nome'].trim() ? raw['nome'] : `Dashboard ${index + 1}`).slice(0, 60),
     secoes,
   };
 }
 
 function migrarFormatoAntigo(raw: Record<string, unknown>): DashboardPainel {
-  const visible = raw.blocosVisiveis && typeof raw.blocosVisiveis === "object" ? raw.blocosVisiveis as Record<string, unknown> : {};
-  const visibleCards = raw.caixasVisiveis && typeof raw.caixasVisiveis === "object" ? raw.caixasVisiveis as Record<string, unknown> : {};
-  const widths = raw.largurasCaixas && typeof raw.largurasCaixas === "object" ? raw.largurasCaixas as Record<string, unknown> : {};
-  const heights = raw.alturasCaixas && typeof raw.alturasCaixas === "object" ? raw.alturasCaixas as Record<string, unknown> : {};
-  const oldSizes = raw.tamanhosCaixas && typeof raw.tamanhosCaixas === "object" ? raw.tamanhosCaixas as Record<string, unknown> : {};
+  const visible = raw['blocosVisiveis'] && typeof raw['blocosVisiveis'] === "object" ? raw['blocosVisiveis'] as Record<string, unknown> : {};
+  const visibleCards = raw['caixasVisiveis'] && typeof raw['caixasVisiveis'] === "object" ? raw['caixasVisiveis'] as Record<string, unknown> : {};
+  const widths = raw['largurasCaixas'] && typeof raw['largurasCaixas'] === "object" ? raw['largurasCaixas'] as Record<string, unknown> : {};
+  const heights = raw['alturasCaixas'] && typeof raw['alturasCaixas'] === "object" ? raw['alturasCaixas'] as Record<string, unknown> : {};
+  const oldSizes = raw['tamanhosCaixas'] && typeof raw['tamanhosCaixas'] === "object" ? raw['tamanhosCaixas'] as Record<string, unknown> : {};
   const defaultBlocks = ["saldos", "termometro", "meta", "categorias", "fluxo"] as const;
-  const inputOrder = Array.isArray(raw.ordemBlocos) ? raw.ordemBlocos.filter((id): id is PainelBlocoId => typeof id === "string" && defaultBlocks.includes(id as PainelBlocoId)) : [];
+  const inputOrder = Array.isArray(raw['ordemBlocos']) ? raw['ordemBlocos'].filter((id): id is PainelBlocoId => typeof id === "string" && defaultBlocks.includes(id as PainelBlocoId)) : [];
   const order = [...new Set(inputOrder), ...defaultBlocks.filter(id => !inputOrder.includes(id))];
   const walletWidgets = ORDEM_PADRAO_PAINEL.flatMap(id => {
     if (visibleCards[id] === false) return [];
@@ -159,15 +160,15 @@ function migrarFormatoAntigo(raw: Record<string, unknown>): DashboardPainel {
     return [widget(`saldo-${id}`, id, name, width, height)];
   });
   const mapping: Record<PainelBlocoId, SecaoPainel | null> = {
-    saldos: visible.saldos === false ? null : { id: "resumo", nome: "Saldos", colunas: 4, widgets: walletWidgets },
-    termometro: visible.termometro === false ? null : { id: "mes", nome: "Mês selecionado", colunas: 3, widgets: [
+    saldos: visible['saldos'] === false ? null : { id: "resumo", nome: "Saldos", colunas: 4, widgets: walletWidgets },
+    termometro: visible['termometro'] === false ? null : { id: "mes", nome: "Mês selecionado", colunas: 3, widgets: [
       widget("mes-entradas", "entradas_mes", "Entradas", 1, "compacta"),
       widget("mes-saidas", "saidas_pagas_mes", "Saídas pagas", 1, "compacta"),
       widget("mes-sobra", "previsao_sobra", "Previsão de sobra", 1, "compacta"),
     ] },
-    meta: visible.meta === false ? null : { id: "objetivo", nome: "Meta", colunas: 2, widgets: [widget("meta-ativa", "meta_ativa", "Meta ativa", 2, "media")] },
-    categorias: visible.categorias === false ? null : { id: "categorias", nome: "Análise por categoria", colunas: 2, widgets: [widget("grafico-categorias", "gastos_categoria", "Gastos por categoria", 1, "alta", raw.graficoCategorias === "pizza" || raw.graficoCategorias === "barras" ? raw.graficoCategorias : "rosca")] },
-    fluxo: visible.fluxo === false ? null : { id: "fluxo", nome: "Fluxo mensal", colunas: 2, widgets: [widget("grafico-fluxo", "fluxo_mensal", "Entradas vs. saídas", 1, "alta", raw.graficoFluxo === "linhas" || raw.graficoFluxo === "area" ? raw.graficoFluxo : "barras")] },
+    meta: visible['meta'] === false ? null : { id: "objetivo", nome: "Meta", colunas: 2, widgets: [widget("meta-ativa", "meta_ativa", "Meta ativa", 2, "media")] },
+    categorias: visible['categorias'] === false ? null : { id: "categorias", nome: "Análise por categoria", colunas: 2, widgets: [widget("grafico-categorias", "gastos_categoria", "Gastos por categoria", 1, "alta", raw['graficoCategorias'] === "pizza" || raw['graficoCategorias'] === "barras" ? raw['graficoCategorias'] : "rosca")] },
+    fluxo: visible['fluxo'] === false ? null : { id: "fluxo", nome: "Fluxo mensal", colunas: 2, widgets: [widget("grafico-fluxo", "fluxo_mensal", "Entradas vs. saídas", 1, "alta", raw['graficoFluxo'] === "linhas" || raw['graficoFluxo'] === "area" ? raw['graficoFluxo'] : "barras")] },
   };
   const secoes: SecaoPainel[] = [];
   let analiseAdicionada = false;
@@ -187,9 +188,9 @@ function migrarFormatoAntigo(raw: Record<string, unknown>): DashboardPainel {
 
 export function normalizarPreferenciasPainel(value: unknown): PreferenciasPainel {
   const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const dashboardsRaw = Array.isArray(raw.dashboards) ? raw.dashboards : [migrarFormatoAntigo(raw)];
+  const dashboardsRaw = Array.isArray(raw['dashboards']) ? raw['dashboards'] : [migrarFormatoAntigo(raw)];
   const dashboards = dashboardsRaw.map((item, index) => normalizarDashboard(item, index)).filter((item): item is DashboardPainel => item !== null);
   const valid = dashboards.length ? dashboards : [dashboardPadrao()];
-  const dashboardAtualId = typeof raw.dashboardAtualId === "string" && valid.some(dash => dash.id === raw.dashboardAtualId) ? raw.dashboardAtualId : valid[0].id;
+  const dashboardAtualId = typeof raw['dashboardAtualId'] === "string" && valid.some(dash => dash.id === raw['dashboardAtualId']) ? raw['dashboardAtualId'] : (valid[0]?.id ?? "principal");
   return { dashboards: valid, dashboardAtualId };
 }

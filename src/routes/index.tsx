@@ -111,7 +111,7 @@ function Painel() {
   const cores = ['var(--primary)', 'var(--credit)', 'var(--debit)', 'var(--saved)', 'var(--muted-foreground)'];
   const saldosCarteiras = carteiras.filter(wallet => wallet.no_painel).flatMap((wallet, index) => {
     const value = valorEmReais(wallet, saldoCarteira(wallet, linhas, moto), cotacoes);
-    return value === null ? [] : [{ nome: wallet.nome, valor: value, cor: cores[index % cores.length] }];
+    return value === null ? [] : [{ nome: wallet.nome, valor: value, cor: cores[index % cores.length] ?? 'var(--primary)' }];
   });
   const dadosFluxo = fluxoMensal(movimentos);
   const hojeMes = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo' }).format(new Date()).slice(0, 7);
@@ -145,7 +145,8 @@ function Painel() {
   }
 
   function renderWidget(widget: WidgetPainel, section: SecaoPainel): ReactNode {
-    const source = FONTES_WIDGET.find(item => item.id === widget.fonte)!;
+    const source = FONTES_WIDGET.find(item => item.id === widget.fonte);
+    if (!source) return null;
     const width = Math.max(1, Math.min(section.colunas, widget.largura)) as 1 | 2 | 3 | 4;
     const heightLevel = widget.altura === 'alta' ? 3 : widget.altura === 'media' ? 2 : 1;
     const scale = Math.min(4, Math.max(width, heightLevel)) as 1 | 2 | 3 | 4;
@@ -172,6 +173,7 @@ function Painel() {
         sobra_financeira: { value: mes.livre, Icon: Wallet, detail: `Variação financeira · ${month}`, color: mes.livre >= 0 ? 'text-primary' : 'text-debit' },
       };
       const metric = metrics[widget.fonte];
+      if (!metric) return null;
       return <article key={widget.id} className={article} style={cardStyle}>
         <div className="flex items-start justify-between gap-2"><h2 className={`min-w-0 break-words font-medium ${style.title}`} style={titleStyle}>{title}</h2><metric.Icon className={`shrink-0 ${style.icon} ${metric.color ?? ''}`} style={iconStyle} /></div>
         <p className={`mt-auto break-words pt-2 font-display font-bold leading-tight sm:pt-4 ${style.value} ${metric.color ?? ''}`} style={valueStyle}>{moeda(metric.value)}</p>
@@ -191,7 +193,7 @@ function Painel() {
       {access.financas && <Button asChild variant="link" size="sm" className="mt-2 w-fit px-0"><Link to="/metas">Ver metas →</Link></Button>}
     </article>;
 
-    if (widget.fonte === 'gastos_categoria') return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`} style={{ containerType: 'inline-size' }}>
+    if (widget.fonte === 'gastos_categoria') return <article key={widget.id} className={`${article} !justify-start text-left`} style={{ containerType: 'inline-size' }}>
       <h2 className={`mb-3 font-medium ${style.title}`} style={titleStyle}>{title}</h2>
       {access.financas ? <CategoriasChart dados={categorias} tipo={widget.grafico === 'pizza' || widget.grafico === 'barras' ? widget.grafico : 'rosca'} /> : <p className="py-8 text-sm text-muted-foreground">Sem acesso ao módulo Finanças.</p>}
     </article>;
@@ -209,6 +211,7 @@ function Painel() {
   }
 
   const activeDashboard = dashboard ?? PREFERENCIAS_PADRAO_PAINEL.dashboards[0];
+  if (!activeDashboard) return null;
 
   return <main className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">

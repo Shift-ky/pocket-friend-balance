@@ -15,8 +15,8 @@ function move<T>(items: T[], index: number, delta: -1 | 1) {
   const destination = Math.max(0, Math.min(items.length - 1, index + delta));
   if (destination === index) return items;
   const next = [...items];
-  [next[index], next[destination]] = [next[destination], next[index]];
-  return next;
+  return next.map((item, position) => position === index ? items[destination] ?? item : position === destination ? items[index] ?? item : item);
+
 }
 
 function fontePadrao(fonte: FonteWidgetPainel): WidgetPainel["grafico"] {
@@ -34,11 +34,11 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
   onSave: () => void;
   onCancel: () => void;
 }) {
-  const dashboard = value.dashboards.find(item => item.id === value.dashboardAtualId) ?? value.dashboards[0];
+  const dashboard = value.dashboards.find(item => item.id === value.dashboardAtualId) ?? value.dashboards[0] ?? PREFERENCIAS_PADRAO_PAINEL.dashboards[0];
   if (!dashboard) return null;
 
   function updateDashboard(updater: (current: DashboardPainel) => DashboardPainel) {
-    onChange({ ...value, dashboards: value.dashboards.map(item => item.id === dashboard.id ? updater(item) : item) });
+    onChange({ ...value, dashboards: value.dashboards.map(item => item.id === dashboard?.id ? updater(item) : item) });
   }
   function updateSection(sectionId: string, updater: (section: SecaoPainel) => SecaoPainel) {
     updateDashboard(current => ({ ...current, secoes: current.secoes.map(section => section.id === sectionId ? updater(section) : section) }));
@@ -56,7 +56,7 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
     });
   }
   function addSection() {
-    const index = dashboard.secoes.length + 1;
+    const index = (dashboard?.secoes.length ?? 0) + 1;
     updateDashboard(current => ({ ...current, secoes: [...current.secoes, { id: novoIdPainel("secao"), nome: `Seção ${index}`, colunas: 2, widgets: [] }] }));
   }
   function addWidget(section: SecaoPainel) {
@@ -66,8 +66,8 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
   }
   function deleteDashboard() {
     if (value.dashboards.length <= 1) return;
-    const dashboards = value.dashboards.filter(item => item.id !== dashboard.id);
-    onChange({ ...value, dashboards, dashboardAtualId: dashboards[0].id });
+    const dashboards = value.dashboards.filter(item => item.id !== dashboard?.id);
+    onChange({ ...value, dashboards, dashboardAtualId: dashboards[0]?.id ?? value.dashboardAtualId });
   }
 
   return <section className="mb-8 space-y-6 rounded-xl border bg-card p-4 sm:p-6" aria-labelledby="painel-custom-title">
@@ -101,7 +101,8 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
           {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="space-y-2"><div className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_120px_auto] lg:items-end">
             <label className="text-xs text-muted-foreground">O que esta caixa mostra<select aria-label="Indicador da caixa" value={widget.fonte} onChange={event => {
               const fonte = event.target.value as FonteWidgetPainel;
-              const source = FONTES_WIDGET.find(item => item.id === fonte)!;
+              const source = FONTES_WIDGET.find(item => item.id === fonte);
+              if (!source) return;
               updateWidget(section.id, widget.id, current => ({ ...current, fonte, titulo: source.nome, grafico: fontePadrao(fonte) }));
             }} className={`${field} mt-1`}>{["Saldos", "Finanças", "Metas", "Gráficos"].map(group => <optgroup key={group} label={group}>{FONTES_WIDGET.filter(source => source.grupo === group).map(source => <option key={source.id} value={source.id}>{source.nome}</option>)}</optgroup>)}</select><span className="mt-1 block">{FONTES_WIDGET.find(source => source.id === widget.fonte)?.descricao}</span></label>
             <label className="text-xs text-muted-foreground">Título da caixa<input aria-label="Título da caixa" maxLength={60} value={widget.titulo} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, titulo: event.target.value }))} className={`${field} mt-1`} /></label>
@@ -127,6 +128,7 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
             </div>
           </div>
         </div>)}
+        </div>
         <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => addWidget(section)}><Plus />Adicionar caixa</Button>
       </section>)}
     </div>
@@ -134,7 +136,7 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
       <Button type="button" variant="outline" size="sm" disabled={saving} onClick={addSection}><Plus />Adicionar seção</Button>
       <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => {
         const padrao = PREFERENCIAS_PADRAO_PAINEL.dashboards[0];
-        updateDashboard(current => ({ ...padrao, id: current.id, nome: current.nome }));
+        if (padrao) updateDashboard(current => ({ ...padrao, id: current.id, nome: current.nome }));
       }}>Restaurar padrão desta visão</Button>
     </div>
     {error && <p role="alert" className="text-sm text-debit">{error}</p>}

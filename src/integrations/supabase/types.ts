@@ -358,6 +358,7 @@ export type Database = {
           grupo_id: string
           id: string
           nome: string
+          ordem: number | null
           pego: boolean
           preco: number
           qtd: number
@@ -368,6 +369,7 @@ export type Database = {
           grupo_id: string
           id?: string
           nome: string
+          ordem?: number | null
           pego?: boolean
           preco?: number
           qtd?: number
@@ -378,6 +380,7 @@ export type Database = {
           grupo_id?: string
           id?: string
           nome?: string
+          ordem?: number | null
           pego?: boolean
           preco?: number
           qtd?: number
@@ -856,31 +859,29 @@ export type Database = {
       }
       user_appearance: {
         Row: {
-          dashboard_order: string[]
-          dashboard_preferences: Json
           background_path: string | null
           background_visibility: number
           custom_colors: Json
           custom_enabled: boolean
+          dashboard_order: string[]
           theme: string
           user_id: string
         }
         Insert: {
-          dashboard_order?: string[]
-          dashboard_preferences?: Json
           background_path?: string | null
           background_visibility?: number
           custom_colors?: Json
           custom_enabled?: boolean
+          dashboard_order?: string[]
           theme?: string
           user_id: string
         }
         Update: {
-          dashboard_order?: string[]
           background_path?: string | null
           background_visibility?: number
           custom_colors?: Json
           custom_enabled?: boolean
+          dashboard_order?: string[]
           theme?: string
           user_id?: string
         }
@@ -926,6 +927,10 @@ export type Database = {
         Args: { _grupo_id: string; _ids: string[] }
         Returns: undefined
       }
+      ordenar_feira: {
+        Args: { _grupo_id: string; _ids: string[] }
+        Returns: undefined
+      }
       sync_offline_operation: {
         Args: { _commands: Json; _grupo_id: string; _id: string }
         Returns: Json
@@ -953,17 +958,6 @@ export type Database = {
           _id: string
           _local: string
           _produtos: Json
-          _valor: number
-        }
-        Returns: string
-      }
-      telegram_edit_approved_launch: {
-        Args: {
-          _categoria: string
-          _conta: string
-          _data: string
-          _descricao: string
-          _id: string
           _valor: number
         }
         Returns: string

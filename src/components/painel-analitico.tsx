@@ -1,6 +1,7 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowDownLeft, ArrowUpRight, CalendarClock, Layers } from "lucide-react";
 import { brl } from "@/lib/painel";
+import { descendingValues } from "@/lib/finance-history-edit";
 
 type Kpis = { consolidado: number; entradasMes: number; saidasPagasMes: number; aVencer7: number; qtdAVencer7: number };
 type Fluxo = { mes: string; entradas: number; saidas: number }[];
@@ -59,24 +60,31 @@ export function FluxoChart({ dados, tipo = "barras" }: { dados: Fluxo; tipo?: "b
 }
 
 export function CategoriasChart({ dados, tipo = "rosca" }: { dados: { nome: string; valor: number }[]; tipo?: "pizza" | "rosca" | "barras" }) {
-  if (!dados.length) return <p className="py-20 text-center text-sm text-muted-foreground">Nenhuma saída paga neste mês.</p>;
-  const cores = ["#2563eb", "#10b981", "#f97316", "#8b5cf6", "#ef4444", "#06b6d4", "#eab308", "#ec4899", "#14b8a6", "#64748b", "#84cc16", "#a855f7"];
-  return tipo === "barras" ? <div className="h-72 w-full">
-    <ResponsiveContainer><BarChart data={dados} layout="vertical" margin={{ top: 4, right: 12, left: 8, bottom: 4 }}>
-      <CartesianGrid horizontal={false} stroke="var(--border)" />
-      <XAxis type="number" tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
-      <YAxis type="category" dataKey="nome" width={112} tick={{ fill: "var(--foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
-      <Tooltip {...dica} formatter={(v: number) => [brl(v), "Saídas"]} />
-      <Bar dataKey="valor" name="Saídas" radius={[0, 6, 6, 0]}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Bar>
-    </BarChart></ResponsiveContainer>
-  </div> : <><div className="h-64 w-full"><ResponsiveContainer><PieChart><Pie data={dados} dataKey="valor" nameKey="nome" innerRadius={tipo === "rosca" ? 65 : 0} outerRadius={100} paddingAngle={3}>{dados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Pie><Tooltip contentStyle={dica.contentStyle} formatter={(v: number) => [brl(v)]} /></PieChart></ResponsiveContainer></div><div role="list" aria-label="Legenda de gastos por categoria" className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">{dados.map((c, i) => <span key={c.nome} role="listitem" className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: cores[i % cores.length] }} /><span>{c.nome} · {brl(c.valor)}</span></span>)}</div></>;
+  if (!dados.length) return <p className="py-10 text-left text-sm text-muted-foreground">Nenhuma saída paga neste mês.</p>;
+  const ordenados = descendingValues(dados);
+  const cores = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+  const total = ordenados.reduce((sum, item) => sum + item.valor, 0);
+  return <div className="min-w-0 w-full space-y-4 text-left">
+    {tipo !== "barras" && <div className="aspect-square max-h-64 w-full max-w-64 self-start"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={ordenados} dataKey="valor" nameKey="nome" innerRadius={tipo === "rosca" ? "48%" : 0} outerRadius="80%" paddingAngle={3}>{ordenados.map((c, i) => <Cell key={c.nome} fill={cores[i % cores.length]} />)}</Pie><Tooltip contentStyle={dica.contentStyle} formatter={(v: number) => [brl(v)]} /></PieChart></ResponsiveContainer></div>}
+    <div role="list" aria-label="Legenda de gastos por categoria" className="min-w-0 space-y-3 text-xs text-muted-foreground">
+      {ordenados.map((c, i) => <div key={c.nome} role="listitem" className="min-w-0 space-y-1.5">
+        <div className="flex flex-wrap items-start gap-x-2 gap-y-1">
+          <span aria-hidden="true" className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: cores[i % cores.length] }} />
+          <span className="min-w-0 flex-1 break-words text-foreground">{c.nome}</span>
+          <span className="ml-auto break-words font-semibold tabular-nums text-foreground">{brl(c.valor)}</span>
+        </div>
+        {tipo === "barras" && <div className="h-2 w-full overflow-hidden rounded-sm bg-muted"><div className="h-full rounded-sm" style={{ width: `${c.valor / (ordenados[0]?.valor || 1) * 100}%`, backgroundColor: cores[i % cores.length] }} /></div>}
+        <p className="pl-4">{total ? (c.valor / total * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : 0}%</p>
+      </div>)}
+    </div>
+  </div>;
 }
 
 export function CarteirasChart({ dados }: { dados: Carteira }) {
   if (!dados.length) return null;
-  return <div className="h-52 w-full">
+  return <div className="h-52 min-w-0 w-full">
     <ResponsiveContainer>
-      <BarChart data={dados} layout="vertical" maxBarSize={28} margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
+      <BarChart data={descendingValues(dados)} layout="vertical" maxBarSize={28} margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
         <CartesianGrid horizontal={false} stroke="var(--border)" />
         <XAxis type="number" tickFormatter={compacto} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
         <YAxis type="category" dataKey="nome" width={90} tick={{ fill: "var(--foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
