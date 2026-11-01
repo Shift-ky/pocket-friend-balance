@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Organizar análise financeira à esquerda, adaptar gráficos à tela e ordenar valores decrescentes; permitir editar importações Telegram no histórico.
 - [x] Reorganizar Finanças: formulário recolhido, pendências abertas e histórico mensal; Painel exclusivamente analítico.
 - [x] Migrar Moto para Carteiras sem perder históricos; cadastro, flags, moedas e transferências conciliadas com travas.
 - [x] Integrar carteiras elegíveis à Feira e Contas Fixas, preservando offline e regras existentes.
