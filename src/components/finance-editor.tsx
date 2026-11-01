@@ -3,6 +3,7 @@ import { supabase } from "@/lib/offline-client";
 import { Button } from "@/components/ui/button";
 import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
 import { historyEditPayload } from '@/lib/finance-history-edit';
+import { supabase as onlineClient } from '@/integrations/supabase/client';
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
 type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null; categoria?:string };
@@ -29,10 +30,21 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
     if (!descricao.trim() || !Number.isFinite(v) || v <= 0 || !data) { setErro('Preencha descrição, valor e data.'); return; }
     setSalvando(true);
     setErro('');
-    const { error, count } = await supabase.from(moto ? 'moto_despesas' : 'lancamentos').update(historyEditPayload(item, { descricao, valor: v, data, conta, categoria }, moto), { count: 'exact' }).eq("id", item.id);
-    setSalvando(false);
-    if (error || count === 0) { setErro('Não foi possível salvar esta movimentação.'); return; }
-    onFechar();
+    try {
+      const payload = historyEditPayload(item, { descricao, valor: v, data, conta, categoria }, moto);
+      const { data: review, error: reviewError } = moto ? { data: null, error: null } : await onlineClient.from('telegram_reviews').select('id').eq('lancamento_id', item.id).eq('status', 'aprovado').maybeSingle();
+      if (reviewError && navigator.onLine) throw reviewError;
+      if (review) {
+        const { error } = await onlineClient.rpc('telegram_edit_approved_launch', { _id: review.id, _valor: v, _data: data, _descricao: descricao.trim(), _conta: comConta ? conta : item.conta, _categoria: categoria });
+        if (error) throw error;
+      } else {
+        const { error, count } = await supabase.from(moto ? 'moto_despesas' : 'lancamentos').update(payload, { count: 'exact' }).eq('id', item.id);
+        if (error || count === 0) throw error ?? new Error('Lançamento não encontrado');
+      }
+      onFechar();
+    } catch {
+      setErro('Não foi possível salvar esta movimentação. Confira sua conexão e tente novamente.');
+    } finally { setSalvando(false); }
   }
   const campo = "min-w-0 w-full rounded-lg border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring";
   return (
