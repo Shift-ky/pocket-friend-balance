@@ -101,7 +101,8 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
           {section.widgets.map((widget, widgetIndex) => <div key={widget.id} className="space-y-2"><div className="grid gap-3 rounded-md bg-muted/30 p-3 lg:grid-cols-[1.4fr_1fr_1fr_130px_130px_120px_auto] lg:items-end">
             <label className="text-xs text-muted-foreground">O que esta caixa mostra<select aria-label="Indicador da caixa" value={widget.fonte} onChange={event => {
               const fonte = event.target.value as FonteWidgetPainel;
-              const source = FONTES_WIDGET.find(item => item.id === fonte)!;
+              const source = FONTES_WIDGET.find(item => item.id === fonte);
+              if (!source) return;
               updateWidget(section.id, widget.id, current => ({ ...current, fonte, titulo: source.nome, grafico: fontePadrao(fonte) }));
             }} className={`${field} mt-1`}>{["Saldos", "Finanças", "Metas", "Gráficos"].map(group => <optgroup key={group} label={group}>{FONTES_WIDGET.filter(source => source.grupo === group).map(source => <option key={source.id} value={source.id}>{source.nome}</option>)}</optgroup>)}</select><span className="mt-1 block">{FONTES_WIDGET.find(source => source.id === widget.fonte)?.descricao}</span></label>
             <label className="text-xs text-muted-foreground">Título da caixa<input aria-label="Título da caixa" maxLength={60} value={widget.titulo} onChange={event => updateWidget(section.id, widget.id, current => ({ ...current, titulo: event.target.value }))} className={`${field} mt-1`} /></label>
@@ -127,6 +128,7 @@ export function PainelCustomizer({ value, onChange, saving, error, status, onSav
             </div>
           </div>
         </div>)}
+        </div>
         <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => addWidget(section)}><Plus />Adicionar caixa</Button>
       </section>)}
     </div>

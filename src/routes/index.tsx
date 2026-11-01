@@ -145,7 +145,8 @@ function Painel() {
   }
 
   function renderWidget(widget: WidgetPainel, section: SecaoPainel): ReactNode {
-    const source = FONTES_WIDGET.find(item => item.id === widget.fonte)!;
+    const source = FONTES_WIDGET.find(item => item.id === widget.fonte);
+    if (!source) return null;
     const width = Math.max(1, Math.min(section.colunas, widget.largura)) as 1 | 2 | 3 | 4;
     const heightLevel = widget.altura === 'alta' ? 3 : widget.altura === 'media' ? 2 : 1;
     const scale = Math.min(4, Math.max(width, heightLevel)) as 1 | 2 | 3 | 4;
@@ -191,7 +192,7 @@ function Painel() {
       {access.financas && <Button asChild variant="link" size="sm" className="mt-2 w-fit px-0"><Link to="/metas">Ver metas →</Link></Button>}
     </article>;
 
-    if (widget.fonte === 'gastos_categoria') return <article key={widget.id} className={`${article} ${widget.altura === 'alta' ? '' : 'justify-start'}`} style={{ containerType: 'inline-size' }}>
+    if (widget.fonte === 'gastos_categoria') return <article key={widget.id} className={`${article} !justify-start text-left`} style={{ containerType: 'inline-size' }}>
       <h2 className={`mb-3 font-medium ${style.title}`} style={titleStyle}>{title}</h2>
       {access.financas ? <CategoriasChart dados={categorias} tipo={widget.grafico === 'pizza' || widget.grafico === 'barras' ? widget.grafico : 'rosca'} /> : <p className="py-8 text-sm text-muted-foreground">Sem acesso ao módulo Finanças.</p>}
     </article>;

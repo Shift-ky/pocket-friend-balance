@@ -39,6 +39,11 @@
   --coringa-debit: #ff6b7a;
   --coringa-saved: #22e1ff;
   --radius: 1rem;
+  --chart-1: var(--primary);
+  --chart-2: var(--credit);
+  --chart-3: var(--debit);
+  --chart-4: var(--saved);
+  --chart-5: var(--muted-foreground);
   --background: oklch(0.21 0.05 262);
   --foreground: oklch(0.93 0.02 250);
   --card: oklch(0.26 0.06 262);
