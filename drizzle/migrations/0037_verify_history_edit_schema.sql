@@ -1,0 +1,1 @@
+COMMENT ON FUNCTION public.telegram_edit_approved_launch(uuid, numeric, date, text, text, text) IS 'Owner-approved Telegram history editing preserves linked purchase records';
