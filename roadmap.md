@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Organizar análise financeira à esquerda, adaptar gráficos à tela e ordenar valores decrescentes; permitir editar importações Telegram no histórico.
+- [x] Organizar análise à esquerda e ordenar valores decrescentes; gráficos conferidos em 502px e 1280px sem corte, editor do histórico abre, importações usam edição aprovada e Moto tem editor próprio; 23 testes aprovados.
+- [ ] Conferir salvamento de importação Telegram própria pelo histórico; conta de verificação não tem lançamento Telegram aprovado vinculado disponível.
 - [x] Reorganizar Finanças: formulário recolhido, pendências abertas e histórico mensal; Painel exclusivamente analítico.
 - [x] Migrar Moto para Carteiras sem perder históricos; cadastro, flags, moedas e transferências conciliadas com travas.
 - [x] Integrar carteiras elegíveis à Feira e Contas Fixas, preservando offline e regras existentes.
