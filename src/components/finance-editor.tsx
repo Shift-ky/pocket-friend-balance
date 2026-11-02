@@ -51,7 +51,7 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
     <li className="space-y-3 rounded-lg border-2 border-primary bg-card p-4">
       <p className="text-sm font-semibold">Editar {moto ? 'despesa Moto' : INFO[item.tipo].label.toLowerCase()}</p>
       <label className="block text-sm">Descrição<input aria-label="Descrição da movimentação" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={`mt-1 ${campo}`} /></label>
-      {!moto && item.tipo === "debito" && <label className="block text-sm">Tipo de saída<select aria-label="Tipo de saída" value={categoria} onChange={e => setCategoria(e.target.value)} className={`mt-1 ${campo}`}>
+      {!moto && item.tipo === "debito" && <label className="block text-sm">Categoria da movimentação<select aria-label="Categoria da movimentação" value={categoria} onChange={e => setCategoria(e.target.value)} className={`mt-1 ${campo}`}>
         {!CATEGORIAS_SAIDA.includes(categoria as typeof CATEGORIAS_SAIDA[number]) && categoria && <option value={categoria}>{categoria} (atual)</option>}
         {GRUPOS_CATEGORIAS_SAIDA.map(grupo => <optgroup key={grupo.nome} label={grupo.nome}>{grupo.categorias.map(c => <option key={c} value={c}>{c}</option>)}</optgroup>)}
       </select></label>}
