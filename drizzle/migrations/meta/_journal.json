@@ -260,6 +260,13 @@
       "when": 1793445000003,
       "tag": "0036_telegram_approved_launch_edit",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793594892590,
+      "tag": "0037_verify_history_edit_schema",
+      "breakpoints": true
     }
   ]
 }

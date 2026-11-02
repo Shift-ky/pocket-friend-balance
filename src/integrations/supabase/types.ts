@@ -864,6 +864,7 @@ export type Database = {
           custom_colors: Json
           custom_enabled: boolean
           dashboard_order: string[]
+          dashboard_preferences: Json
           theme: string
           user_id: string
         }
@@ -873,6 +874,7 @@ export type Database = {
           custom_colors?: Json
           custom_enabled?: boolean
           dashboard_order?: string[]
+          dashboard_preferences?: Json
           theme?: string
           user_id: string
         }
@@ -882,6 +884,7 @@ export type Database = {
           custom_colors?: Json
           custom_enabled?: boolean
           dashboard_order?: string[]
+          dashboard_preferences?: Json
           theme?: string
           user_id?: string
         }
@@ -940,6 +943,17 @@ export type Database = {
         Returns: boolean
       }
       telegram_claim: { Args: { _id: string }; Returns: boolean }
+      telegram_edit_approved_launch: {
+        Args: {
+          _categoria: string
+          _conta: string
+          _data: string
+          _descricao: string
+          _id: string
+          _valor: number
+        }
+        Returns: string
+      }
       telegram_products_action: {
         Args: { _action: string; _id: string; _produtos: Json }
         Returns: string
