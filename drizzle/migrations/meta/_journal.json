@@ -267,6 +267,13 @@
       "when": 1793594892590,
       "tag": "0037_verify_history_edit_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793595750514,
+      "tag": "0038_moto_history_category",
+      "breakpoints": true
     }
   ]
 }

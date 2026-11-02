@@ -36,7 +36,7 @@ export function movimentosAnaliticos(wallets:Carteira[], linhas:LancamentoPainel
     const w=carteiraDaLinha(l,wallets); if(!w?.no_painel)return []; const valor=valorEmReais(w,Number(l.valor),taxas); if(valor===null)return [];
     return [{data:l.data,valor,entrada:l.tipo==='credito',pendente:l.tipo==='debito'&&!l.pago,categoria:l.categoria || (l.origem_modulo==='feira'?'Feira':'Outros'),financeiro:w.tipo==='financeiro'}];
   });
-  if(wallets.some(w=>w.legado==='gasolina'&&w.no_painel))result.push(...moto.map(d=>({data:d.data,valor:Number(d.valor),entrada:false,pendente:false,categoria:'Moto/Gasolina',financeiro:true})));
+  if(wallets.some(w=>w.legado==='gasolina'&&w.no_painel))result.push(...moto.map(d=>({data:d.data,valor:Number(d.valor),entrada:false,pendente:false,categoria:d.categoria || 'Moto/Gasolina',financeiro:true})));
   return result;
 }
 export function termometro(movs:ReturnType<typeof movimentosAnaliticos>,mes:string) {

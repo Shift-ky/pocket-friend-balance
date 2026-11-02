@@ -568,6 +568,7 @@ export type Database = {
       }
       moto_despesas: {
         Row: {
+          categoria: string
           conta: string
           created_at: string
           criado_por: string | null
@@ -578,6 +579,7 @@ export type Database = {
           valor: number
         }
         Insert: {
+          categoria?: string
           conta?: string
           created_at?: string
           criado_por?: string | null
@@ -588,6 +590,7 @@ export type Database = {
           valor: number
         }
         Update: {
+          categoria?: string
           conta?: string
           created_at?: string
           criado_por?: string | null
