@@ -12,7 +12,7 @@ describe('Edição de importações do Telegram', () => {
     expect(historyEditPayload({ tipo: 'debito', conta: 'alimentacao', carteira_id: 'wallet' }, values)).toEqual({ descricao: 'Cupom corrigido', valor: 38.97, data: '2026-10-31', conta: 'alimentacao', categoria: 'Mercado' });
   });
   it('edita uma despesa Moto sem escrever campos financeiros ou recriar o lançamento', () => {
-    expect(historyEditPayload({ tipo: 'debito', conta: 'dinheiro' }, values, true)).toEqual({ descricao: 'Cupom corrigido', valor: 38.97, data: '2026-10-31' });
+    expect(historyEditPayload({ tipo: 'debito', conta: 'dinheiro' }, values, true)).toEqual({ descricao: 'Cupom corrigido', valor: 38.97, data: '2026-10-31', categoria: 'Mercado' });
   });
 });
 
