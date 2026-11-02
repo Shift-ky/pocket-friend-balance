@@ -52,7 +52,8 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
       <p className="text-sm font-semibold">Editar {moto ? 'despesa Moto' : INFO[item.tipo].label.toLowerCase()}</p>
       <label className="block text-sm">Descrição<input aria-label="Descrição da movimentação" value={descricao} onChange={(e) => setDescricao(e.target.value)} className={`mt-1 ${campo}`} /></label>
       {item.tipo === "debito" && <label className="block text-sm">Categoria da movimentação<select aria-label="Categoria da movimentação" value={categoria} onChange={e => setCategoria(e.target.value)} className={`mt-1 ${campo}`}>
-        {!CATEGORIAS_SAIDA.includes(categoria as typeof CATEGORIAS_SAIDA[number]) && categoria && <option value={categoria}>{categoria} (atual)</option>}
+        {moto && <option value="Moto/Gasolina">Moto/Gasolina</option>}
+        {!CATEGORIAS_SAIDA.includes(categoria as typeof CATEGORIAS_SAIDA[number]) && categoria && !(moto && categoria === 'Moto/Gasolina') && <option value={categoria}>{categoria} (atual)</option>}
         {GRUPOS_CATEGORIAS_SAIDA.map(grupo => <optgroup key={grupo.nome} label={grupo.nome}>{grupo.categorias.map(c => <option key={c} value={c}>{c}</option>)}</optgroup>)}
       </select></label>}
       <div className="grid gap-3 sm:grid-cols-2">
