@@ -1,2 +1,3 @@
-ALTER TABLE public.user_appearance
-  ADD COLUMN dashboard_order text[] NOT NULL DEFAULT ARRAY[]::text[];
+-- The content of this migration cannot be applied: its ordering column already exists.
+-- ALTER TABLE public.user_appearance
+--   ADD COLUMN dashboard_order text[] NOT NULL DEFAULT ARRAY[]::text[];
