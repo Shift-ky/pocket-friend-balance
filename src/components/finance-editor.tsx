@@ -2,8 +2,11 @@ import { useState } from "react";
 import { supabase } from "@/lib/offline-client";
 import { Button } from "@/components/ui/button";
 import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
-import { historyEditPayload } from '@/lib/finance-history-edit';
+import { historyEditPayload, telegramWalletOptions } from '@/lib/finance-history-edit';
 import { supabase as onlineClient } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
+import { contaLegada, type Carteira, type Meta } from '@/lib/carteiras';
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
 type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null; categoria?:string };
@@ -17,6 +20,18 @@ const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: s
 };
 
 export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento; onFechar: () => void; moto?: boolean }) {
+  const { grupo } = useGrupo();
+  const { linhas: carteiras } = useTabelaAoVivo<Carteira>('carteiras', grupo.id);
+  const { linhas: metas } = useTabelaAoVivo<Meta>('metas', grupo.id);
+  const [carteiraId, setCarteiraId] = useState(item.carteira_id ?? '');
+  const reviewQuery = useQuery({ queryKey: ['telegram-edit', item.id], enabled: !moto, queryFn: async () => {
+    const { data, error } = await onlineClient.from('telegram_reviews').select('id,feira_historico_id').eq('lancamento_id', item.id).eq('status', 'aprovado').maybeSingle();
+    if (error) throw error;
+    return data;
+  } });
+  const review = reviewQuery.data;
+  const currentId = item.carteira_id ?? carteiras.find(w => w.legado === item.conta)?.id;
+  const opcoesCarteira = telegramWalletOptions(carteiras, metas, currentId, Boolean(review?.feira_historico_id));
   const [descricao, setDescricao] = useState(item.descricao);
   const [valor, setValor] = useState(String(item.valor).replace(".", ","));
   const [data, setData] = useState(item.data);
@@ -31,11 +46,14 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
     setSalvando(true);
     setErro('');
     try {
-      const payload = historyEditPayload(item, { descricao, valor: v, data, conta, categoria }, moto);
-      const { data: review, error: reviewError } = moto ? { data: null, error: null } : await onlineClient.from('telegram_reviews').select('id').eq('lancamento_id', item.id).eq('status', 'aprovado').maybeSingle();
-      if (reviewError && navigator.onLine) throw reviewError;
+      const result = moto ? null : await reviewQuery.refetch();
+      if (result?.error && navigator.onLine) throw result.error;
+      const review = result?.data;
+      const wallet = review ? opcoesCarteira.find(w => w.id === (carteiraId || currentId)) : undefined;
+      const payload = historyEditPayload(item, { descricao, valor: v, data, conta, categoria }, moto, wallet);
       if (review) {
-        const { error } = await onlineClient.rpc('telegram_edit_approved_launch', { _id: review.id, _valor: v, _data: data, _descricao: descricao.trim(), _conta: comConta ? conta : item.conta, _categoria: categoria });
+        if (!wallet) throw new Error('Selecione a carteira');
+        const { error } = await onlineClient.rpc('telegram_edit_approved_launch', { _id: review.id, _valor: v, _data: data, _descricao: descricao.trim(), _conta: contaLegada(wallet), _categoria: categoria, _carteira_id: wallet.id });
         if (error) throw error;
       } else {
         const { error, count } = await supabase.from(moto ? 'moto_despesas' : 'lancamentos').update(payload, { count: 'exact' }).eq('id', item.id);
@@ -60,7 +78,11 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
         <label className="min-w-0 text-sm">Valor<input aria-label="Valor da movimentação" value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" className={`mt-1 ${campo}`} /></label>
         <label className="min-w-0 text-sm">Data<input aria-label="Data da movimentação" type="date" value={data} onChange={(e) => setData(e.target.value)} className={`mt-1 ${campo}`} /></label>
       </div>
-      {comConta && (
+      {review && <label className="block text-sm">Carteira do pagamento<select aria-label="Carteira do pagamento" value={carteiraId || currentId || ''} onChange={e => setCarteiraId(e.target.value)} className={`mt-1 ${campo}`}>
+        {!currentId && !carteiraId && <option value="">Selecione</option>}
+        {opcoesCarteira.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
+      </select></label>}
+      {comConta && !review && (
         <div className="flex flex-wrap gap-2">
           {(Object.keys(CONTAS) as Conta[]).map((c) => (
             <Button key={c} variant="ghost" type="button" onClick={() => setConta(c)}

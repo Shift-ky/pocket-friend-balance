@@ -40,4 +40,4 @@
 - Internal transfers are paired journaled debits/credits validated by deferred database reconciliation; benefit, international and goal-linked wallets cannot transfer, and analytics exclude internal flows.
 - Goals reference financial wallets and calculate suggested contributions from projected monthly financial surplus; automatic sources reject international and goal-linked wallets.
 - Rates use authenticated functions, daily caching and Frankfurter; missing rates are excluded.
-- History edits preserve wallet keys; Telegram edits use its existing RPC; Moto stays in its ledger.
+- Shared Telegram edits atomically update launch and purchase wallets, never stock; Moto stays separate.
