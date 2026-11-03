@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corrigir troca da carteira em transações aprovadas do Telegram, sincronizando histórico da compra e saldos, e conferir salvamento.
 - [x] Categoria disponível e persistida na edição Moto/Gasolina, inclusive importações; histórico e análise usam a categoria escolhida, whitelist offline atualizada sem modificar saldos.
 - [x] Organizar análise à esquerda e ordenar valores decrescentes; gráficos conferidos em 502px e 1280px sem corte, editor do histórico abre, importações usam edição aprovada e Moto tem editor próprio; 23 testes aprovados.
 - [ ] Conferir salvamento de importação Telegram própria pelo histórico; conta de verificação não tem lançamento Telegram aprovado vinculado disponível.
