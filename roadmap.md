@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Exibir e salvar forma de pagamento também nas movimentações compartilhadas do grupo, sem depender da fila privada do remetente Telegram.
 - [x] Corrigir troca da carteira em transações aprovadas do Telegram; editor compartilhado, compra vinculada atualizada atomicamente; 18 testes aprovados e troca Dinheiro → Alimentação salva e relida na conta proprietária, registro temporário removido.
 - [x] Categoria disponível e persistida na edição Moto/Gasolina, inclusive importações; histórico e análise usam a categoria escolhida, whitelist offline atualizada sem modificar saldos.
 - [x] Organizar análise à esquerda e ordenar valores decrescentes; gráficos conferidos em 502px e 1280px sem corte, editor do histórico abre, importações usam edição aprovada e Moto tem editor próprio; 23 testes aprovados.
