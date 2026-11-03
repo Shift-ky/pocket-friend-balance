@@ -10,7 +10,7 @@ import type { Tables } from '@/integrations/supabase/types';
 import { TelegramProducts } from '@/components/telegram-products';
 import { TelegramReceipt } from '@/components/telegram-receipt';
 import { supabase } from '@/integrations/supabase/client';
-import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from '@/lib/categorias-financas';
+import { EditarLinha } from '@/components/finance-editor';
 
 export const Route = createFileRoute('/conferencia')({ head: () => ({ meta: [
   { title: 'MarIA — Conferência do Telegram' }, { name: 'description', content: 'Revise cupons e boletos recebidos pelo Telegram antes de lançar nas carteiras.' },
@@ -59,46 +59,13 @@ function EditarLancamentoTelegram({ row, onCancel, onSaved }: {
   onCancel: () => void;
   onSaved: () => void;
 }) {
-  const [descricao, setDescricao] = useState(row.descricao);
-  const [valor, setValor] = useState(String(row.valor ?? '').replace('.', ','));
-  const [data, setData] = useState(row.data ?? '');
-  const [conta, setConta] = useState<'dinheiro'|'alimentacao'|'refeicao'>(row.conta as 'dinheiro'|'alimentacao'|'refeicao');
-  const [categoria, setCategoria] = useState(row.categoria || 'Outros');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  async function save() {
-    const amount = Number(valor.replace(',', '.'));
-    if (!descricao.trim() || !Number.isFinite(amount) || amount <= 0 || !data) {
-      setError('Preencha descrição, valor e data corretamente.');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    try {
-      const { error: saveError } = await supabase.rpc('telegram_edit_approved_launch', {
-        _id: row.id, _valor: amount, _data: data, _descricao: descricao.trim(), _conta: conta, _categoria: categoria,
-      });
-      if (saveError) throw saveError;
-      onSaved();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Não foi possível editar o lançamento.');
-    } finally {
-      setSaving(false);
-    }
-  }
-  return <div className="space-y-3 rounded-lg border border-primary/50 bg-background p-4">
-    <h3 className="text-sm font-semibold">Editar lançamento aprovado pelo Telegram</h3>
-    <label className="block text-sm">Descrição<input aria-label="Descrição do lançamento" maxLength={200} value={descricao} onChange={e => setDescricao(e.target.value)} className={field} /></label>
-    <div className="grid gap-3 sm:grid-cols-2">
-      <label className="block text-sm">Valor (R$)<input aria-label="Valor do lançamento" inputMode="decimal" value={valor} onChange={e => setValor(e.target.value)} className={field} /></label>
-      <label className="block text-sm">Data<input aria-label="Data do lançamento" type="date" value={data} onChange={e => setData(e.target.value)} className={field} /></label>
-    </div>
-    <label className="block text-sm">Carteira<select aria-label="Carteira do lançamento" value={conta} onChange={e => setConta(e.target.value as typeof conta)} className={field}><option value="dinheiro">Dinheiro</option><option value="alimentacao">Alimentação</option><option value="refeicao">Refeição</option></select></label>
-    <label className="block text-sm">Categoria<select aria-label="Categoria do lançamento" value={categoria} onChange={e => setCategoria(e.target.value)} className={field}>
-      {!CATEGORIAS_SAIDA.includes(categoria as typeof CATEGORIAS_SAIDA[number]) && categoria && <option value={categoria}>{categoria} (atual)</option>}
-      {GRUPOS_CATEGORIAS_SAIDA.map(group => <optgroup key={group.nome} label={group.nome}>{group.categorias.map(option => <option key={option} value={option}>{option}</option>)}</optgroup>)}
-    </select></label>
-    {error && <p role="alert" className="text-sm text-debit">{error}</p>}
-    <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving} onClick={() => void save()}>{saving ? 'Salvando…' : 'Salvar edição'}</Button><Button type="button" variant="outline" disabled={saving} onClick={onCancel}>Cancelar</Button></div>
-  </div>;
+  const { data: launch, error } = useQuery({ queryKey: ['telegram-launch', row.lancamento_id], queryFn: async () => {
+    const { data, error } = await supabase.from('lancamentos').select('*').eq('id', row.lancamento_id ?? '').single();
+    if (error) throw error;
+    return data;
+  } });
+  if (error) return <p role="alert" className="text-sm text-debit">Não foi possível abrir o lançamento.</p>;
+  if (!launch) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (!['credito', 'debito', 'aplicacao', 'resgate'].includes(launch.tipo) || !['dinheiro', 'alimentacao', 'refeicao'].includes(launch.conta)) return null;
+  return <ul><EditarLinha item={{ ...launch, tipo: launch.tipo as 'credito'|'debito'|'aplicacao'|'resgate', conta: launch.conta as 'dinheiro'|'alimentacao'|'refeicao' }} onFechar={onSaved} /></ul>;
 }
