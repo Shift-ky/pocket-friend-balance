@@ -946,17 +946,30 @@ export type Database = {
         Returns: boolean
       }
       telegram_claim: { Args: { _id: string }; Returns: boolean }
-      telegram_edit_approved_launch: {
-        Args: {
-          _categoria: string
-          _conta: string
-          _data: string
-          _descricao: string
-          _id: string
-          _valor: number
-        }
-        Returns: string
-      }
+      telegram_edit_approved_launch:
+        | {
+            Args: {
+              _categoria: string
+              _conta: string
+              _data: string
+              _descricao: string
+              _id: string
+              _valor: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _carteira_id: string
+              _categoria: string
+              _conta: string
+              _data: string
+              _descricao: string
+              _id: string
+              _valor: number
+            }
+            Returns: string
+          }
       telegram_products_action: {
         Args: { _action: string; _id: string; _produtos: Json }
         Returns: string
