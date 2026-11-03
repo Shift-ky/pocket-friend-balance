@@ -919,6 +919,17 @@ export type Database = {
       criar_grupo: { Args: { _nome: string }; Returns: string }
       data_conta_fixa: { Args: { _dia: number; _mes: string }; Returns: string }
       e_membro: { Args: { _grupo: string }; Returns: boolean }
+      editar_pagamento_historico: {
+        Args: {
+          _carteira_id: string
+          _categoria: string
+          _data: string
+          _descricao: string
+          _lancamento_id: string
+          _valor: number
+        }
+        Returns: string
+      }
       entrar_grupo: { Args: { _codigo: string }; Returns: string }
       gerar_contas_fixas: { Args: { _id?: string }; Returns: number }
       has_role: {

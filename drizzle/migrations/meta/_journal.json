@@ -281,6 +281,13 @@
       "when": 1793742279240,
       "tag": "0039_telegram_history_wallet_correction",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793742858389,
+      "tag": "0040_shared_history_payment_wallet",
+      "breakpoints": true
     }
   ]
 }
