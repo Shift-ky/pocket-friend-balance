@@ -4,13 +4,11 @@ import { Button } from "@/components/ui/button";
 import { CATEGORIAS_SAIDA, GRUPOS_CATEGORIAS_SAIDA } from "@/lib/categorias-financas";
 import { historyEditPayload, telegramWalletOptions } from '@/lib/finance-history-edit';
 import { supabase as onlineClient } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 import { useGrupo, useTabelaAoVivo } from '@/lib/grupo';
-import { contaLegada, type Carteira, type Meta } from '@/lib/carteiras';
+import { type Carteira, type Meta } from '@/lib/carteiras';
 type Tipo = "credito" | "debito" | "aplicacao" | "resgate";
 type Conta = "dinheiro" | "alimentacao" | "refeicao";
 type Lancamento = { id: string; tipo: Tipo; descricao: string; valor: number; data: string; pago: boolean; conta: Conta; destino?: string; carteira_id?:string|null; categoria?:string; origem_modulo?: string; transferencia_id?: string | null };
-const CONTAS: Record<Conta, string> = { dinheiro: "Dinheiro", alimentacao: "Alimentação", refeicao: "Refeição" };
 
 const INFO: Record<Tipo, { label: string; sinal: string; ativo: string; icone: string; texto: string }> = {
   credito: { label: "Crédito", sinal: "+", ativo: "bg-credit text-primary-foreground", icone: "bg-credit-soft text-credit", texto: "text-credit" },
@@ -24,18 +22,12 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
   const { linhas: carteiras } = useTabelaAoVivo<Carteira>('carteiras', grupo.id);
   const { linhas: metas } = useTabelaAoVivo<Meta>('metas', grupo.id);
   const [carteiraId, setCarteiraId] = useState(item.carteira_id ?? '');
-  const reviewQuery = useQuery({ queryKey: ['telegram-edit', item.id], enabled: !moto, queryFn: async () => {
-    const { data, error } = await onlineClient.from('telegram_reviews').select('id,feira_historico_id').eq('lancamento_id', item.id).eq('status', 'aprovado').maybeSingle();
-    if (error) throw error;
-    return data;
-  } });
-  const review = reviewQuery.data;
   const currentId = item.carteira_id ?? carteiras.find(w => w.legado === item.conta)?.id;
-  const opcoesCarteira = telegramWalletOptions(carteiras, metas, currentId, item.origem_modulo === 'feira' || Boolean(review?.feira_historico_id));
+  const opcoesCarteira = telegramWalletOptions(carteiras, metas, currentId, item.origem_modulo === 'feira');
   const [descricao, setDescricao] = useState(item.descricao);
   const [valor, setValor] = useState(String(item.valor).replace(".", ","));
   const [data, setData] = useState(item.data);
-  const [conta, setConta] = useState<Conta>(item.conta ?? "dinheiro");
+  const conta = item.conta ?? 'dinheiro';
   const [categoria, setCategoria] = useState(item.categoria || (moto ? 'Moto/Gasolina' : 'Outros'));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -46,9 +38,6 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
     setSalvando(true);
     setErro('');
     try {
-      const result = moto ? null : await reviewQuery.refetch();
-      if (result?.error && navigator.onLine) throw result.error;
-      const review = result?.data;
       const wallet = comConta ? opcoesCarteira.find(w => w.id === (carteiraId || currentId)) : undefined;
       const payload = historyEditPayload(item, { descricao, valor: v, data, conta, categoria }, moto, wallet);
       if (comConta && navigator.onLine) {
@@ -83,16 +72,6 @@ export function EditarLinha({ item, onFechar, moto = false }: { item: Lancamento
         {!currentId && !carteiraId && <option value="">Selecione</option>}
         {opcoesCarteira.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
       </select></label>}
-      {false && (
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(CONTAS) as Conta[]).map((c) => (
-            <Button key={c} variant="ghost" type="button" onClick={() => setConta(c)}
-              className={`rounded-lg border py-2 text-sm font-semibold ${conta === c ? "bg-foreground text-background" : "text-muted-foreground"}`}>
-              {CONTAS[c]}
-            </Button>
-          ))}
-        </div>
-      )}
       {erro && <p role="alert" className="text-sm text-debit">{erro}</p>}
       <div className="flex gap-2">
         <Button disabled={salvando} onClick={salvar} className="flex-1 rounded-lg bg-primary py-2 font-semibold text-primary-foreground">{salvando ? 'Salvando…' : 'Salvar'}</Button>
