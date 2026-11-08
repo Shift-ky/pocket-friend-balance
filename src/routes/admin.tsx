@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { possoAcessarAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador, alterarAcessos } from "@/lib/admin.functions";
 import { MODULES, MODULE_LABELS, type Access } from "@/lib/access";
 import { useGrupo } from "@/lib/grupo";
@@ -47,7 +48,7 @@ function Admin() {
     catch (e) { setMsg((e as Error).message); }
   }
   async function onRedefinir(email: string) {
-    try { await redefinir({ data: { email, origem: window.location.origin } }); setMsg(`Link de nova senha enviado para ${email}.`); }
+    try { await redefinir({ data: { email, origem: getAppBaseUrl() } }); setMsg(`Link de nova senha enviado para ${email}.`); }
     catch (e) { setMsg((e as Error).message); }
   }
   async function onAdministrador(id: string, email: string, administrador: boolean) {
@@ -105,3 +106,4 @@ function Admin() {
     </main>
   );
 }
+
