@@ -33,7 +33,7 @@ jobs:
           test -n "$shell_html"
           cp "$shell_html" .output/public/index.html
           cp "$shell_html" .output/public/404.html
-          cp "$shell_html" .output/public/_shell.html
+          if [ "$shell_html" != ".output/public/_shell.html" ]; then cp "$shell_html" .output/public/_shell.html; fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .output/public
