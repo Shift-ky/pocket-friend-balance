@@ -158,27 +158,43 @@ Deno.serve(async (request) => {
         if (valid.length) await supabaseAdmin.from("cotacoes").upsert(valid);
         return response(["USD", "EUR"].flatMap((currency) => valid.find((r) => r.moeda === currency) ?? cache?.find((r) => r.moeda === currency) ?? []));
       }
-      case "linkTelegram": {
+      case "linkWhatsApp": {
         if (!validUuid(data.grupo)) return fail("Grupo inválido.");
-        const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
-        if (!botToken) return fail("Configure o token do bot nas variáveis do Supabase.", 503);
-        const secretDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`telegram-webhook:${botToken}`));
-        const secretBinary = Array.from(new Uint8Array(secretDigest), byte => String.fromCharCode(byte)).join("");
-        const webhookSecret = btoa(secretBinary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-        const webhookUrl = `${url.replace(/\/$/, "")}/functions/v1/telegram-webhook`;
-        const webhookResponse = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: webhookUrl, secret_token: webhookSecret, allowed_updates: ["message", "callback_query"], drop_pending_updates: false }),
+        const apiUrl = Deno.env.get("EVOLUTION_API_URL")?.replace(/\/+$/, "");
+        const apiKey = Deno.env.get("EVOLUTION_API_KEY");
+        const instance = Deno.env.get("EVOLUTION_INSTANCE");
+        const phone = Deno.env.get("EVOLUTION_PHONE_NUMBER")?.replace(/\D/g, "");
+        const webhookSecret = Deno.env.get("EVOLUTION_WEBHOOK_SECRET");
+        if (!apiUrl || !apiKey || !instance || !phone || !webhookSecret || webhookSecret.length < 32) return fail("Configure URL, chave, instância, número e segredo da Evolution API nos Secrets do Supabase.", 503);
+        try { if (new URL(apiUrl).protocol !== "https:" || !/^[1-9][0-9]{6,14}$/.test(phone)) throw new Error(); }
+        catch { return fail("A URL da Evolution precisa usar HTTPS e o número deve incluir o código do país."); }
+        const { data: allowed, error: accessError } = await supabaseAdmin.rpc("telegram_sender_allowed", { _user: userId, _grupo: data.grupo });
+        if (accessError || !allowed) return fail("Sem acesso à conferência deste grupo.", 403);
+        const webhookUrl = `${url.replace(/\/$/, "")}/functions/v1/whatsapp-webhook?key=${encodeURIComponent(webhookSecret)}`;
+        const webhookResponse = await fetch(`${apiUrl}/webhook/set/${encodeURIComponent(instance)}`, {
+          method: "POST", headers: { "Content-Type": "application/json", apikey: apiKey },
+          body: JSON.stringify({ enabled: true, url: webhookUrl, webhookByEvents: false, webhookBase64: false, events: ["MESSAGES_UPSERT"] }),
         });
-        const webhookResult = await webhookResponse.json().catch(() => null) as { ok?: boolean } | null;
-        if (!webhookResponse.ok || !webhookResult?.ok) return fail("Não foi possível conectar o bot do Telegram. Confira o token no Supabase.", 502);
+        if (!webhookResponse.ok) return fail("Não foi possível configurar o webhook na Evolution. Confira URL, chave e nome da instância.", 502);
         const bytes = crypto.getRandomValues(new Uint8Array(24));
-        const code = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+        const code = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
         const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
-        const codeHash = Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0")).join("");
-        const { error } = await supabase.from("telegram_links").upsert({ user_id: userId, grupo_id: data.grupo, telegram_user_id: null, chat_id: null, code_hash: codeHash, code_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
-        if (error) return fail(error.message, 500);
-        return response({ url: `https://t.me/Nosborx_bot?start=${code}` });
+        const codeHash = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
+        const { error } = await supabaseAdmin.from("whatsapp_links").upsert({
+          user_id: userId, grupo_id: data.grupo, code_hash: codeHash,
+          code_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        }, { onConflict: "user_id" });
+        if (error) return fail("Não foi possível criar o código para conectar o WhatsApp.", 500);
+        return response({ url: `https://wa.me/${phone}?text=${code}` });
+      }
+      case "listWhatsAppReviews": {
+        if (!validUuid(data.grupo)) return fail("Grupo inválido.");
+        const [{ data: rows, error }, { data: link }] = await Promise.all([
+          supabase.from("telegram_reviews").select("*").eq("grupo_id", data.grupo).eq("source_channel", "whatsapp").order("created_at", { ascending: false }).limit(100),
+          supabaseAdmin.from("whatsapp_links").select("wa_id").eq("user_id", userId).eq("grupo_id", data.grupo).maybeSingle(),
+        ]);
+        if (error) return fail("Não foi possível consultar as mensagens do WhatsApp.", 500);
+        return response({ rows: rows ?? [], linked: Boolean(link?.wa_id) });
       }
       case "listTelegramReviews": {
         if (!validUuid(data.grupo)) return fail("Grupo inválido.");

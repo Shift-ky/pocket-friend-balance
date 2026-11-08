@@ -690,6 +690,41 @@ export type Database = {
           },
         ]
       }
+      whatsapp_links: {
+        Row: {
+          code_expires_at: string | null
+          code_hash: string | null
+          created_at: string
+          grupo_id: string
+          user_id: string
+          wa_id: string | null
+        }
+        Insert: {
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          grupo_id: string
+          user_id: string
+          wa_id?: string | null
+        }
+        Update: {
+          code_expires_at?: string | null
+          code_hash?: string | null
+          created_at?: string
+          grupo_id?: string
+          user_id?: string
+          wa_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_links_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_product_links: {
         Row: {
           estoque_id: string
@@ -755,6 +790,9 @@ export type Database = {
           produtos_importados_at: string | null
           reviewed_at: string | null
           source_text: string
+          source_channel: string
+          source_message_id: string | null
+          sender_phone: string | null
           status: string
           update_id: number
           user_id: string
@@ -788,6 +826,9 @@ export type Database = {
           produtos_importados_at?: string | null
           reviewed_at?: string | null
           source_text?: string
+          source_channel?: string
+          source_message_id?: string | null
+          sender_phone?: string | null
           status?: string
           update_id: number
           user_id: string
@@ -821,6 +862,9 @@ export type Database = {
           produtos_importados_at?: string | null
           reviewed_at?: string | null
           source_text?: string
+          source_channel?: string
+          source_message_id?: string | null
+          sender_phone?: string | null
           status?: string
           update_id?: number
           user_id?: string
@@ -956,6 +1000,7 @@ export type Database = {
         Args: { _chat: number; _hash: string; _telegram: number }
         Returns: boolean
       }
+      whatsapp_bind: { Args: { _hash: string; _wa_id: string }; Returns: boolean }
       telegram_claim: { Args: { _id: string }; Returns: boolean }
       telegram_edit_approved_launch:
         | {
@@ -1154,3 +1199,4 @@ export const Constants = {
     },
   },
 } as const
+
