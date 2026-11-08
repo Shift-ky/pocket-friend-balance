@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
 import { Check, ExternalLink, FileText, Send, Trash2, Save, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGrupo } from '@/lib/grupo';
@@ -19,7 +18,7 @@ export const Route = createFileRoute('/conferencia')({ head: () => ({ meta: [
 ] }), component: Conference });
 const field = 'mt-1 w-full min-w-0 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
 function Conference() {
-  const { grupo } = useGrupo(); const read = useServerFn(listTelegramReviews); const link = useServerFn(linkTelegram);
+  const { grupo } = useGrupo(); const read = listTelegramReviews; const link = linkTelegram;
   const qc = useQueryClient(); const [message, setMessage] = useState(''); const [filter, setFilter] = useState('pendente');
   const { data, error } = useQuery({ queryKey: ['telegram', grupo.id], queryFn: () => read({ data: { grupo: grupo.id } }), refetchInterval: 5000 });
   return <main className="mx-auto max-w-4xl px-4 py-8 pb-28 sm:px-5">
@@ -31,7 +30,7 @@ function Conference() {
   </main>;
 }
 function Review({ row, done }: { row: Tables<'telegram_reviews'>; done: () => void }) {
-  const act = useServerFn(reviewTelegram); const file = useServerFn(telegramFile);
+  const act = reviewTelegram; const file = telegramFile;
   const [valor, setValor] = useState(String(row.valor ?? '')); const [data, setData] = useState(row.data ?? '');
   const [descricao, setDescricao] = useState(row.descricao); const [conta, setConta] = useState<'dinheiro'|'alimentacao'|'refeicao'>(row.conta as 'dinheiro');
   const [categoria, setCategoria] = useState(row.categoria); const [pago, setPago] = useState(row.pago);

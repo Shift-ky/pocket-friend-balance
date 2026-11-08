@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { possoAcessarAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador, alterarAcessos } from "@/lib/admin.functions";
@@ -25,13 +24,13 @@ export const Route = createFileRoute("/admin")({
 function Admin() {
   const { session } = useGrupo();
   const qc = useQueryClient();
-  const checar = useServerFn(possoAcessarAdmin);
-  const listar = useServerFn(listarUsuarios);
-  const excluir = useServerFn(excluirUsuario);
-  const redefinir = useServerFn(enviarRedefinicao);
-  const gerenciar = useServerFn(possoGerenciarAdministradores);
-  const alterar = useServerFn(alterarAdministrador);
-  const salvarAcessos = useServerFn(alterarAcessos);
+  const checar = possoAcessarAdmin;
+  const listar = listarUsuarios;
+  const excluir = excluirUsuario;
+  const redefinir = enviarRedefinicao;
+  const gerenciar = possoGerenciarAdministradores;
+  const alterar = alterarAdministrador;
+  const salvarAcessos = alterarAcessos;
   const [msg, setMsg] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
 

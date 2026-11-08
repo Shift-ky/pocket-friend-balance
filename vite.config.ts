@@ -7,19 +7,22 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from 'vite-plugin-pwa';
 
+const base = process.env.GITHUB_PAGES === 'true' ? '/pocket-friend-balance/' : '/';
+
 export default defineConfig({
+  vite: { base },
   plugins: [VitePWA({
     outDir: 'dist/client',
     strategies: 'generateSW', filename: 'sw.js', registerType: 'autoUpdate', injectRegister: null,
     devOptions: { enabled: false },
     manifest: {
-      name: 'Minhas Finanças', short_name: 'Finanças', start_url: '/', scope: '/', display: 'standalone',
+      name: 'Minhas Finanças', short_name: 'Finanças', start_url: base, scope: base, display: 'standalone',
       theme_color: '#FFFFFF', background_color: '#FFFFFF',
       icons: [{ src: '/app-icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }],
     },
     workbox: {
       globPatterns: ['**/*.{js,css,jpg,png,ico,woff2}'], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-      additionalManifestEntries: [{ url: '/_shell.html', revision: new Date().toISOString() }],
+      additionalManifestEntries: [{ url: `${base}_shell.html`, revision: new Date().toISOString() }],
       navigateFallback: null, cleanupOutdatedCaches: true,
       runtimeCaching: [
         { urlPattern: ({ request, url }) => request.mode === 'navigate' && url.origin === self.location.origin && ['/', '/financas', '/contas-fixas', '/feira', '/estoque', '/moto'].includes(url.pathname), handler: 'NetworkFirst', options: { cacheName: 'finance-pages', networkTimeoutSeconds: 4, cacheableResponse: { statuses: [200] }, precacheFallback: { fallbackURL: '/_shell.html' } } },

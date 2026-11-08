@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Bike, Boxes, CalendarClock, Home, LayoutGrid, Shield, ShoppingBasket, Wallet, X, Inbox, Target } from "lucide-react";
 import { possoAcessarAdmin } from "@/lib/admin.functions";
@@ -15,7 +14,7 @@ type Item = { to: "/" | "/financas" | "/contas-fixas" | "/feira" | "/estoque" | 
 function useItens(): Item[] {
   const access = useAccess();
   const { session } = useGrupo();
-  const checar = useServerFn(possoAcessarAdmin);
+  const checar = possoAcessarAdmin;
   const { data: admin } = useQuery({ queryKey: ["acessoAdmin", session.user.id], queryFn: () => checar() });
   const itens: Item[] = [{ to: "/", label: "Início", icon: Home }];
   if (access.financas) itens.push({ to: "/financas", label: "Finanças", icon: Wallet }, { to: "/contas-fixas", label: "Contas fixas", icon: CalendarClock }, { to: "/conferencia", label: "Conferência", icon: Inbox });
