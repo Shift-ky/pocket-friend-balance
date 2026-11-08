@@ -160,6 +160,16 @@ Deno.serve(async (request) => {
       }
       case "linkTelegram": {
         if (!validUuid(data.grupo)) return fail("Grupo inválido.");
+        const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+        const webhookSecret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
+        if (!botToken || !webhookSecret || !/^[A-Za-z0-9_-]{1,256}$/.test(webhookSecret)) return fail("Configure o token do bot e o segredo do webhook nas variáveis do Supabase.", 503);
+        const webhookUrl = `${url.replace(/\/$/, "")}/functions/v1/telegram-webhook`;
+        const webhookResponse = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: webhookUrl, secret_token: webhookSecret, allowed_updates: ["message", "callback_query"], drop_pending_updates: false }),
+        });
+        const webhookResult = await webhookResponse.json().catch(() => null) as { ok?: boolean } | null;
+        if (!webhookResponse.ok || !webhookResult?.ok) return fail("Não foi possível conectar o bot do Telegram. Confira o token no Supabase.", 502);
         const bytes = crypto.getRandomValues(new Uint8Array(24));
         const code = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
         const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
@@ -219,3 +229,4 @@ Deno.serve(async (request) => {
     return fail(error instanceof Error ? error.message : "Erro inesperado.", 500);
   }
 });
+
