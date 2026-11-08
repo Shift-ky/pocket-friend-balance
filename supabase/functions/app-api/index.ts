@@ -161,8 +161,10 @@ Deno.serve(async (request) => {
       case "linkTelegram": {
         if (!validUuid(data.grupo)) return fail("Grupo inválido.");
         const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
-        const webhookSecret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
-        if (!botToken || !webhookSecret || !/^[A-Za-z0-9_-]{1,256}$/.test(webhookSecret)) return fail("Configure o token do bot e o segredo do webhook nas variáveis do Supabase.", 503);
+        if (!botToken) return fail("Configure o token do bot nas variáveis do Supabase.", 503);
+        const secretDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`telegram-webhook:${botToken}`));
+        const secretBinary = Array.from(new Uint8Array(secretDigest), byte => String.fromCharCode(byte)).join("");
+        const webhookSecret = btoa(secretBinary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
         const webhookUrl = `${url.replace(/\/$/, "")}/functions/v1/telegram-webhook`;
         const webhookResponse = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
           method: "POST", headers: { "Content-Type": "application/json" },
