@@ -1,1 +1,1 @@
-Deno.serve(() => Response.json({ error: "Integração Telegram cancelada." }, { status: 410 }));`n
+Deno.serve(() => Response.json({ error: "Integração Telegram cancelada." }, { status: 410 }));
