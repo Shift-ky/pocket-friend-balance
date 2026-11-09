@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { possoAcessarAdmin, listarUsuarios, excluirUsuario, enviarRedefinicao, possoGerenciarAdministradores, alterarAdministrador, alterarAcessos } from "@/lib/admin.functions";
 import { MODULES, MODULE_LABELS, type Access } from "@/lib/access";
 import { useGrupo } from "@/lib/grupo";
@@ -25,13 +25,13 @@ export const Route = createFileRoute("/admin")({
 function Admin() {
   const { session } = useGrupo();
   const qc = useQueryClient();
-  const checar = useServerFn(possoAcessarAdmin);
-  const listar = useServerFn(listarUsuarios);
-  const excluir = useServerFn(excluirUsuario);
-  const redefinir = useServerFn(enviarRedefinicao);
-  const gerenciar = useServerFn(possoGerenciarAdministradores);
-  const alterar = useServerFn(alterarAdministrador);
-  const salvarAcessos = useServerFn(alterarAcessos);
+  const checar = possoAcessarAdmin;
+  const listar = listarUsuarios;
+  const excluir = excluirUsuario;
+  const redefinir = enviarRedefinicao;
+  const gerenciar = possoGerenciarAdministradores;
+  const alterar = alterarAdministrador;
+  const salvarAcessos = alterarAcessos;
   const [msg, setMsg] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
 
@@ -48,7 +48,7 @@ function Admin() {
     catch (e) { setMsg((e as Error).message); }
   }
   async function onRedefinir(email: string) {
-    try { await redefinir({ data: { email, origem: window.location.origin } }); setMsg(`Link de nova senha enviado para ${email}.`); }
+    try { await redefinir({ data: { email, origem: getAppBaseUrl() } }); setMsg(`Link de nova senha enviado para ${email}.`); }
     catch (e) { setMsg((e as Error).message); }
   }
   async function onAdministrador(id: string, email: string, administrador: boolean) {
@@ -106,3 +106,4 @@ function Admin() {
     </main>
   );
 }
+

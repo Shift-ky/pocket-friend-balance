@@ -1,0 +1,49 @@
+name: Publish GitHub Pages
+
+on:
+  push:
+    branches: [github-pages-migration]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+        env:
+          GITHUB_PAGES: 'true'
+      - name: Prepare single-page routes
+        run: |
+          find .output/public -maxdepth 4 -type f -print
+          shell_html=$(find .output/public -type f \( -name '_shell.html' -o -path '*/_shell/index.html' -o -name 'index.html' \) -print -quit)
+          test -n "$shell_html"
+          cp "$shell_html" .output/public/index.html
+          cp "$shell_html" .output/public/404.html
+          if [ "$shell_html" != ".output/public/_shell.html" ]; then cp "$shell_html" .output/public/_shell.html; fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .output/public
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+

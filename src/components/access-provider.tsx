@@ -1,6 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
 import { useLocation } from '@tanstack/react-router';
 import { useGrupo } from '@/lib/grupo';
 import { meusAcessos } from '@/lib/admin.functions';
@@ -12,7 +11,7 @@ import { cachedValue } from '@/lib/offline-store';
 export function AccessProvider({ children }: { children: ReactNode }) {
   const { session } = useGrupo();
   const qc = useQueryClient();
-  const read = useServerFn(meusAcessos);
+  const read = meusAcessos;
   const { data, isError } = useQuery({ queryKey: ['acessos', session.user.id], networkMode: 'always', queryFn: () => cachedValue(session.user.id, 'acessos', () => read()), refetchInterval: 3000, staleTime: 0 });
   useEffect(() => {
     const channel = supabase.channel(`access-${session.user.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'user_access', filter: `user_id=eq.${session.user.id}` }, () => { void qc.invalidateQueries({ queryKey: ['acessos', session.user.id] }); }).subscribe();

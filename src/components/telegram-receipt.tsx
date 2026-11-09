@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
 import { Check, Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAccess } from '@/lib/access-context';
@@ -12,7 +11,7 @@ import type { Tables } from '@/integrations/supabase/types';
 const field='mt-1 w-full min-w-0 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
 const number=(s:string) => s.trim() ? Number(s.replace(',','.')) : null;
 export function TelegramReceipt({row,done}:{row:Tables<'telegram_reviews'>;done:()=>void}) {
-  const access=useAccess(); const read=useServerFn(receiptOptions); const act=useServerFn(reviewTelegramReceipt); const discard=useServerFn(reviewTelegram);
+  const access=useAccess(); const read=receiptOptions; const act=reviewTelegramReceipt; const discard=reviewTelegram;
   const options=useQuery({queryKey:['telegram-stock-options',row.grupo_id],queryFn:()=>read({data:{grupo:row.grupo_id}}),enabled:access.estoque});
   const [items,setItems]=useState(()=>produtosExtraidos(row.produtos).map((p,id)=>({id,nome:p.nome,qtd:String(p.qtd ?? ''),preco:String(p.preco ?? ''),estoque_id:p.estoque_id ?? '',novo:p.novo ?? false,nome_estoque:p.nome_estoque || p.nome})));
   const [valor,setValor]=useState(String(row.valor ?? '')); const [date,setDate]=useState(row.data ?? row.emissao ?? '');

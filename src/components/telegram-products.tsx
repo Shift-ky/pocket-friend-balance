@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
 import { Package, Plus, Save, ShoppingBasket, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAccess } from '@/lib/access-context';
@@ -9,7 +8,7 @@ import type { Tables } from '@/integrations/supabase/types';
 
 const field = 'mt-1 w-full min-w-0 rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
 export function TelegramProducts({ row, done }: { row: Tables<'telegram_reviews'>; done: () => void }) {
-  const access = useAccess(); const act = useServerFn(reviewTelegramProducts);
+  const access = useAccess(); const act = reviewTelegramProducts;
   const [items, setItems] = useState(() => produtosExtraidos(row.produtos).map((p, id) => ({ id, nome: p.nome, qtd: String(p.qtd ?? ''), selected: true })));
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
   const [confirm, setConfirm] = useState<'feira' | 'estoque' | null>(null);

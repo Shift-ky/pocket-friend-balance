@@ -10,7 +10,7 @@ GRANT ALL ON public.user_access TO service_role;
 ALTER TABLE public.user_access ENABLE ROW LEVEL SECURITY;
 CREATE POLICY own_access ON public.user_access FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE OR REPLACE FUNCTION public.module_access(_module text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
- SELECT auth.uid() IS NOT NULL AND CASE WHEN auth.uid() = '3f3f6b62-d686-4451-b75f-a108adfb813d'::uuid THEN true ELSE COALESCE((SELECT CASE _module WHEN 'financas' THEN a.financas WHEN 'moto' THEN a.moto WHEN 'feira' THEN a.feira WHEN 'estoque' THEN a.estoque ELSE false END FROM public.user_access a WHERE a.user_id = auth.uid()), _module IN ('financas','moto','feira','estoque')) END
+ SELECT auth.uid() IS NOT NULL AND CASE WHEN public.has_role(auth.uid(), 'admin'::public.app_role) THEN true ELSE COALESCE((SELECT CASE _module WHEN 'financas' THEN a.financas WHEN 'moto' THEN a.moto WHEN 'feira' THEN a.feira WHEN 'estoque' THEN a.estoque ELSE false END FROM public.user_access a WHERE a.user_id = auth.uid()), _module IN ('financas','moto','feira','estoque')) END
 $$;
 REVOKE ALL ON FUNCTION public.module_access(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.module_access(text) TO authenticated;

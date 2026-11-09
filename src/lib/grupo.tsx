@@ -9,6 +9,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import loginDreams from '@/assets/login-dreams.jpg';
 import mariaLogo from '@/assets/maria-logo.png';
 import { LoginWelcome } from '@/components/login-welcome';
+import { getAppBaseUrl } from '@/lib/app-url';
 
 type Grupo = { id: string; nome: string; codigo: string };
 type Ctx = { session: Session; grupo: Grupo; sair: () => Promise<void> };
@@ -55,14 +56,14 @@ function Login({ aoEntrar }: { aoEntrar: () => void }) {
     e.preventDefault();
     setCarregando(true); setMsg("");
     if (modo === "recuperar") {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${getAppBaseUrl()}/reset-password` });
       setMsg(error ? error.message : "Enviamos um link para seu e-mail. Abra-o para criar uma nova senha.");
     } else if (modo === "entrar") {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) setMsg("E-mail ou senha incorretos.");
       else aoEntrar();
     } else {
-      const { error } = await supabase.auth.signUp({ email, password: senha, options: { emailRedirectTo: window.location.origin } });
+      const { error } = await supabase.auth.signUp({ email, password: senha, options: { emailRedirectTo: getAppBaseUrl() } });
       setMsg(error ? error.message : "Conta criada! Confirme pelo link enviado ao seu e-mail e depois entre.");
     }
     setCarregando(false);
@@ -230,3 +231,4 @@ export function useTabelaAoVivo<T>(tabela: "lancamentos" | "feira_itens" | "desp
 
   return { linhas: !allowed ? [] : tabela === "lancamentos" ? visibleEntries(linhas as (T & { destino?: string; origem_modulo?: string })[], access) : tabela === 'carteiras' ? linhas.filter(l=>(l as T & {legado?:string}).legado==='gasolina'?access.moto:access.financas) : tabela === 'contas_fixas' ? linhas.filter(l => access.moto || (l as T & { modalidade?: string }).modalidade !== 'gasolina') : linhas, recarregar };
 }
+
